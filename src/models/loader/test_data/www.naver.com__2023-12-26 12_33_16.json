@@ -1,0 +1,1268 @@
+{
+    "file_path": "https://www.naver.com/",
+    "file_name": "www.naver.com/",
+    "init_date": "2023-12-26 12:33:16",
+    "updated_data": null,
+    "data": [
+        {
+            "text": "상단영역 바로가기",
+            "bbox": {
+                "leftX": -46.796875,
+                "topY": -29,
+                "rightX": 58.78125,
+                "bottomY": -1
+            }
+        },
+        {
+            "text": "서비스 메뉴 바로가기",
+            "bbox": {
+                "leftX": -54.578125,
+                "topY": -29,
+                "rightX": 66.5625,
+                "bottomY": -1
+            }
+        },
+        {
+            "text": "새소식 블록 바로가기",
+            "bbox": {
+                "leftX": -54.578125,
+                "topY": -29,
+                "rightX": 66.5625,
+                "bottomY": -1
+            }
+        },
+        {
+            "text": "쇼핑 블록 바로가기",
+            "bbox": {
+                "leftX": -48.578125,
+                "topY": -29,
+                "rightX": 60.5625,
+                "bottomY": -1
+            }
+        },
+        {
+            "text": "관심사 블록 바로가기",
+            "bbox": {
+                "leftX": -54.578125,
+                "topY": -29,
+                "rightX": 66.5625,
+                "bottomY": -1
+            }
+        },
+        {
+            "text": "MY 영역 바로가기",
+            "bbox": {
+                "leftX": -45.203125,
+                "topY": -29,
+                "rightX": 57.1875,
+                "bottomY": -1
+            }
+        },
+        {
+            "text": "위젯 보드 바로가기",
+            "bbox": {
+                "leftX": -48.578125,
+                "topY": -29,
+                "rightX": 60.5625,
+                "bottomY": -1
+            }
+        },
+        {
+            "text": "보기 설정 바로가기",
+            "bbox": {
+                "leftX": -48.578125,
+                "topY": -29,
+                "rightX": 60.5625,
+                "bottomY": -1
+            }
+        },
+        {
+            "text": "NAVER",
+            "bbox": {
+                "leftX": 279,
+                "topY": 111,
+                "rightX": 280,
+                "bottomY": 112
+            }
+        },
+        {
+            "text": "검색",
+            "bbox": {
+                "leftX": 918.5,
+                "topY": 112,
+                "rightX": 919.5,
+                "bottomY": 113
+            }
+        },
+        {
+            "text": "자동완성/최근검색어펼치기",
+            "bbox": {
+                "leftX": 885,
+                "topY": 102,
+                "rightX": 886,
+                "bottomY": 103
+            }
+        },
+        {
+            "text": "메일",
+            "bbox": {
+                "leftX": 268,
+                "topY": 197,
+                "rightX": 332,
+                "bottomY": 217
+            }
+        },
+        {
+            "text": "카페",
+            "bbox": {
+                "leftX": 336,
+                "topY": 197,
+                "rightX": 400,
+                "bottomY": 217
+            }
+        },
+        {
+            "text": "블로그",
+            "bbox": {
+                "leftX": 404,
+                "topY": 197,
+                "rightX": 468,
+                "bottomY": 217
+            }
+        },
+        {
+            "text": "쇼핑",
+            "bbox": {
+                "leftX": 472,
+                "topY": 197,
+                "rightX": 536,
+                "bottomY": 217
+            }
+        },
+        {
+            "text": "뉴스",
+            "bbox": {
+                "leftX": 540,
+                "topY": 197,
+                "rightX": 604,
+                "bottomY": 217
+            }
+        },
+        {
+            "text": "증권",
+            "bbox": {
+                "leftX": 608,
+                "topY": 197,
+                "rightX": 672,
+                "bottomY": 217
+            }
+        },
+        {
+            "text": "부동산",
+            "bbox": {
+                "leftX": 676,
+                "topY": 197,
+                "rightX": 740,
+                "bottomY": 217
+            }
+        },
+        {
+            "text": "지도",
+            "bbox": {
+                "leftX": 744,
+                "topY": 197,
+                "rightX": 808,
+                "bottomY": 217
+            }
+        },
+        {
+            "text": "웹툰",
+            "bbox": {
+                "leftX": 812,
+                "topY": 197,
+                "rightX": 876,
+                "bottomY": 217
+            }
+        },
+        {
+            "text": "바로가기 펼침",
+            "bbox": {
+                "leftX": 879,
+                "topY": 189,
+                "rightX": 880,
+                "bottomY": 190
+            }
+        },
+        {
+            "text": "확장 영역",
+            "bbox": {
+                "leftX": -22,
+                "topY": 27,
+                "rightX": -21,
+                "bottomY": 28
+            }
+        },
+        {
+            "text": "페이 바로가기",
+            "bbox": {
+                "leftX": 15,
+                "topY": 24,
+                "rightX": 16,
+                "bottomY": 25
+            }
+        },
+        {
+            "text": "톡",
+            "bbox": {
+                "leftX": 1182,
+                "topY": 27,
+                "rightX": 1183,
+                "bottomY": 28
+            }
+        },
+        {
+            "text": "알림",
+            "bbox": {
+                "leftX": 1232,
+                "topY": 27,
+                "rightX": 1233,
+                "bottomY": 28
+            }
+        },
+        {
+            "text": "LIVE",
+            "bbox": {
+                "leftX": 306.859375,
+                "topY": 435,
+                "rightX": 354.734375,
+                "bottomY": 453
+            }
+        },
+        {
+            "text": "리스트형",
+            "bbox": {
+                "leftX": 727,
+                "topY": 820,
+                "rightX": 728,
+                "bottomY": 821
+            }
+        },
+        {
+            "text": "썸네일형",
+            "bbox": {
+                "leftX": 765,
+                "topY": 820,
+                "rightX": 766,
+                "bottomY": 821
+            }
+        },
+        {
+            "text": "이전 페이지",
+            "bbox": {
+                "leftX": 284,
+                "topY": 810,
+                "rightX": 285,
+                "bottomY": 811
+            }
+        },
+        {
+            "text": "더보기",
+            "bbox": {
+                "leftX": 326.734375,
+                "topY": 801,
+                "rightX": 414.640625,
+                "bottomY": 819
+            }
+        },
+        {
+            "text": "언론사",
+            "bbox": {
+                "leftX": 326.734375,
+                "topY": 801,
+                "rightX": 366.484375,
+                "bottomY": 819
+            }
+        },
+        {
+            "text": "1",
+            "bbox": {
+                "leftX": 414.640625,
+                "topY": 801,
+                "rightX": 422.15625,
+                "bottomY": 819
+            }
+        },
+        {
+            "text": "페이지",
+            "bbox": {
+                "leftX": 421.15625,
+                "topY": 792,
+                "rightX": 422.15625,
+                "bottomY": 793
+            }
+        },
+        {
+            "text": "/4",
+            "bbox": {
+                "leftX": 422.15625,
+                "topY": 801,
+                "rightX": 435.265625,
+                "bottomY": 819
+            }
+        },
+        {
+            "text": "전체",
+            "bbox": {
+                "leftX": 421.15625,
+                "topY": 792,
+                "rightX": 422.15625,
+                "bottomY": 793
+            }
+        },
+        {
+            "text": "다음 페이지",
+            "bbox": {
+                "leftX": 476,
+                "topY": 810,
+                "rightX": 477,
+                "bottomY": 811
+            }
+        },
+        {
+            "text": "다유",
+            "bbox": {
+                "leftX": 12,
+                "topY": 1665,
+                "rightX": 38.5,
+                "bottomY": 1683
+            }
+        },
+        {
+            "text": "러브화이트",
+            "bbox": {
+                "leftX": 214.5,
+                "topY": 1665,
+                "rightX": 280.75,
+                "bottomY": 1683
+            }
+        },
+        {
+            "text": "리빙센스",
+            "bbox": {
+                "leftX": 417,
+                "topY": 1665,
+                "rightX": 470,
+                "bottomY": 1683
+            }
+        },
+        {
+            "text": "유짱",
+            "bbox": {
+                "leftX": 619.5,
+                "topY": 1665,
+                "rightX": 646,
+                "bottomY": 1683
+            }
+        },
+        {
+            "text": "앨",
+            "bbox": {
+                "leftX": 12,
+                "topY": 1879,
+                "rightX": 25.25,
+                "bottomY": 1897
+            }
+        },
+        {
+            "text": "은주",
+            "bbox": {
+                "leftX": 214.5,
+                "topY": 1879,
+                "rightX": 241,
+                "bottomY": 1897
+            }
+        },
+        {
+            "text": "mingle",
+            "bbox": {
+                "leftX": 417,
+                "topY": 1879,
+                "rightX": 456.75,
+                "bottomY": 1897
+            }
+        },
+        {
+            "text": "초록여신",
+            "bbox": {
+                "leftX": 619.5,
+                "topY": 1879,
+                "rightX": 672.5,
+                "bottomY": 1897
+            }
+        },
+        {
+            "text": "정면돌파",
+            "bbox": {
+                "leftX": 12,
+                "topY": 2093,
+                "rightX": 65,
+                "bottomY": 2111
+            }
+        },
+        {
+            "text": "쨍쨍이",
+            "bbox": {
+                "leftX": 214.5,
+                "topY": 2093,
+                "rightX": 254.25,
+                "bottomY": 2111
+            }
+        },
+        {
+            "text": "가을애",
+            "bbox": {
+                "leftX": 417,
+                "topY": 2093,
+                "rightX": 456.75,
+                "bottomY": 2111
+            }
+        },
+        {
+            "text": "윤이현이맘",
+            "bbox": {
+                "leftX": 619.5,
+                "topY": 2093,
+                "rightX": 685.75,
+                "bottomY": 2111
+            }
+        },
+        {
+            "text": "펀딩",
+            "bbox": {
+                "leftX": -14,
+                "topY": 2197,
+                "rightX": 21.203125,
+                "bottomY": 2217
+            }
+        },
+        {
+            "text": "토버스",
+            "bbox": {
+                "leftX": -14,
+                "topY": 2372,
+                "rightX": 25.75,
+                "bottomY": 2390
+            }
+        },
+        {
+            "text": "달성",
+            "bbox": {
+                "leftX": 25.75,
+                "topY": 2371,
+                "rightX": 104.046875,
+                "bottomY": 2391
+            }
+        },
+        {
+            "text": "471%",
+            "bbox": {
+                "leftX": 40.75,
+                "topY": 2372,
+                "rightX": 73.140625,
+                "bottomY": 2390
+            }
+        },
+        {
+            "text": "펀딩",
+            "bbox": {
+                "leftX": 188.5,
+                "topY": 2197,
+                "rightX": 223.703125,
+                "bottomY": 2217
+            }
+        },
+        {
+            "text": "한라산과자점",
+            "bbox": {
+                "leftX": 188.5,
+                "topY": 2372,
+                "rightX": 268,
+                "bottomY": 2390
+            }
+        },
+        {
+            "text": "달성",
+            "bbox": {
+                "leftX": 268,
+                "topY": 2371,
+                "rightX": 356,
+                "bottomY": 2391
+            }
+        },
+        {
+            "text": "1,032%",
+            "bbox": {
+                "leftX": 283,
+                "topY": 2372,
+                "rightX": 325.09375,
+                "bottomY": 2390
+            }
+        },
+        {
+            "text": "펀딩",
+            "bbox": {
+                "leftX": 391,
+                "topY": 2197,
+                "rightX": 426.203125,
+                "bottomY": 2217
+            }
+        },
+        {
+            "text": "제주joy감귤농장",
+            "bbox": {
+                "leftX": 391,
+                "topY": 2372,
+                "rightX": 487.5625,
+                "bottomY": 2390
+            }
+        },
+        {
+            "text": "달성",
+            "bbox": {
+                "leftX": 487.5625,
+                "topY": 2371,
+                "rightX": 565.859375,
+                "bottomY": 2391
+            }
+        },
+        {
+            "text": "208%",
+            "bbox": {
+                "leftX": 502.5625,
+                "topY": 2372,
+                "rightX": 534.953125,
+                "bottomY": 2390
+            }
+        },
+        {
+            "text": "펀딩",
+            "bbox": {
+                "leftX": 593.5,
+                "topY": 2197,
+                "rightX": 628.703125,
+                "bottomY": 2217
+            }
+        },
+        {
+            "text": "베니X조앤조",
+            "bbox": {
+                "leftX": 593.5,
+                "topY": 2372,
+                "rightX": 667.5625,
+                "bottomY": 2390
+            }
+        },
+        {
+            "text": "달성",
+            "bbox": {
+                "leftX": 667.5625,
+                "topY": 2371,
+                "rightX": 745.859375,
+                "bottomY": 2391
+            }
+        },
+        {
+            "text": "807%",
+            "bbox": {
+                "leftX": 682.5625,
+                "topY": 2372,
+                "rightX": 714.953125,
+                "bottomY": 2390
+            }
+        },
+        {
+            "text": "네이버를 더 안전하고 편리하게 이용하세요",
+            "bbox": {
+                "leftX": 846,
+                "topY": 289,
+                "rightX": 1226,
+                "bottomY": 309
+            }
+        },
+        {
+            "text": "NAVER",
+            "bbox": {
+                "leftX": 1009.546875,
+                "topY": 342,
+                "rightX": 1010.546875,
+                "bottomY": 343
+            }
+        },
+        {
+            "text": "서울시 연희동",
+            "bbox": {
+                "leftX": 1144.09375,
+                "topY": 710,
+                "rightX": 1228,
+                "bottomY": 750
+            }
+        },
+        {
+            "text": "4.7°",
+            "bbox": {
+                "leftX": 948.03125,
+                "topY": 787,
+                "rightX": 1009.953125,
+                "bottomY": 855
+            }
+        },
+        {
+            "text": "맑음",
+            "bbox": {
+                "leftX": 948.03125,
+                "topY": 835,
+                "rightX": 1009.953125,
+                "bottomY": 855
+            }
+        },
+        {
+            "text": "-1°",
+            "bbox": {
+                "leftX": 913.6875,
+                "topY": 878,
+                "rightX": 932.3125,
+                "bottomY": 898
+            }
+        },
+        {
+            "text": "최저기온",
+            "bbox": {
+                "leftX": 912.6875,
+                "topY": 879,
+                "rightX": 913.6875,
+                "bottomY": 880
+            }
+        },
+        {
+            "text": "8°",
+            "bbox": {
+                "leftX": 932.3125,
+                "topY": 878,
+                "rightX": 954.3125,
+                "bottomY": 898
+            }
+        },
+        {
+            "text": "최고기온",
+            "bbox": {
+                "leftX": 940.3125,
+                "topY": 879,
+                "rightX": 941.3125,
+                "bottomY": 880
+            }
+        },
+        {
+            "text": "미세",
+            "bbox": {
+                "leftX": 849.625,
+                "topY": 902,
+                "rightX": 906.625,
+                "bottomY": 922
+            }
+        },
+        {
+            "text": "나쁨",
+            "bbox": {
+                "leftX": 876.125,
+                "topY": 903,
+                "rightX": 906.625,
+                "bottomY": 921
+            }
+        },
+        {
+            "text": "초미세",
+            "bbox": {
+                "leftX": 906.625,
+                "topY": 902,
+                "rightX": 1018.375,
+                "bottomY": 922
+            }
+        },
+        {
+            "text": "매우나쁨",
+            "bbox": {
+                "leftX": 961.375,
+                "topY": 903,
+                "rightX": 1018.375,
+                "bottomY": 921
+            }
+        },
+        {
+            "text": "13시",
+            "bbox": {
+                "leftX": 1048,
+                "topY": 904,
+                "rightX": 1080,
+                "bottomY": 920
+            }
+        },
+        {
+            "text": "맑음",
+            "bbox": {
+                "leftX": 1063,
+                "topY": 899,
+                "rightX": 1064,
+                "bottomY": 900
+            }
+        },
+        {
+            "text": "5°",
+            "bbox": {
+                "leftX": 1048,
+                "topY": 795,
+                "rightX": 1080,
+                "bottomY": 860
+            }
+        },
+        {
+            "text": "15",
+            "bbox": {
+                "leftX": 1085,
+                "topY": 904,
+                "rightX": 1117,
+                "bottomY": 920
+            }
+        },
+        {
+            "text": "맑음",
+            "bbox": {
+                "leftX": 1100,
+                "topY": 899,
+                "rightX": 1101,
+                "bottomY": 900
+            }
+        },
+        {
+            "text": "8°",
+            "bbox": {
+                "leftX": 1085,
+                "topY": 777,
+                "rightX": 1117,
+                "bottomY": 860
+            }
+        },
+        {
+            "text": "17",
+            "bbox": {
+                "leftX": 1122,
+                "topY": 904,
+                "rightX": 1154,
+                "bottomY": 920
+            }
+        },
+        {
+            "text": "맑음",
+            "bbox": {
+                "leftX": 1137,
+                "topY": 899,
+                "rightX": 1138,
+                "bottomY": 900
+            }
+        },
+        {
+            "text": "5°",
+            "bbox": {
+                "leftX": 1122,
+                "topY": 795,
+                "rightX": 1154,
+                "bottomY": 860
+            }
+        },
+        {
+            "text": "19",
+            "bbox": {
+                "leftX": 1159,
+                "topY": 904,
+                "rightX": 1191,
+                "bottomY": 920
+            }
+        },
+        {
+            "text": "맑음",
+            "bbox": {
+                "leftX": 1174,
+                "topY": 899,
+                "rightX": 1175,
+                "bottomY": 900
+            }
+        },
+        {
+            "text": "3°",
+            "bbox": {
+                "leftX": 1159,
+                "topY": 807,
+                "rightX": 1191,
+                "bottomY": 860
+            }
+        },
+        {
+            "text": "21",
+            "bbox": {
+                "leftX": 1196,
+                "topY": 904,
+                "rightX": 1228,
+                "bottomY": 920
+            }
+        },
+        {
+            "text": "맑음",
+            "bbox": {
+                "leftX": 1211,
+                "topY": 899,
+                "rightX": 1212,
+                "bottomY": 900
+            }
+        },
+        {
+            "text": "2°",
+            "bbox": {
+                "leftX": 1196,
+                "topY": 813,
+                "rightX": 1228,
+                "bottomY": 860
+            }
+        },
+        {
+            "text": "정보 더보기",
+            "bbox": {
+                "leftX": 886.703125,
+                "topY": 981,
+                "rightX": 887.703125,
+                "bottomY": 982
+            }
+        },
+        {
+            "text": "12.26. 12:33",
+            "bbox": {
+                "leftX": 1137.890625,
+                "topY": 962,
+                "rightX": 1228,
+                "bottomY": 1002
+            }
+        },
+        {
+            "text": "새로고침",
+            "bbox": {
+                "leftX": 1219,
+                "topY": 989,
+                "rightX": 1220,
+                "bottomY": 990
+            }
+        },
+        {
+            "text": "코스피",
+            "bbox": {
+                "leftX": 844,
+                "topY": 1024,
+                "rightX": 1024,
+                "bottomY": 1043
+            }
+        },
+        {
+            "text": "2,601.83",
+            "bbox": {
+                "leftX": 844,
+                "topY": 1046,
+                "rightX": 1024,
+                "bottomY": 1076
+            }
+        },
+        {
+            "text": "2.32",
+            "bbox": {
+                "leftX": 844,
+                "topY": 1078,
+                "rightX": 1024,
+                "bottomY": 1095
+            }
+        },
+        {
+            "text": "상승",
+            "bbox": {
+                "leftX": 843,
+                "topY": 1082,
+                "rightX": 844,
+                "bottomY": 1083
+            }
+        },
+        {
+            "text": "+0.09%",
+            "bbox": {
+                "leftX": 880.609375,
+                "topY": 1077,
+                "rightX": 931.953125,
+                "bottomY": 1095
+            }
+        },
+        {
+            "text": "DS단석",
+            "bbox": {
+                "leftX": 1048.5,
+                "topY": 1024,
+                "rightX": 1094.828125,
+                "bottomY": 1045
+            }
+        },
+        {
+            "text": "375,000",
+            "bbox": {
+                "leftX": 1166,
+                "topY": 1024,
+                "rightX": 1228,
+                "bottomY": 1045
+            }
+        },
+        {
+            "text": "하락",
+            "bbox": {
+                "leftX": 1165,
+                "topY": 1031,
+                "rightX": 1166,
+                "bottomY": 1032
+            }
+        },
+        {
+            "text": "삼성전자",
+            "bbox": {
+                "leftX": 1048.5,
+                "topY": 1063,
+                "rightX": 1105.703125,
+                "bottomY": 1084
+            }
+        },
+        {
+            "text": "76,400",
+            "bbox": {
+                "leftX": 1173.6875,
+                "topY": 1063,
+                "rightX": 1228,
+                "bottomY": 1084
+            }
+        },
+        {
+            "text": "상승",
+            "bbox": {
+                "leftX": 1172.6875,
+                "topY": 1070,
+                "rightX": 1173.6875,
+                "bottomY": 1071
+            }
+        },
+        {
+            "text": "포스코DX",
+            "bbox": {
+                "leftX": 1048.5,
+                "topY": 1102,
+                "rightX": 1109.578125,
+                "bottomY": 1123
+            }
+        },
+        {
+            "text": "65,800",
+            "bbox": {
+                "leftX": 1173.6875,
+                "topY": 1102,
+                "rightX": 1228,
+                "bottomY": 1123
+            }
+        },
+        {
+            "text": "상승",
+            "bbox": {
+                "leftX": 1172.6875,
+                "topY": 1109,
+                "rightX": 1173.6875,
+                "bottomY": 1110
+            }
+        },
+        {
+            "text": "위젯 보드",
+            "bbox": {
+                "leftX": 844,
+                "topY": 1223,
+                "rightX": 1228,
+                "bottomY": 1248
+            }
+        },
+        {
+            "text": "캘린더",
+            "bbox": {
+                "leftX": 851,
+                "topY": 1269,
+                "rightX": 1023,
+                "bottomY": 1303
+            }
+        },
+        {
+            "text": "12.26",
+            "bbox": {
+                "leftX": 861,
+                "topY": 1311,
+                "rightX": 1023,
+                "bottomY": 1347
+            }
+        },
+        {
+            "text": "화",
+            "bbox": {
+                "leftX": 959.1875,
+                "topY": 1327,
+                "rightX": 970.84375,
+                "bottomY": 1347
+            }
+        },
+        {
+            "text": "로그인하기",
+            "bbox": {
+                "leftX": 862,
+                "topY": 1415.15625,
+                "rightX": 933.5,
+                "bottomY": 1433
+            }
+        },
+        {
+            "text": "메모",
+            "bbox": {
+                "leftX": 1051,
+                "topY": 1267,
+                "rightX": 1135,
+                "bottomY": 1301
+            }
+        },
+        {
+            "text": "로그인하기",
+            "bbox": {
+                "leftX": 1060,
+                "topY": 1402,
+                "rightX": 1210,
+                "bottomY": 1445
+            }
+        },
+        {
+            "text": "papago",
+            "bbox": {
+                "leftX": 861,
+                "topY": 1481,
+                "rightX": 862,
+                "bottomY": 1482
+            }
+        },
+        {
+            "text": "번역하기",
+            "bbox": {
+                "leftX": 875,
+                "topY": 1604,
+                "rightX": 999,
+                "bottomY": 1644
+            }
+        },
+        {
+            "text": "Commuting time.",
+            "bbox": {
+                "leftX": 1060,
+                "topY": 1519,
+                "rightX": 1202,
+                "bottomY": 1561
+            }
+        },
+        {
+            "text": "VIBE",
+            "bbox": {
+                "leftX": 861,
+                "topY": 1684,
+                "rightX": 862,
+                "bottomY": 1685
+            }
+        },
+        {
+            "text": "바닷가 ASMR",
+            "bbox": {
+                "leftX": 938,
+                "topY": 1683,
+                "rightX": 1033.078125,
+                "bottomY": 1705
+            }
+        },
+        {
+            "text": "재생",
+            "bbox": {
+                "leftX": 933,
+                "topY": 1843,
+                "rightX": 934,
+                "bottomY": 1844
+            }
+        },
+        {
+            "text": "갈매기 나는 선착장의 소리",
+            "bbox": {
+                "leftX": 862,
+                "topY": 1888,
+                "rightX": 970,
+                "bottomY": 1928
+            }
+        },
+        {
+            "text": "재생",
+            "bbox": {
+                "leftX": 1053,
+                "topY": 1843,
+                "rightX": 1054,
+                "bottomY": 1844
+            }
+        },
+        {
+            "text": "경포대 바닷가에서",
+            "bbox": {
+                "leftX": 982,
+                "topY": 1888,
+                "rightX": 1090,
+                "bottomY": 1928
+            }
+        },
+        {
+            "text": "재생",
+            "bbox": {
+                "leftX": 1173,
+                "topY": 1843,
+                "rightX": 1174,
+                "bottomY": 1844
+            }
+        },
+        {
+            "text": "제주 우도의 백사장에서",
+            "bbox": {
+                "leftX": 1102,
+                "topY": 1888,
+                "rightX": 1210,
+                "bottomY": 1928
+            }
+        },
+        {
+            "text": "재생",
+            "bbox": {
+                "leftX": 1293,
+                "topY": 1843,
+                "rightX": 1294,
+                "bottomY": 1844
+            }
+        },
+        {
+            "text": "숲으로 둘러진 해변",
+            "bbox": {
+                "leftX": 1222,
+                "topY": 1888,
+                "rightX": 1330,
+                "bottomY": 1928
+            }
+        },
+        {
+            "text": "열기",
+            "bbox": {
+                "leftX": 844,
+                "topY": 1967,
+                "rightX": 1037.3125,
+                "bottomY": 1992
+            }
+        },
+        {
+            "text": "나만의 스마트한 브라우저, 웨일",
+            "bbox": {
+                "leftX": 898,
+                "topY": 2049,
+                "rightX": 1196,
+                "bottomY": 2069
+            }
+        },
+        {
+            "text": "인터넷을 여는 가장 스마트한 방법",
+            "bbox": {
+                "leftX": 898,
+                "topY": 2071,
+                "rightX": 1196,
+                "bottomY": 2091
+            }
+        },
+        {
+            "text": "item.text",
+            "bbox": {
+                "leftX": 1212,
+                "topY": 2067,
+                "rightX": 1218,
+                "bottomY": 2073
+            }
+        },
+        {
+            "text": "item.text",
+            "bbox": {
+                "leftX": 1222,
+                "topY": 2067,
+                "rightX": 1228,
+                "bottomY": 2073
+            }
+        },
+        {
+            "text": "최상단으로 이동",
+            "bbox": {
+                "leftX": 683,
+                "topY": 535,
+                "rightX": 684,
+                "bottomY": 536
+            }
+        },
+        {
+            "text": "홈 설정",
+            "bbox": {
+                "leftX": 735,
+                "topY": 535,
+                "rightX": 736,
+                "bottomY": 536
+            }
+        },
+        {
+            "text": "Creators",
+            "bbox": {
+                "leftX": -34,
+                "topY": 2774,
+                "rightX": 76,
+                "bottomY": 2794
+            }
+        },
+        {
+            "text": "Partners",
+            "bbox": {
+                "leftX": -34,
+                "topY": 2804,
+                "rightX": 76,
+                "bottomY": 2824
+            }
+        },
+        {
+            "text": "Developers",
+            "bbox": {
+                "leftX": -34,
+                "topY": 2834,
+                "rightX": 76,
+                "bottomY": 2854
+            }
+        },
+        {
+            "text": "네이버 정책 및 약관",
+            "bbox": {
+                "leftX": -35,
+                "topY": 2894,
+                "rightX": -34,
+                "bottomY": 2895
+            }
+        }
+    ]
+}

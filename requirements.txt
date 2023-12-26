@@ -1,0 +1,7 @@
+openai
+langchain
+sentence-transformers
+tiktoken
+pdfminer.six
+beautifulsoup4
+scrapy

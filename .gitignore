@@ -1,0 +1,5 @@
+__pycache__/
+.secrets.ini
+package-lock.json
+package.json
+node_modules/
