@@ -9,10 +9,13 @@ from utils import add_api_key
 add_api_key()
 
 import json
+from datetime import datetime
 
 import tqdm
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch.helpers import BulkIndexError
+
+from models.embedder.utils import get_embedder
 
 class ArxivElasticSearch:
     mappings = {
@@ -33,6 +36,9 @@ class ArxivElasticSearch:
                     }
                 }
             },
+            "full_text":{
+                "type": "text"
+            },
             "init_date": {
                 "type": "date"
             },
@@ -45,10 +51,26 @@ class ArxivElasticSearch:
                     "content": {
                         "type": "text"
                     },
+                    "bbox": {
+                        "properties": {
+                            "left_x": {
+                                "type": "integer"
+                            },
+                            "top_y": {
+                                "type": "integer"
+                            },
+                            "right_x": {
+                                "type": "integer"
+                            },
+                            "bottom_y": {
+                                "type": "integer"
+                            }
+                        }
+                    },
                     "content_embedding": {
                         "type": "dense_vector",
-                        # "dims": 1536
-                        "dims": 1024
+                        "dims": 1536
+                        # "dims": 1024
                     },
                     "page": {
                         "type": "integer"
@@ -67,6 +89,7 @@ class ArxivElasticSearch:
     def __init__(self, index_name='arxiv'):
         self.es = Elasticsearch(hosts=["http://localhost:9200"], timeout=180)
         self.index_name = index_name
+        self.embedding = get_embedder('openai')
     
     def _create_index(self, settings=None, mappings=None):
         self._delete_index()
@@ -131,16 +154,18 @@ class ArxivElasticSearch:
         document = {
             "file_name": data['file_name'],
             "file_path": data['file_path'],
-            "init_date": data['init_date'],
-            "updated_date": data['updated_date'],            
+            "full_text": data['full_text'],
+            "init_date": datetime.strptime(data['init_date'], '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%dT%H:%M:%S'),
+            "updated_date": datetime.strptime(data['updated_data'], '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%dT%H:%M:%S') if data['updated_date'] else None,
             "contents": [
                 {
                     "content": content['text'],
-                    "conetent_embedding": content['content_embedding'],
-                    "page": page,
+                    "content_embedding": content['embedding'],
+                    "bbox": content['bbox'],
+                    "page": content['page'],
                     "token_num": content['token_num']
                 } for content in data['data']
-                    if (content['content_embedding'] is not None) and (content['text'] != '')
+                    if (content['embedding'] is not None) and (content['text'] != '')
             ]
         }
 
@@ -209,7 +234,7 @@ class ArxivElasticSearch:
 
         return results
     
-    def _create_similarity_query(self, query_vector, search_range, part='chunk', num_chunks=5, limit_token_length=0, delete_reference=False, filter=None):
+    def _create_similarity_query(self, query_vector, search_range, part='chunk', num_chunks=5, limit_token_length=0, filter=None):
         if search_range == 'document':
             # version1: title 또는 summary를 이용해서 검색했을 경우
             if part == 'topic_summary':
@@ -256,7 +281,7 @@ class ArxivElasticSearch:
                                             "script_score": {
                                                 "query": {"match_all": {}},
                                                 "script": {
-                                                    "source": "if (doc['contents.token_num'].value >= params.limit_token_length" + (" && doc['contents.is_reference'].value == false" if delete_reference else "") + ") { return (cosineSimilarity(params.query_vector, 'contents.index_embedding') + 1.0)/2.0; } else { return 0; }",
+                                                    "source": "if (doc['contents.token_num'].value >= params.limit_token_length) { return (cosineSimilarity(params.query_vector, 'contents.content_embedding') + 1.0)/2.0; } else { return 0; }",
                                                     "params": {"query_vector": query_vector, "limit_token_length": limit_token_length}
                                                 }
                                             }
@@ -294,7 +319,7 @@ class ArxivElasticSearch:
                                         "script_score": {
                                             "query": {"match_all": {}},
                                             "script": {
-                                                "source": "if (doc['contents.token_num'].value >= params.limit_token_length" + (" && doc['contents.is_reference'].value == false" if delete_reference else "") + ") { return (cosineSimilarity(params.query_vector, 'contents.index_embedding') + 1.0)/2.0; } else { return 0; }",
+                                                "source": "if (doc['contents.token_num'].value >= params.limit_token_length) { return (cosineSimilarity(params.query_vector, 'contents.content_embedding') + 1.0)/2.0; } else { return 0; }",
                                                 "params": {"query_vector": query_vector, "limit_token_length": limit_token_length}
                                             }
                                         }
@@ -313,14 +338,12 @@ class ArxivElasticSearch:
                 if "filter" not in es_query["bool"]:
                     es_query["bool"]["filter"] = {"bool": {"should": []}}
                 es_query["bool"]["filter"]["bool"]["should"].extend(
-                    [{"match_phrase": {"topic": topic}} for topic in filter]
+                    [{"match_phrase": {"file_name": file_name}} for file_name in filter]
                 )
                 es_query["bool"]["filter"]["bool"]["minimum_should_match"] = 1
-
             return es_query
-        
 
-    def _create_match_query(self, query, search_range, part='chunk', num_chunks=5, limit_token_length=0, delete_reference=False, filter=None):
+    def _create_match_query(self, query, search_range, part='chunk', num_chunks=5, limit_token_length=0, filter=None):
         if search_range == 'document':
             # version1: title 또는 summary를 이용해서 검색했을 경우
             # using elastic search match
@@ -371,12 +394,6 @@ class ArxivElasticSearch:
                     }
                 }
 
-                # delete_reference가 True인 경우에만 해당 필터를 추가
-                if delete_reference:
-                    es_query["bool"]["must"]["nested"]["query"]["bool"]["filter"]["bool"]["must"].append(
-                        {"term": {"contents.is_reference": {"value": False}}}
-                    )
-
                 # filter가 제공되고, 비어있지 않은 경우에만 토픽 필터 추가
                 if filter and len(filter) > 0:
                     if "filter" not in es_query["bool"]:
@@ -388,7 +405,6 @@ class ArxivElasticSearch:
 
                 return es_query
 
-
         elif search_range == 'chunk':
             es_query = {
                 "bool": {
@@ -398,7 +414,7 @@ class ArxivElasticSearch:
                             "query": {
                                 "bool": {
                                     "must": [
-                                        {"match": {"contents.index": {"query": query}}}
+                                        {"match": {"contents.content": {"query": query}}}
                                     ],
                                     "filter": {
                                         "bool": {
@@ -416,18 +432,12 @@ class ArxivElasticSearch:
                 }
             }
 
-            # delete_reference가 True인 경우에만 해당 필터를 추가
-            if delete_reference:
-                es_query["bool"]["must"]["nested"]["query"]["bool"]["filter"]["bool"]["must"].append(
-                    {"term": {"contents.is_reference": {"value": False}}}
-                )
-
             # filter가 제공되고, 비어있지 않은 경우에만 토픽 필터 추가
             if filter and len(filter) > 0:
                 if "filter" not in es_query["bool"]:
                     es_query["bool"]["filter"] = {"bool": {"should": []}}
                 es_query["bool"]["filter"]["bool"]["should"].extend(
-                    [{"match_phrase": {"topic": topic}} for topic in filter]
+                    [{"match_phrase": {"file_name": file_name}} for file_name in filter]
                 )
                 es_query["bool"]["filter"]["bool"]["minimum_should_match"] = 1
 
@@ -440,39 +450,27 @@ class ArxivElasticSearch:
             "sort": [{"_score": {"order": "desc"}}]
         }
 
-    def _rerank(self, response, query, search_range, reranking_type='v1', num_chunks=5):
-        if reranking_type == 'v1':
-            reranked_list = self.reranking_chain.run(chunk_document_list=response, query=query, search_range=search_range, num_chunks=num_chunks)
-        elif reranking_type == 'bge':
-            reranked_list = self.bge_reranker.run(chunk_document_list=response, query=query, search_range=search_range, num_chunks=num_chunks)
-        return reranked_list
-
     def search(self, 
                query, 
                query_embedding=None, 
-               top_k=20, 
                num_results=5, 
                method='hybrid', 
                search_range='document', 
                part='chunk',
-               reranking=False, 
-               reranking_type='v1', 
                num_chunks=5, 
                limit_token_length=30, 
-               delete_reference=True, 
                match_weight=0.02, 
                similarity_weight=1,
                filter=None):
-        search_results_num = top_k if reranking else num_results # reranking을 사용할 경우, top_k만큼 search를을 수행
+        search_results_num = num_results # reranking을 사용할 경우, top_k만큼 search를을 수행
         if method == 'similarity':            
-            response = self._similarity_search(query, query_embedding, search_range, part, search_results_num, num_chunks, limit_token_length, delete_reference, filter)
+            response = self._similarity_search(query, query_embedding, search_range, part, search_results_num, num_chunks, limit_token_length, filter)
         elif method == 'match':
-            response = self._match_search(query, search_range, part, search_results_num, num_chunks, limit_token_length, delete_reference, filter)
+            response = self._match_search(query, search_range, part, search_results_num, num_chunks, limit_token_length, filter)
         elif method == 'hybrid':
-            response = self._hybrid_search(query, query_embedding, search_range, part, search_results_num, num_chunks, limit_token_length, delete_reference, match_weight, similarity_weight, filter)
+            response = self._hybrid_search(query, query_embedding, search_range, part, search_results_num, num_chunks, limit_token_length, match_weight, similarity_weight, filter)
             
         response = self.post_process_search_results(response, search_range)
-        response = self._rerank(response, query, search_range, reranking_type, num_chunks) if reranking else response
         response = response[:num_results] if response is not None else []
         return response
     
@@ -483,23 +481,19 @@ class ArxivElasticSearch:
     def parse_input_query(self, search_config, filter):
         query = search_config.get('query', None)
         query_embedding = search_config.get('query_embedding', None)
-        top_k = search_config.get('top_k', 20)
         num_results = search_config.get('num_results', 5)
         method = search_config.get('method', 'hybrid')
         search_range = search_config.get('search_range', 'document')
         part = search_config.get('part', 'chunk')
-        reranking = search_config.get('reranking', False)
-        reranking_type = search_config.get('reranking_type', 'v1')
         num_chunks = search_config.get('num_chunks', 5)
         limit_token_length = search_config.get('limit_token_length', 0)
-        delete_reference = search_config.get('delete_reference', False)
         match_weight = search_config.get('match_weight', 0.02)
         similarity_weight = search_config.get('similarity_weight', 1)
         filter = search_config.get('filter', filter)
-        return query, query_embedding, top_k, num_results, method, search_range, part, reranking, reranking_type, num_chunks, limit_token_length, delete_reference, match_weight, similarity_weight, filter
+        return query, query_embedding, num_results, method, search_range, part, num_chunks, limit_token_length, match_weight, similarity_weight, filter
 
     def multi_search(self, search_configs):
-        # args: [List of (query, query_embedding, top_k, num_results, method, search_range, part, reranking, reranking_type, num_chunks, limit_token_length, delete_reference, match_weight, similarity_weight)]
+        # args: [List of (query, query_embedding, top_k, num_results, method, search_range, part, num_chunks, limit_token_length, match_weight, similarity_weight)]
         filter = None
         for search_config in search_configs:
             query_params = self.parse_input_query(search_config, filter)
@@ -507,23 +501,23 @@ class ArxivElasticSearch:
             filter = self._create_filter_from_results(response)
         return response
 
-    def _similarity_search(self, query, query_embedding=None, search_range='document', part='chunk', num_results=5, num_chunks=5, limit_token_length=0, delete_reference=False, filter=None):
+    def _similarity_search(self, query, query_embedding=None, search_range='document', part='chunk', num_results=5, num_chunks=5, limit_token_length=0, filter=None):
         query_vector = self.embedding.get_embedding(query) if query_embedding is None else query_embedding
-        elastic_query = self._create_similarity_query(query_vector, search_range, part, num_chunks, limit_token_length, delete_reference, filter)
+        elastic_query = self._create_similarity_query(query_vector, search_range, part, num_chunks, limit_token_length, filter)
         response = self.es.search(index=self.index_name, size=num_results, query=elastic_query)
         return response
     
-    def _match_search(self, query, search_range='document', part='chunk', num_results=5, num_chunks=5, limit_token_length=0, delete_reference=False, filter=None):
-        elastic_query = self._create_match_query(query, search_range, part, num_chunks, limit_token_length, delete_reference, filter)
+    def _match_search(self, query, search_range='document', part='chunk', num_results=5, num_chunks=5, limit_token_length=0, filter=None):
+        elastic_query = self._create_match_query(query, search_range, part, num_chunks, limit_token_length, filter)
         response = self.es.search(index=self.index_name, size=num_results, query=elastic_query)
         return response
     
-    def _hybrid_search(self, query, query_embedding=None, search_range='document', part='chunk', num_results=5, num_chunks=5, limit_token_length=0, delete_reference=False, match_weight=1, similarity_weight=1, filter=None):
+    def _hybrid_search(self, query, query_embedding=None, search_range='document', part='chunk', num_results=5, num_chunks=5, limit_token_length=0, match_weight=1, similarity_weight=1, filter=None):
         if search_range == 'chunk':
             raise ValueError("search_range='chunk' is not supported when method='hybrid'")
         single_search_num_results = num_results * 4 # 두 개의 검색을 더하는 방법을 사용하므로, 각각의 검색 결과 수를 N배로 설정
-        similarity_response = self._similarity_search(query, query_embedding, search_range, part, single_search_num_results, num_chunks, limit_token_length, delete_reference, filter)
-        match_response = self._match_search(query, search_range, part, single_search_num_results, num_chunks, limit_token_length, delete_reference, filter)
+        similarity_response = self._similarity_search(query, query_embedding, search_range, part, single_search_num_results, num_chunks, limit_token_length, filter)
+        match_response = self._match_search(query, search_range, part, single_search_num_results, num_chunks, limit_token_length, filter)
         response = self._combine_response(similarity_response, match_response, match_weight, similarity_weight)
         return response
     
@@ -561,104 +555,33 @@ class ArxivElasticSearch:
         return final_response        
 
 if __name__ == "__main__":
-    # test embedding    
-    # query = "What is the meaning of life?"
-    # embedding = OpenAIEmbedding()
-    # print(f'embedding of "{query}": {embedding.get_embedding(query)[:5]}')
-    # print(type(embedding.get_embedding(query)))
-
     # test elasticsearch
-    # es = ArxivElasticSearch(index_name='arxiv_multilingual_large_token_256_overlap_16')
-    es = ArxivElasticSearch(index_name='arxiv_multilingual_large')
-    # es = ArxivElasticSearch(index_name='arxiv_openai')
-    # es = ArxivElasticSearch(index_name='arxiv_openai_token_256_overlap_16')
+    es = ArxivElasticSearch(index_name='refeat_ai')
     
     # # ---------- create index ---------- #
     # es._create_index(settings=es.settings, mappings=es.mappings)
+    # json_path = '../../modules/test_data/Cross-lingual Language Model Pretraining_2023-12-26 16_48_17.json'
+    # es.add_document_from_json(json_path)
     # es.add_documents_from_json_dir('../../data/arxiv/rag_test_token_256_overlap_16_large/chunk')
-    # es.add_documents_from_json_dir('../../data/arxiv/rag_test_e5_large/chunk')
-    # es.add_documents_from_json_dir('../../data/arxiv/rag_test_openai_token_256_overlap_16/chunk')
-    # es.add_documents_from_json_dir('../../data/arxiv/rag_test_openai/chunk')
 
 
     # ---------- delete index ---------- #
     # es._delete_index()
 
     # ---------- search test ---------- #
-    # response = es.search(
-    #     query="0710.4190v2.Parameter_estimation_of_ODE_s_via_nonparametric_estimators", 
-    #     query_embedding=None,
-    #     top_k=20, # reranking을 사용할 경우, top_k만큼 search를 수행
-    #     num_results=5, # 최종 결과로 반환할 문서 수
-    #     method='match', # [similarity, match, hybrid]
-    #     search_range='document', # [document, chunk]
-    #     part='chunk', # [chunk, topic_summary]
-    #     reranking=False,
-    #     reranking_type='v1', # [v1, bge]
-    #     num_chunks=5, # reranking을 사용할 경우, 사용할 chunk 수
-    #     limit_token_length=100,
-    #     delete_reference=True,
-    #     match_weight=0.02, # hybrid search에서 match search의 가중치
-    #     similarity_weight=1, # hybrid search에서 similarity search의 가중치
-    #     filter=None # topic filter
-    #     )
-    
-    # response = es.search(
-    #     query="document structure", 
-    #     query_embedding=None,
-    #     top_k=20, # reranking을 사용할 경우, top_k만큼 search를 수행
-    #     num_results=5, # 최종 결과로 반환할 문서 수
-    #     method='match', # [similarity, match, hybrid]
-    #     search_range='document', # [document, chunk]
-    #     part='topic_summary', # [chunk, topic_summary]
-    #     reranking=False,
-    #     reranking_type='v1', # [v1, bge]
-    #     num_chunks=5, # reranking을 사용할 경우, 사용할 chunk 수
-    #     limit_token_length=0,
-    #     delete_reference=False,
-    #     match_weight=0.02, # hybrid search에서 match search의 가중치
-    #     similarity_weight=1, # hybrid search에서 similarity search의 가중치
-    #     # filter=["DocXChain: A Powerful Open-Source Toolchain for Document Parsing and Beyond",
-    #     #         "DSG: An End-to-End Document Structure Generator"] # topic filter
-    #     )
-
-    response = es.multi_search([{
-        'query':"document structure", 
-        'query_embedding':None,
-        'top_k':10, # reranking을 사용할 경우, top_k만큼 search를 수행
-        'num_results':20, # 최종 결과로 반환할 문서 수
-        'method':'hybrid', # [similarity, match, hybrid]
-        'search_range':'document', # [document, chunk]
-        'part':'topic_summary', # [chunk, topic_summary]
-        'reranking':False,
-        'reranking_type':'v1', # [v1, bge]
-        'num_chunks':5, # reranking을 사용할 경우, 사용할 chunk 수
-        'limit_token_length':0,
-        'delete_reference':False,
-        'match_weight':0.02, # hybrid search에서 match search의 가중치
-        'similarity_weight':1, # hybrid search에서 similarity search의 가중치
-        # 'filter':["DocXChain: A Powerful Open-Source Toolchain for Document Parsing and Beyond",
-        #         "DSG: An End-to-End Document Structure Generator"] # topic filter
-        },{
-        'query':"document structure", 
-        'query_embedding':None,
-        'top_k':10, # reranking을 사용할 경우, top_k만큼 search를 수행
-        'num_results':5, # 최종 결과로 반환할 문서 수
-        'method':'similarity', # [similarity, match, hybrid]
-        'search_range':'document', # [document, chunk]
-        'part':'chunk', # [chunk, topic_summary]
-        'reranking':False,
-        'reranking_type':'v1', # [v1, bge]
-        'num_chunks':5, # reranking을 사용할 경우, 사용할 chunk 수
-        'limit_token_length':20,
-        'delete_reference':True,
-        'match_weight':0.02, # hybrid search에서 match search의 가중치
-        'similarity_weight':1, # hybrid search에서 similarity search의 가중치
-        # 'filter':["DocXChain: A Powerful Open-Source Toolchain for Document Parsing and Beyond",]
-        }])
-
-    # response = es.search("The computational demands and potential strategies for optimizing the performance of nonparametric regression and spline-based methods when applied to parameter estimation in large-scale or complex ODE models.", search_range='document', method='similarity', reranking=False, limit_token_length=100)
-    # response = es.search("Abstract: Ordinary diferential equations (ODE's) are widespread models in physics, chenistry and biology. In particular, this mathematical formal- isrn is used for describing the evolution of complex systems and it might consist of high-dimensional sets of coupled nonlinear diferential equations. In this setting, we propose a general method for estimating the parame- ters indexing ODE's from times series. Our method is able to alleviate the computational diffculties encountered by the classical parametric methods. These diffculties are due to the implicit definition of the model. We propose the use of a nonparametric estimator of regression functions as a first-step in the construction of an M-estimator, and we show the consistency of the derived estirnator under general conditions. In the case of spline estirmators, we prove asymptotic normality, and that the rate of convergence is the usual √n-rate for parametric estimators. Some perspectives of refinernents of this new farnily of parametric estimators are given.", search_range='chunk', method='similarity')
+    response = es.search(
+        query="Cross-lingual Language Model Pretraining bleu score", 
+        query_embedding=None,
+        num_results=5, # 최종 결과로 반환할 문서 수
+        method='similarity', # [similarity, match, hybrid]
+        search_range='chunk', # [document, chunk]
+        part='chunk', # [chunk, topic_summary]
+        num_chunks=5, # reranking을 사용할 경우, 사용할 chunk 수
+        limit_token_length=100,
+        match_weight=0.02, # hybrid search에서 match search의 가중치
+        similarity_weight=1, # hybrid search에서 similarity search의 가중치
+        filter=['Cross-lingual Language Model Pretraining'] # topic filter
+        )
     
     for i, result in enumerate(response):
         chunk_score = result['chunk_score'] if 'chunk_score' in result else None
@@ -672,110 +595,7 @@ if __name__ == "__main__":
             print(f"Chunk score: {chunk_score}")
             print(f"Chunk content: {chunk_info['content']}")
         print(f"Document score: {document_score}")
-        print(f"Document title: {document_info['topic']}")
+        print(f"Document file path: {document_info['file_name']}")
         if inner_contents:
             for inner_content in inner_contents:
                 print(f"\tInner Content Score: {inner_content['score']}, Content: {inner_content['content']}")
-
-
-    # ---------- add new field(reference_page) to index ---------- #
-    # es.update_index_with_reference_page_field()
-    # print(es.es.indices.get_mapping(index=es.index_name))
-
-    # json_dir_path = '../../data/arxiv/rag_test/chunk/'
-    # json_file_list = get_json_file_list(json_dir_path)
-    
-    # for json_path in tqdm.tqdm(json_file_list):
-    #     with open(json_path, 'r', encoding='utf-8') as f:
-    #         data = json.load(f)
-    #     reference_page = get_reference_page(data)
-    #     data['metadata']['reference_page'] = reference_page
-    #     with open(json_path, 'w', encoding='utf-8') as f:
-    #         json.dump(data, f, indent=4)
-    #     es.update_document_with_reference_page(data['file_name'], reference_page)
-    #     es.es.indices.refresh(index=es.index_name)
-    #     # check the updated document, with title using class search method   
-    #     query = data['file_name']
-    #     response = es.es.search(index=es.index_name, size=1, query={"match": {"file_name": query}})
-    #     print(query)
-    #     print(response['hits']['hits'][0]['_source']['metadata']['reference_page'])
-
-    # ---------- add new field(token_num) to index ---------- #
-    # es.update_index_with_token_num_field()
-    # print(es.es.indices.get_mapping(index=es.index_name))
-
-    # json_dir_path = '../../data/arxiv/rag_test/chunk/'
-    # json_file_list = get_json_file_list(json_dir_path)
-    
-    # for json_path in tqdm.tqdm(json_file_list):
-    #     with open(json_path, 'r', encoding='utf-8') as f:
-    #         data = json.load(f)
-    #     token_num_list = get_token_num_list(data)
-        
-    #     idx = 0
-    #     query = data['file_name']
-    #     print(query)
-    #     for page, page_contents in data['contents'].items():
-    #         for content in page_contents:
-    #             if content['index'] != '':
-    #                 content['token_num'] = token_num_list[idx]
-    #                 idx += 1
-    #             else:
-    #                 content['token_num'] = 0
-    #     with open(json_path, 'w', encoding='utf-8') as f:
-    #         json.dump(data, f, indent=4)
-    #     es.update_document_with_token_num(data['file_name'], token_num_list)
-    #     es.es.indices.refresh(index=es.index_name)
-    #     # check the updated document, with title using class search method
-    #     response = es.es.search(index=es.index_name, size=1, query={"match": {"file_name": query}})
-        
-    #     # print(response['hits']['hits'][0]['_source']['contents'][0]['token_num'])
-    #     print(response['hits']['hits'][0]['_source']['contents'][0]['token_num'])
-
-    # ---------- add new field(is_reference) to index ---------- #
-    # es.update_index_with_is_reference_field()
-    # print(es.es.indices.get_mapping(index=es.index_name))
-
-    # json_dir_path = '../../data/arxiv/rag_test_e5/chunk/'
-    # json_file_list = get_json_file_list(json_dir_path)
-    
-    # for json_path in tqdm.tqdm(json_file_list):
-        
-    #     with open(json_path, 'r', encoding='utf-8') as f:
-    #         data = json.load(f)
-    #     is_reference_list = get_is_reference_list(data)
-        
-    #     idx = 0
-    #     query = data['file_name']
-    #     print(query)
-        
-    #     for idx, (page, page_contents) in enumerate(data['contents'].items()):
-    #         for content in page_contents:
-    #             content['is_reference'] = is_reference_list[idx]
-
-    #     with open(json_path, 'w', encoding='utf-8') as f:
-    #         json.dump(data, f, indent=4)
-    #     es.update_document_with_is_reference(data['file_name'], is_reference_list)
-    #     es.es.indices.refresh(index=es.index_name)
-    #     # check the updated document, with title using class search method
-    #     response = es.es.search(index=es.index_name, size=1, query={"match": {"file_name": query}})
-    #     print(response['hits']['hits'][0]['_source']['contents'][0]['is_reference'])
-    #     print(response['hits']['hits'][0]['_source']['contents'][-1]['is_reference'])
-    # es = ArxivElasicSearch(index_name='arxiv_multilingual_token_128_overlap_16')
-    # es._create_index(settings=es.settings, mappings=es.mappings)
-    # es.add_documents_from_json_dir('../../data/arxiv/rag_test_token_128_overlap_16/chunk')
-
-    # rag_dir_list = [
-    #     'token_128_overlap_8',
-    #     'token_128_overlap_32',
-    #     'token_256_overlap_16',
-    #     'token_256_overlap_32',
-    #     'token_256_overlap_64',
-    #     'token_512_overlap_32',
-    #     'token_512_overlap_128'
-    # ]
-
-    # for rag_dir in rag_dir_list:
-    #     es = ArxivElasicSearch(index_name=f'arxiv_multilingual_{rag_dir}')
-    #     es._create_index(settings=es.settings, mappings=es.mappings)
-    #     es.add_documents_from_json_dir(f'../../data/arxiv/rag_test_{rag_dir}/chunk')

@@ -24,10 +24,10 @@ class WebLoader {
                 const bbox = await elementHandle.boundingBox();
     
                 if (bbox) {
-                    const left_x = bbox.x;
-                    const bottom_y = bbox.y + bbox.height;
-                    const right_x = bbox.x + bbox.width;
-                    const top_y = bbox.y;
+                    const left_x = Math.round(bbox.x);
+                    const bottom_y = Math.round(bbox.y + bbox.height);
+                    const right_x = Math.round(bbox.x + bbox.width);
+                    const top_y = Math.round(bbox.y);
     
                     const formattedBbox = {
                         left_x,

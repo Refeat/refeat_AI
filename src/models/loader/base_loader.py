@@ -9,8 +9,9 @@ class BaseLoader(ABC):
         self.file_path = file_path
         self.file_name = self.get_base_name(file_path)
         self.init_date = self.get_date()
-        self.data = self.get_data(file_path)
         self.updated_data = None
+        self.data = self.get_data(file_path)
+        self.full_text = self.get_full_text()
 
     @abstractmethod
     def get_data(self, file_path):
@@ -42,6 +43,10 @@ class BaseLoader(ABC):
         safe_date = self.init_date.replace(':', '_')
         save_path = os.path.join(save_dir, f'{safe_file_name}_{safe_date}.json')
         return save_path
+    
+    def get_full_text(self):
+        full_text = ' '.join([chunk['text'] for chunk in self.data])
+        return full_text
         
     def to_dict(self):
         return {
@@ -49,6 +54,7 @@ class BaseLoader(ABC):
             'file_name': self.file_name,
             'init_date': self.init_date,
             'updated_data': self.updated_data,
+            'full_text': self.full_text,
             'data': self.data
         }
 

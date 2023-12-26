@@ -1,27 +1,10 @@
 [
     {
-        "top_k":10, 
         "num_results":20, 
-        "method":"hybrid", 
-        "search_range":"document", 
-        "part":"topic_summary",
-        "num_chunks":5, 
-        "limit_token_length":0,
-        "delete_reference":false,
-        "match_weight":0.02, 
-        "similarity_weight":1
-    },
-    {
-        "query":"document structure", 
-        "top_k":10,
-        "num_results":5,
-        "method":"similarity",
-        "search_range":"document",
+        "method":"similarity", 
+        "search_range":"chunk", 
         "part":"chunk",
-        "reranking":false,
-        "reranking_type":"v1",
-        "num_chunks":5,
-        "limit_token_length":20,
-        "delete_reference":true
+        "num_chunks":5, 
+        "limit_token_length":0
     }
 ]

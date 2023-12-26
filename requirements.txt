@@ -6,3 +6,5 @@ pdfminer.six
 beautifulsoup4
 scrapy
 elasticsearch
+langchainhub
+google-search-results

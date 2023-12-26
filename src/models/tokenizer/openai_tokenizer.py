@@ -16,9 +16,16 @@ class OpenAITokenizer:
             return len(tokenized_text)
         elif isinstance(text, list):
             return [len(token) for token in tokenized_text]
+        
+    def get_decoding(self, token):
+        if isinstance(token[0], list):
+            return self.encoding.decode_batch(token)
+        elif isinstance(token[0], int):
+            return self.encoding.decode(token)
     
 if __name__ == '__main__':
-    text = ['l']
+    text = 'hello world'
     tokenizer = OpenAITokenizer()
     print(tokenizer.get_encoding(text))
     print(tokenizer.get_token_num(text))
+    print(tokenizer.get_decoding(tokenizer.get_encoding(text)))

@@ -20,7 +20,7 @@ class PdfLoader(BaseLoader):
         for page_num, page_layout in enumerate(extract_pages(file_path)):
             self.page_height = page_layout.height
             for element in page_layout:
-                single_data = self.data_from_element(element, page_num)
+                single_data = self.data_from_element(element, page_num+1)
                 data.append(single_data) if single_data else None
         return data
     
@@ -31,12 +31,12 @@ class PdfLoader(BaseLoader):
             for text_line in element:
                 if isinstance(text_line, LTAnno):
                     continue
-                if text_line.get_text().strip():
+                if text_line.get_text().strip() and ('cid' not in text_line.get_text()):
                     text_list.append(text_line.get_text().strip())
-                    bbox['left_x'] = min(bbox['left_x'], text_line.bbox[0])
-                    bbox['top_y'] = min(bbox['top_y'], self.page_height-text_line.bbox[3])
-                    bbox['right_x'] = max(bbox['right_x'], text_line.bbox[2])
-                    bbox['bottom_y'] = max(bbox['bottom_y'], self.page_height-text_line.bbox[1])
+                    bbox['left_x'] = int(min(bbox['left_x'], text_line.bbox[0]))
+                    bbox['top_y'] = int(min(bbox['top_y'], self.page_height-text_line.bbox[3]))
+                    bbox['right_x'] = int(max(bbox['right_x'], text_line.bbox[2]))
+                    bbox['bottom_y'] = int(max(bbox['bottom_y'], self.page_height-text_line.bbox[1]))
         data = {'text': ' '.join(text_list), 'page': page_num, 'bbox': bbox}
         return data if data['text'] else None
     

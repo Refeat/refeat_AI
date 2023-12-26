@@ -13,3 +13,5 @@ def add_api_key():
     config.read(os.path.join(current_path, '../.secrets.ini'))
     openai_api_key = config['OPENAI']['OPENAI_API_KEY']
     os.environ.update({'OPENAI_API_KEY': openai_api_key})
+    serp_api_key = config['SERPER']['SERPER_API_KEY']
+    os.environ.update({'SERPER_API_KEY': serp_api_key})

@@ -2,7 +2,7 @@
     "file_path": "../../models/loader/test_data/Cross-lingual Language Model Pretraining.pdf",
     "file_name": "Cross-lingual Language Model Pretraining",
     "init_date": "2023-12-26 16:48:17",
-    "updated_data": null,
+    "updated_date": null,
     "data": [
         {
             "text": "Cross-lingual Language Model Pretraining Guillaume Lample∗ Facebook AI Research Sorbonne Universit´es glample@fb.com Alexis Conneau∗ Facebook AI Research Universit´e Le Mans aconneau@fb.com 9 1 0 2 n a J 2 2 ] L C . s c [ 1 v 1 9 2 7 0 . 1 0 9 1 : v i X r a Abstract Recent studies have demonstrated the ef- ﬁciency of generative pretraining for En- In glish natural language understanding. this work, we extend this approach to mul- tiple languages and show the effectiveness of cross-lingual pretraining. We propose two methods to learn cross-lingual lan- guage models (XLMs): one unsupervised that only relies on monolingual data, and one supervised that leverages parallel data with a new cross-lingual language model objective. We obtain state-of-the-art re- sults on cross-lingual classiﬁcation, unsu- pervised and supervised machine transla- tion. On XNLI, our approach pushes the state of the art by an absolute gain of 4.9% accuracy. On unsupervised machine trans- lation, we obtain 34.3 BLEU on WMT’16 German-English, improving the previous state of the art by more than 9 BLEU. On supervised machine translation, we obtain a new state of the art of 38.5 BLEU on WMT’16 Romanian-English, outperform- ing the previous best approach by more than 4 BLEU. Our code and pretrained models will be made publicly available.",
