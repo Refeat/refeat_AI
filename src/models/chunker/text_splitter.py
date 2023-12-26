@@ -49,7 +49,7 @@ class TextSplitter:
     
 
 class ChunkTextSplitter:
-    def __init__(self, tokenizer, max_token_num=256, overlap=16):
+    def __init__(self, tokenizer, max_token_num=256, overlap=8):
         self.tokenizer = tokenizer
         self.max_token_num = max_token_num
         self.overlap = overlap

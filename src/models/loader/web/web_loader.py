@@ -19,7 +19,6 @@ class WebLoader(BaseLoader):
 
     def get_data(self, file_path):
         result = subprocess.run(['node', self.js_path, file_path], capture_output=True, text=True, encoding='utf-8')
-        print(result.stdout)
         data = json.loads(result.stdout)
         return data
 

@@ -14,19 +14,10 @@ import tqdm
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch.helpers import BulkIndexError
 
-from models.llm.search.chain import RerankingChain, RerankingChainV2, RerankingChainV3
-from models.tokenizer.utils import get_tokenizer
-from models.embedding.openai_embedding import OpenAIEmbedding
-from models.embedding.multilingual_e5 import MultilingualEmbedding
-from models.reranker.bge_reranker import BGEReranker
-
 class ArxivElasticSearch:
     mappings = {
         "properties": {
-            "file_name": {
-                "type": "text"
-            },
-            "topic": {
+            "file_path": {
                 "type": "text",
                 "fields": {
                     "keyword": {
@@ -34,69 +25,27 @@ class ArxivElasticSearch:
                     }
                 }
             },
-            "topic_embedding": {
-                "type": "dense_vector",
-                # "dims": 1536
-                "dims": 1024
-            },
-            "summary_embedding": {
-                "type": "dense_vector",
-                # "dims": 1536
-                "dims": 1024
-            },
-            "metadata": {
-                "type": "object",
-                "properties": {
-                    "entry_id": {
+            "file_name": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
                         "type": "keyword"
-                    },
-                    "updated": {
-                        "type": "date"
-                    },
-                    "published": {
-                        "type": "date"
-                    },
-                    "title": {
-                        "type": "text"
-                    },
-                    "authors": {
-                        "type": "text"
-                    },
-                    "summary": {
-                        "type": "text"
-                    },
-                    "category": {
-                        "type": "keyword"
-                    },
-                    "pdf_url": {
-                        "type": "keyword"
-                    },
-                    "pdf_save_path": {
-                        "type": "keyword"
-                    },
-                    "summary_embedding": {
-                        "type": "dense_vector",
-                        # "dims": 1536
-                        "dims": 1024
-                    },
-                    "reference_page":{
-                        "type": "integer"
                     }
                 }
+            },
+            "init_date": {
+                "type": "date"
+            },
+            "updated_date": {
+                "type": "date"
             },
             "contents": {
                 "type": "nested",
                 "properties": {
-                    "type": {
-                        "type": "keyword"
-                    },
                     "content": {
                         "type": "text"
                     },
-                    "index": {
-                        "type": "text"
-                    },
-                    "index_embedding": {
+                    "content_embedding": {
                         "type": "dense_vector",
                         # "dims": 1536
                         "dims": 1024
@@ -104,14 +53,8 @@ class ArxivElasticSearch:
                     "page": {
                         "type": "integer"
                     },
-                    "crop_image_path": {
-                        "type": "keyword"
-                    },
                     "token_num": {
                         "type": "integer"
-                    },
-                    "is_reference": {
-                        "type": "boolean"
                     }
                 }
             }
@@ -122,13 +65,7 @@ class ArxivElasticSearch:
         "number_of_replicas": 1
     }
     def __init__(self, index_name='arxiv'):
-        # self.embedding = OpenAIEmbedding()
-        # self.tiktoken = OpenAITokenizer()
-        self.embedding = MultilingualEmbedding()
-        self.tiktoken = MultilingualTokenizer()
         self.es = Elasticsearch(hosts=["http://localhost:9200"], timeout=180)
-        self.reranking_chain = RerankingChain(verbose=False)
-        self.bge_reranker = BGEReranker()
         self.index_name = index_name
     
     def _create_index(self, settings=None, mappings=None):
@@ -190,36 +127,20 @@ class ArxivElasticSearch:
         return None
     
     def _prepare_document(self, data):
-        # Process embeddings
-        topic_embedding =  data['topic_embedding'] if 'topic_embedding' in data else self.embedding.get_embedding(data['topic'])
-        summary_embedding = data['metadata']['summary_embedding'] if 'summary_embedding' in data['metadata'] else self.embedding.get_embedding(data['metadata']['summary'])
-        for page, page_contents in data['contents'].items():
-            for content in page_contents:
-                content['index_embedding'] = content['index_embedding'] if 'index_embedding' in content else self.embedding.get_embedding(content['index'])
-                content['page'] = int(page)
-
-        data['metadata']['reference_page'] =  data['metadata']['reference_page'] if 'reference_page' in data['metadata'] else 1
-
         # Convert to Elasticsearch document format
         document = {
             "file_name": data['file_name'],
-            "topic": data['topic'],
-            "topic_embedding": topic_embedding,
-            "summary_embedding": summary_embedding,
-            "metadata": data['metadata'],
+            "file_path": data['file_path'],
+            "init_date": data['init_date'],
+            "updated_date": data['updated_date'],            
             "contents": [
                 {
-                    "type": content['type'],
-                    "content": content['content'],
-                    "index": content['index'],
-                    "index_embedding": content['index_embedding'],
+                    "content": content['text'],
+                    "conetent_embedding": content['content_embedding'],
                     "page": page,
-                    "crop_image_path": content['crop_image_path'],
-                    "token_num": content['token_num'] if 'token_num' in content else len(self.tiktoken.get_encoding(content['index'])),
-                    "is_reference": content['is_reference'] if 'is_reference' in content else False
-                } for page, page_contents in data['contents'].items()
-                        for content in page_contents 
-                        if (content['index_embedding'] is not None) and (content['index'] != '')
+                    "token_num": content['token_num']
+                } for content in data['data']
+                    if (content['content_embedding'] is not None) and (content['text'] != '')
             ]
         }
 

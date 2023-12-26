@@ -12,7 +12,7 @@ from models.tokenizer.utils import get_tokenizer
 from models.chunker.text_splitter import ChunkTextSplitter
 
 class JsonChunker:
-    def __init__(self, max_token_num=256, overlap=16, model_name='multilingual-e5-large'):
+    def __init__(self, max_token_num=256, overlap=8, model_name='multilingual-e5-large'):
         self.tokenizer = get_tokenizer(model_name=model_name)
         self.chunk_text_splitter = ChunkTextSplitter(self.tokenizer, max_token_num=max_token_num, overlap=overlap)
 
@@ -22,7 +22,7 @@ class JsonChunker:
         return data
     
     def get_chunked_data(self, data):
-        chunked_data = self.chunk_text_splitter.split_chunk_list(data['data'])
+        chunked_data = self.chunk_text_splitter.split_chunk_list(data)
         return chunked_data
     
     def save_chunked_data(self, data, save_path):
@@ -31,8 +31,8 @@ class JsonChunker:
         
     def __call__(self, file_path, save_path):
         data = self.get_file_data(file_path)
-        chunked_data = self.get_chunked_data(data)
-        self.save_chunked_data(chunked_data, save_path)
+        data['data'] = self.get_chunked_data(data['data'])
+        self.save_chunked_data(data, save_path)
 
 # example usage
 # python json_chunker.py --file_path "../loader/test_data/medium.com_thirdai-blog_neuraldb-enterprise-full-stack-llm-driven-generative-search-at-scale-f4e28fecc3af_source=author_recirc-----861ffa0516e7----0---------------------3a853758_b666_41c3_8022_3fcc7269527f-------_2023-12-26 15_10_19.json" --save_path "../loader/test_data/medium.com_thirdai-blog_neuraldb-enterprise-full-stack-llm-driven-generative-search-at-scale-chunked.json" --max_token_num 256 --overlap 16 --model_name openai
