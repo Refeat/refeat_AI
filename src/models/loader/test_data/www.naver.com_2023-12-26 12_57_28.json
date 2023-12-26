@@ -1,0 +1,1052 @@
+{
+    "file_path": "https://www.naver.com",
+    "file_name": "www.naver.com",
+    "init_date": "2023-12-26 12:57:28",
+    "updated_data": null,
+    "data": [
+        {
+            "text": "상단영역 바로가기",
+            "bbox": {
+                "left_x": -46.796875,
+                "top_y": -29,
+                "right_x": 58.78125,
+                "bottom_y": -1
+            }
+        },
+        {
+            "text": "서비스 메뉴 바로가기",
+            "bbox": {
+                "left_x": -54.578125,
+                "top_y": -29,
+                "right_x": 66.5625,
+                "bottom_y": -1
+            }
+        },
+        {
+            "text": "새소식 블록 바로가기",
+            "bbox": {
+                "left_x": -54.578125,
+                "top_y": -29,
+                "right_x": 66.5625,
+                "bottom_y": -1
+            }
+        },
+        {
+            "text": "쇼핑 블록 바로가기",
+            "bbox": {
+                "left_x": -48.578125,
+                "top_y": -29,
+                "right_x": 60.5625,
+                "bottom_y": -1
+            }
+        },
+        {
+            "text": "관심사 블록 바로가기",
+            "bbox": {
+                "left_x": -54.578125,
+                "top_y": -29,
+                "right_x": 66.5625,
+                "bottom_y": -1
+            }
+        },
+        {
+            "text": "MY 영역 바로가기",
+            "bbox": {
+                "left_x": -45.203125,
+                "top_y": -29,
+                "right_x": 57.1875,
+                "bottom_y": -1
+            }
+        },
+        {
+            "text": "위젯 보드 바로가기",
+            "bbox": {
+                "left_x": -48.578125,
+                "top_y": -29,
+                "right_x": 60.5625,
+                "bottom_y": -1
+            }
+        },
+        {
+            "text": "보기 설정 바로가기",
+            "bbox": {
+                "left_x": -48.578125,
+                "top_y": -29,
+                "right_x": 60.5625,
+                "bottom_y": -1
+            }
+        },
+        {
+            "text": "NAVER",
+            "bbox": {
+                "left_x": 279,
+                "top_y": 111,
+                "right_x": 280,
+                "bottom_y": 112
+            }
+        },
+        {
+            "text": "검색",
+            "bbox": {
+                "left_x": 918.5,
+                "top_y": 112,
+                "right_x": 919.5,
+                "bottom_y": 113
+            }
+        },
+        {
+            "text": "자동완성/최근검색어펼치기",
+            "bbox": {
+                "left_x": 885,
+                "top_y": 102,
+                "right_x": 886,
+                "bottom_y": 103
+            }
+        },
+        {
+            "text": "메일",
+            "bbox": {
+                "left_x": 268,
+                "top_y": 197,
+                "right_x": 332,
+                "bottom_y": 217
+            }
+        },
+        {
+            "text": "카페",
+            "bbox": {
+                "left_x": 336,
+                "top_y": 197,
+                "right_x": 400,
+                "bottom_y": 217
+            }
+        },
+        {
+            "text": "블로그",
+            "bbox": {
+                "left_x": 404,
+                "top_y": 197,
+                "right_x": 468,
+                "bottom_y": 217
+            }
+        },
+        {
+            "text": "쇼핑",
+            "bbox": {
+                "left_x": 472,
+                "top_y": 197,
+                "right_x": 536,
+                "bottom_y": 217
+            }
+        },
+        {
+            "text": "뉴스",
+            "bbox": {
+                "left_x": 540,
+                "top_y": 197,
+                "right_x": 604,
+                "bottom_y": 217
+            }
+        },
+        {
+            "text": "증권",
+            "bbox": {
+                "left_x": 608,
+                "top_y": 197,
+                "right_x": 672,
+                "bottom_y": 217
+            }
+        },
+        {
+            "text": "부동산",
+            "bbox": {
+                "left_x": 676,
+                "top_y": 197,
+                "right_x": 740,
+                "bottom_y": 217
+            }
+        },
+        {
+            "text": "지도",
+            "bbox": {
+                "left_x": 744,
+                "top_y": 197,
+                "right_x": 808,
+                "bottom_y": 217
+            }
+        },
+        {
+            "text": "웹툰",
+            "bbox": {
+                "left_x": 812,
+                "top_y": 197,
+                "right_x": 876,
+                "bottom_y": 217
+            }
+        },
+        {
+            "text": "바로가기 펼침",
+            "bbox": {
+                "left_x": 879,
+                "top_y": 189,
+                "right_x": 880,
+                "bottom_y": 190
+            }
+        },
+        {
+            "text": "확장 영역",
+            "bbox": {
+                "left_x": -22,
+                "top_y": 27,
+                "right_x": -21,
+                "bottom_y": 28
+            }
+        },
+        {
+            "text": "페이 바로가기",
+            "bbox": {
+                "left_x": 15,
+                "top_y": 24,
+                "right_x": 16,
+                "bottom_y": 25
+            }
+        },
+        {
+            "text": "톡",
+            "bbox": {
+                "left_x": 1182,
+                "top_y": 27,
+                "right_x": 1183,
+                "bottom_y": 28
+            }
+        },
+        {
+            "text": "알림",
+            "bbox": {
+                "left_x": 1232,
+                "top_y": 27,
+                "right_x": 1233,
+                "bottom_y": 28
+            }
+        },
+        {
+            "text": "LIVE",
+            "bbox": {
+                "left_x": 306.859375,
+                "top_y": 435,
+                "right_x": 354.734375,
+                "bottom_y": 453
+            }
+        },
+        {
+            "text": "리스트형",
+            "bbox": {
+                "left_x": 727,
+                "top_y": 820,
+                "right_x": 728,
+                "bottom_y": 821
+            }
+        },
+        {
+            "text": "썸네일형",
+            "bbox": {
+                "left_x": 765,
+                "top_y": 820,
+                "right_x": 766,
+                "bottom_y": 821
+            }
+        },
+        {
+            "text": "이전 페이지",
+            "bbox": {
+                "left_x": 284,
+                "top_y": 810,
+                "right_x": 285,
+                "bottom_y": 811
+            }
+        },
+        {
+            "text": "더보기",
+            "bbox": {
+                "left_x": 326.734375,
+                "top_y": 801,
+                "right_x": 414.640625,
+                "bottom_y": 819
+            }
+        },
+        {
+            "text": "언론사",
+            "bbox": {
+                "left_x": 326.734375,
+                "top_y": 801,
+                "right_x": 366.484375,
+                "bottom_y": 819
+            }
+        },
+        {
+            "text": "1",
+            "bbox": {
+                "left_x": 414.640625,
+                "top_y": 801,
+                "right_x": 422.15625,
+                "bottom_y": 819
+            }
+        },
+        {
+            "text": "페이지",
+            "bbox": {
+                "left_x": 421.15625,
+                "top_y": 792,
+                "right_x": 422.15625,
+                "bottom_y": 793
+            }
+        },
+        {
+            "text": "/4",
+            "bbox": {
+                "left_x": 422.15625,
+                "top_y": 801,
+                "right_x": 435.265625,
+                "bottom_y": 819
+            }
+        },
+        {
+            "text": "전체",
+            "bbox": {
+                "left_x": 421.15625,
+                "top_y": 792,
+                "right_x": 422.15625,
+                "bottom_y": 793
+            }
+        },
+        {
+            "text": "다음 페이지",
+            "bbox": {
+                "left_x": 476,
+                "top_y": 810,
+                "right_x": 477,
+                "bottom_y": 811
+            }
+        },
+        {
+            "text": "게임메카",
+            "bbox": {
+                "left_x": -14,
+                "top_y": 1688,
+                "right_x": 236,
+                "bottom_y": 1707
+            }
+        },
+        {
+            "text": "게임메카",
+            "bbox": {
+                "left_x": 256,
+                "top_y": 1688,
+                "right_x": 506,
+                "bottom_y": 1707
+            }
+        },
+        {
+            "text": "인디커넥트",
+            "bbox": {
+                "left_x": 526,
+                "top_y": 1688,
+                "right_x": 776,
+                "bottom_y": 1707
+            }
+        },
+        {
+            "text": "테크플러스",
+            "bbox": {
+                "left_x": 156,
+                "top_y": 1820,
+                "right_x": 222.25,
+                "bottom_y": 1838
+            }
+        },
+        {
+            "text": "ACROWN",
+            "bbox": {
+                "left_x": 565,
+                "top_y": 1820,
+                "right_x": 622.265625,
+                "bottom_y": 1838
+            }
+        },
+        {
+            "text": "경향게임스",
+            "bbox": {
+                "left_x": 156,
+                "top_y": 1936,
+                "right_x": 222.25,
+                "bottom_y": 1954
+            }
+        },
+        {
+            "text": "두툰",
+            "bbox": {
+                "left_x": 565,
+                "top_y": 1936,
+                "right_x": 591.5,
+                "bottom_y": 1954
+            }
+        },
+        {
+            "text": "CSL 코스프레",
+            "bbox": {
+                "left_x": 156,
+                "top_y": 2052,
+                "right_x": 234.828125,
+                "bottom_y": 2070
+            }
+        },
+        {
+            "text": "오야OYA",
+            "bbox": {
+                "left_x": 565,
+                "top_y": 2041.5,
+                "right_x": 616.21875,
+                "bottom_y": 2059.5
+            }
+        },
+        {
+            "text": "게임조선",
+            "bbox": {
+                "left_x": 156,
+                "top_y": 2168,
+                "right_x": 209,
+                "bottom_y": 2186
+            }
+        },
+        {
+            "text": "GAMEVU",
+            "bbox": {
+                "left_x": 565,
+                "top_y": 2168,
+                "right_x": 619,
+                "bottom_y": 2186
+            }
+        },
+        {
+            "text": "네이버를 더 안전하고 편리하게 이용하세요",
+            "bbox": {
+                "left_x": 846,
+                "top_y": 289,
+                "right_x": 1226,
+                "bottom_y": 309
+            }
+        },
+        {
+            "text": "NAVER",
+            "bbox": {
+                "left_x": 1009.546875,
+                "top_y": 342,
+                "right_x": 1010.546875,
+                "bottom_y": 343
+            }
+        },
+        {
+            "text": "서울시 연희동",
+            "bbox": {
+                "left_x": 1144.09375,
+                "top_y": 710,
+                "right_x": 1228,
+                "bottom_y": 750
+            }
+        },
+        {
+            "text": "5.3°",
+            "bbox": {
+                "left_x": 948.03125,
+                "top_y": 787,
+                "right_x": 1009.953125,
+                "bottom_y": 855
+            }
+        },
+        {
+            "text": "맑음",
+            "bbox": {
+                "left_x": 948.03125,
+                "top_y": 835,
+                "right_x": 1009.953125,
+                "bottom_y": 855
+            }
+        },
+        {
+            "text": "-1°",
+            "bbox": {
+                "left_x": 913.6875,
+                "top_y": 878,
+                "right_x": 932.3125,
+                "bottom_y": 898
+            }
+        },
+        {
+            "text": "최저기온",
+            "bbox": {
+                "left_x": 912.6875,
+                "top_y": 879,
+                "right_x": 913.6875,
+                "bottom_y": 880
+            }
+        },
+        {
+            "text": "8°",
+            "bbox": {
+                "left_x": 932.3125,
+                "top_y": 878,
+                "right_x": 954.3125,
+                "bottom_y": 898
+            }
+        },
+        {
+            "text": "최고기온",
+            "bbox": {
+                "left_x": 940.3125,
+                "top_y": 879,
+                "right_x": 941.3125,
+                "bottom_y": 880
+            }
+        },
+        {
+            "text": "미세",
+            "bbox": {
+                "left_x": 862.875,
+                "top_y": 902,
+                "right_x": 919.875,
+                "bottom_y": 922
+            }
+        },
+        {
+            "text": "나쁨",
+            "bbox": {
+                "left_x": 889.375,
+                "top_y": 903,
+                "right_x": 919.875,
+                "bottom_y": 921
+            }
+        },
+        {
+            "text": "초미세",
+            "bbox": {
+                "left_x": 919.875,
+                "top_y": 902,
+                "right_x": 1005.125,
+                "bottom_y": 922
+            }
+        },
+        {
+            "text": "나쁨",
+            "bbox": {
+                "left_x": 974.625,
+                "top_y": 903,
+                "right_x": 1005.125,
+                "bottom_y": 921
+            }
+        },
+        {
+            "text": "13시",
+            "bbox": {
+                "left_x": 1048,
+                "top_y": 904,
+                "right_x": 1080,
+                "bottom_y": 920
+            }
+        },
+        {
+            "text": "맑음",
+            "bbox": {
+                "left_x": 1063,
+                "top_y": 899,
+                "right_x": 1064,
+                "bottom_y": 900
+            }
+        },
+        {
+            "text": "5°",
+            "bbox": {
+                "left_x": 1048,
+                "top_y": 795,
+                "right_x": 1080,
+                "bottom_y": 860
+            }
+        },
+        {
+            "text": "15",
+            "bbox": {
+                "left_x": 1085,
+                "top_y": 904,
+                "right_x": 1117,
+                "bottom_y": 920
+            }
+        },
+        {
+            "text": "맑음",
+            "bbox": {
+                "left_x": 1100,
+                "top_y": 899,
+                "right_x": 1101,
+                "bottom_y": 900
+            }
+        },
+        {
+            "text": "8°",
+            "bbox": {
+                "left_x": 1085,
+                "top_y": 777,
+                "right_x": 1117,
+                "bottom_y": 860
+            }
+        },
+        {
+            "text": "17",
+            "bbox": {
+                "left_x": 1122,
+                "top_y": 904,
+                "right_x": 1154,
+                "bottom_y": 920
+            }
+        },
+        {
+            "text": "맑음",
+            "bbox": {
+                "left_x": 1137,
+                "top_y": 899,
+                "right_x": 1138,
+                "bottom_y": 900
+            }
+        },
+        {
+            "text": "5°",
+            "bbox": {
+                "left_x": 1122,
+                "top_y": 795,
+                "right_x": 1154,
+                "bottom_y": 860
+            }
+        },
+        {
+            "text": "19",
+            "bbox": {
+                "left_x": 1159,
+                "top_y": 904,
+                "right_x": 1191,
+                "bottom_y": 920
+            }
+        },
+        {
+            "text": "맑음",
+            "bbox": {
+                "left_x": 1174,
+                "top_y": 899,
+                "right_x": 1175,
+                "bottom_y": 900
+            }
+        },
+        {
+            "text": "3°",
+            "bbox": {
+                "left_x": 1159,
+                "top_y": 807,
+                "right_x": 1191,
+                "bottom_y": 860
+            }
+        },
+        {
+            "text": "21",
+            "bbox": {
+                "left_x": 1196,
+                "top_y": 904,
+                "right_x": 1228,
+                "bottom_y": 920
+            }
+        },
+        {
+            "text": "맑음",
+            "bbox": {
+                "left_x": 1211,
+                "top_y": 899,
+                "right_x": 1212,
+                "bottom_y": 900
+            }
+        },
+        {
+            "text": "2°",
+            "bbox": {
+                "left_x": 1196,
+                "top_y": 813,
+                "right_x": 1228,
+                "bottom_y": 860
+            }
+        },
+        {
+            "text": "정보 더보기",
+            "bbox": {
+                "left_x": 886.703125,
+                "top_y": 981,
+                "right_x": 887.703125,
+                "bottom_y": 982
+            }
+        },
+        {
+            "text": "12.26. 12:57",
+            "bbox": {
+                "left_x": 1137.890625,
+                "top_y": 962,
+                "right_x": 1228,
+                "bottom_y": 1002
+            }
+        },
+        {
+            "text": "새로고침",
+            "bbox": {
+                "left_x": 1219,
+                "top_y": 989,
+                "right_x": 1220,
+                "bottom_y": 990
+            }
+        },
+        {
+            "text": "포스코DX",
+            "bbox": {
+                "left_x": 1048.5,
+                "top_y": 1024,
+                "right_x": 1109.578125,
+                "bottom_y": 1045
+            }
+        },
+        {
+            "text": "69,000",
+            "bbox": {
+                "left_x": 1173.6875,
+                "top_y": 1024,
+                "right_x": 1228,
+                "bottom_y": 1045
+            }
+        },
+        {
+            "text": "상승",
+            "bbox": {
+                "left_x": 1172.6875,
+                "top_y": 1031,
+                "right_x": 1173.6875,
+                "bottom_y": 1032
+            }
+        },
+        {
+            "text": "DS단석",
+            "bbox": {
+                "left_x": 1048.5,
+                "top_y": 1063,
+                "right_x": 1094.828125,
+                "bottom_y": 1084
+            }
+        },
+        {
+            "text": "365,500",
+            "bbox": {
+                "left_x": 1166,
+                "top_y": 1063,
+                "right_x": 1228,
+                "bottom_y": 1084
+            }
+        },
+        {
+            "text": "하락",
+            "bbox": {
+                "left_x": 1165,
+                "top_y": 1070,
+                "right_x": 1166,
+                "bottom_y": 1071
+            }
+        },
+        {
+            "text": "삼성전자",
+            "bbox": {
+                "left_x": 1048.5,
+                "top_y": 1102,
+                "right_x": 1105.703125,
+                "bottom_y": 1123
+            }
+        },
+        {
+            "text": "76,400",
+            "bbox": {
+                "left_x": 1173.6875,
+                "top_y": 1102,
+                "right_x": 1228,
+                "bottom_y": 1123
+            }
+        },
+        {
+            "text": "상승",
+            "bbox": {
+                "left_x": 1172.6875,
+                "top_y": 1109,
+                "right_x": 1173.6875,
+                "bottom_y": 1110
+            }
+        },
+        {
+            "text": "위젯 보드",
+            "bbox": {
+                "left_x": 844,
+                "top_y": 1223,
+                "right_x": 1228,
+                "bottom_y": 1248
+            }
+        },
+        {
+            "text": "캘린더",
+            "bbox": {
+                "left_x": 851,
+                "top_y": 1269,
+                "right_x": 1023,
+                "bottom_y": 1303
+            }
+        },
+        {
+            "text": "12.26",
+            "bbox": {
+                "left_x": 861,
+                "top_y": 1311,
+                "right_x": 1023,
+                "bottom_y": 1347
+            }
+        },
+        {
+            "text": "화",
+            "bbox": {
+                "left_x": 959.1875,
+                "top_y": 1327,
+                "right_x": 970.84375,
+                "bottom_y": 1347
+            }
+        },
+        {
+            "text": "로그인하기",
+            "bbox": {
+                "left_x": 862,
+                "top_y": 1415.15625,
+                "right_x": 933.5,
+                "bottom_y": 1433
+            }
+        },
+        {
+            "text": "메모",
+            "bbox": {
+                "left_x": 1051,
+                "top_y": 1267,
+                "right_x": 1135,
+                "bottom_y": 1301
+            }
+        },
+        {
+            "text": "로그인하기",
+            "bbox": {
+                "left_x": 1060,
+                "top_y": 1402,
+                "right_x": 1210,
+                "bottom_y": 1445
+            }
+        },
+        {
+            "text": "papago",
+            "bbox": {
+                "left_x": 861,
+                "top_y": 1481,
+                "right_x": 862,
+                "bottom_y": 1482
+            }
+        },
+        {
+            "text": "번역하기",
+            "bbox": {
+                "left_x": 875,
+                "top_y": 1604,
+                "right_x": 999,
+                "bottom_y": 1644
+            }
+        },
+        {
+            "text": "Commuting time.",
+            "bbox": {
+                "left_x": 1060,
+                "top_y": 1519,
+                "right_x": 1202,
+                "bottom_y": 1561
+            }
+        },
+        {
+            "text": "VIBE",
+            "bbox": {
+                "left_x": 861,
+                "top_y": 1684,
+                "right_x": 862,
+                "bottom_y": 1685
+            }
+        },
+        {
+            "text": "머리가 맑아지는 숲소리",
+            "bbox": {
+                "left_x": 938,
+                "top_y": 1683,
+                "right_x": 1101.78125,
+                "bottom_y": 1705
+            }
+        },
+        {
+            "text": "재생",
+            "bbox": {
+                "left_x": 573,
+                "top_y": 1843,
+                "right_x": 574,
+                "bottom_y": 1844
+            }
+        },
+        {
+            "text": "내변산 깊은 밤의 풍성한 소리",
+            "bbox": {
+                "left_x": 502,
+                "top_y": 1888,
+                "right_x": 610,
+                "bottom_y": 1928
+            }
+        },
+        {
+            "text": "재생",
+            "bbox": {
+                "left_x": 693,
+                "top_y": 1843,
+                "right_x": 694,
+                "bottom_y": 1844
+            }
+        },
+        {
+            "text": "지리산의 입체적인 빗소리와 산새들",
+            "bbox": {
+                "left_x": 622,
+                "top_y": 1888,
+                "right_x": 730,
+                "bottom_y": 1928
+            }
+        },
+        {
+            "text": "재생",
+            "bbox": {
+                "left_x": 813,
+                "top_y": 1843,
+                "right_x": 814,
+                "bottom_y": 1844
+            }
+        },
+        {
+            "text": "가을 바람에 흔들리는 선운산 풍경",
+            "bbox": {
+                "left_x": 742,
+                "top_y": 1888,
+                "right_x": 850,
+                "bottom_y": 1928
+            }
+        },
+        {
+            "text": "재생",
+            "bbox": {
+                "left_x": 1293,
+                "top_y": 1843,
+                "right_x": 1294,
+                "bottom_y": 1844
+            }
+        },
+        {
+            "text": "계룡산 신흥암과 산새들",
+            "bbox": {
+                "left_x": 1222,
+                "top_y": 1888,
+                "right_x": 1330,
+                "bottom_y": 1928
+            }
+        },
+        {
+            "text": "열기",
+            "bbox": {
+                "left_x": 844,
+                "top_y": 1967,
+                "right_x": 1037.3125,
+                "bottom_y": 1992
+            }
+        },
+        {
+            "text": "item.text",
+            "bbox": {
+                "left_x": 1212,
+                "top_y": 2067,
+                "right_x": 1218,
+                "bottom_y": 2073
+            }
+        },
+        {
+            "text": "item.text",
+            "bbox": {
+                "left_x": 1222,
+                "top_y": 2067,
+                "right_x": 1228,
+                "bottom_y": 2073
+            }
+        },
+        {
+            "text": "최상단으로 이동",
+            "bbox": {
+                "left_x": 683,
+                "top_y": 535,
+                "right_x": 684,
+                "bottom_y": 536
+            }
+        },
+        {
+            "text": "홈 설정",
+            "bbox": {
+                "left_x": 735,
+                "top_y": 535,
+                "right_x": 736,
+                "bottom_y": 536
+            }
+        },
+        {
+            "text": "Creators",
+            "bbox": {
+                "left_x": -34,
+                "top_y": 2587,
+                "right_x": 76,
+                "bottom_y": 2607
+            }
+        },
+        {
+            "text": "Partners",
+            "bbox": {
+                "left_x": -34,
+                "top_y": 2617,
+                "right_x": 76,
+                "bottom_y": 2637
+            }
+        },
+        {
+            "text": "Developers",
+            "bbox": {
+                "left_x": -34,
+                "top_y": 2647,
+                "right_x": 76,
+                "bottom_y": 2667
+            }
+        },
+        {
+            "text": "네이버 정책 및 약관",
+            "bbox": {
+                "left_x": -35,
+                "top_y": 2707,
+                "right_x": -34,
+                "bottom_y": 2708
+            }
+        }
+    ]
+}

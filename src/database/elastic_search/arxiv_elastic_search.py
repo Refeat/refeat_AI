@@ -5,12 +5,8 @@ for _ in range(2):
     current_path = os.path.dirname(current_path)
 sys.path.append(current_path)
 
-# Get OpenAI API key from .secrets.ini
-import configparser
-config = configparser.ConfigParser()
-config.read(os.path.join(current_path, '../.secrets.ini'))
-openai_api_key = config['OPENAI']['OPENAI_API_KEY']
-os.environ.update({'OPENAI_API_KEY': openai_api_key})
+from utils import add_api_key
+add_api_key()
 
 import json
 
@@ -19,8 +15,7 @@ from elasticsearch import Elasticsearch, helpers
 from elasticsearch.helpers import BulkIndexError
 
 from models.llm.search.chain import RerankingChain, RerankingChainV2, RerankingChainV3
-from models.tokenizer.openai_tokenizer import OpenAITokenizer
-from models.tokenizer.multilingual_tokenizer import MultilingualTokenizer
+from models.tokenizer.utils import get_tokenizer
 from models.embedding.openai_embedding import OpenAIEmbedding
 from models.embedding.multilingual_e5 import MultilingualEmbedding
 from models.reranker.bge_reranker import BGEReranker

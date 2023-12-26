@@ -25,24 +25,20 @@ class PdfLoader(BaseLoader):
         return data
     
     def data_from_element(self, element, page_num):
-        data = None
+        text_list = []
+        bbox = {'left_x': float('inf'), 'top_y': float('inf'), 'right_x': float('-inf'), 'bottom_y': float('-inf')}
         if isinstance(element, LTTextContainer):
             for text_line in element:
                 if isinstance(text_line, LTAnno):
                     continue
-                bbox = text_line.bbox
-                adjusted_bbox = (
-                    bbox[0],  
-                    self.page_height - bbox[3],  
-                    bbox[2],  
-                    self.page_height - bbox[1]  
-                )
-                data = {
-                    'text': text_line.get_text(),
-                    'bbox': adjusted_bbox,
-                    'page': page_num + 1
-                }
-        return data
+                if text_line.get_text().strip():
+                    text_list.append(text_line.get_text().strip())
+                    bbox['left_x'] = min(bbox['left_x'], text_line.bbox[0])
+                    bbox['top_y'] = min(bbox['top_y'], self.page_height-text_line.bbox[3])
+                    bbox['right_x'] = max(bbox['right_x'], text_line.bbox[2])
+                    bbox['bottom_y'] = max(bbox['bottom_y'], self.page_height-text_line.bbox[1])
+        data = {'text': ' '.join(text_list), 'page': page_num, 'bbox': bbox}
+        return data if data['text'] else None
     
     def get_base_name(self, file_path):
         return os.path.basename(file_path).split('.')[0]

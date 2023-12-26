@@ -1,6 +1,6 @@
 from sentence_transformers import SentenceTransformer
 
-class MultilingualEmbedding:
+class MultilingualEmbedder:
     def __init__(self, model='intfloat/multilingual-e5-large', device='cpu'):
         self.embedding_model = SentenceTransformer(model, device=device)
         self.model = model

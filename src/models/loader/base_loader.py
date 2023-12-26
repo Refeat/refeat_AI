@@ -35,6 +35,9 @@ class BaseLoader(ABC):
     def get_save_path(self, save_dir):
         # 파일 이름에서 유효하지 않은 문자를 '_'로 대체
         safe_file_name = re.sub(r'[\\/*?:"<>|]', '_', self.file_name)
+        safe_file_name = re.sub(r'%[0-9A-Fa-f]{2}', '_', safe_file_name)
+        if len(safe_file_name) > 100:
+            safe_file_name = safe_file_name[:80] + '...'
         # 날짜 및 시간에서 콜론을 '_'로 대체
         safe_date = self.init_date.replace(':', '_')
         save_path = os.path.join(save_dir, f'{safe_file_name}_{safe_date}.json')

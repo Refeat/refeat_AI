@@ -8,7 +8,7 @@ os.environ.update({'OPENAI_API_KEY': openai_api_key})
 
 from openai import OpenAI
 
-class OpenAIEmbedding:
+class OpenAIEmbedder:
     def __init__(self, model="text-embedding-ada-002"):
         self.embedding_model = OpenAI(api_key=openai_api_key).embeddings
         self.model = model
@@ -36,7 +36,7 @@ class OpenAIEmbedding:
         return embedding
     
 if __name__ == '__main__':
-    openai_embedding = OpenAIEmbedding()
+    openai_embedder = OpenAIEmbedder()
     # print(len(openai_embedding.get_embedding('Hello, my dog is cute')))
-    print(len(openai_embedding.get_embedding(['Hello, my dog is cute', 'Hello, my cat is cute'])))
-    print(len(openai_embedding.get_embedding(['Hello, my dog is cute', 'Hello, my cat is cute'])[0]))
+    print(len(openai_embedder.get_embedding(['Hello, my dog is cute', 'Hello, my cat is cute'])))
+    print(len(openai_embedder.get_embedding(['Hello, my dog is cute', 'Hello, my cat is cute'])[0]))
