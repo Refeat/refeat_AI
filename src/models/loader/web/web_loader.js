@@ -10,7 +10,7 @@ class WebLoader {
         const page = await this.fetch_data(file_path);
     
         let data = [];
-        const elementHandles = await page.$$('p, div, span, h1, h2, h3, h4, h5, h6');
+        const elementHandles = await page.$$('p, div, span, h1, h2, h3, h4, h5, h6, em, figcaption, strong, a, b');
     
         for (const elementHandle of elementHandles) {
             // Evaluate all child nodes and concatenate text content
@@ -24,19 +24,19 @@ class WebLoader {
                 const bbox = await elementHandle.boundingBox();
     
                 if (bbox) {
-                    const leftX = bbox.x;
-                    const bottomY = bbox.y + bbox.height;
-                    const rightX = bbox.x + bbox.width;
-                    const topY = bbox.y;
+                    const left_x = bbox.x;
+                    const bottom_y = bbox.y + bbox.height;
+                    const right_x = bbox.x + bbox.width;
+                    const top_y = bbox.y;
     
                     const formattedBbox = {
-                        leftX,
-                        topY,
-                        rightX,
-                        bottomY
+                        left_x,
+                        top_y,
+                        right_x,
+                        bottom_y
                     };
     
-                    data.push({ text: textContent, bbox: formattedBbox });
+                    data.push({ text: textContent.trim(), bbox: formattedBbox });
                 }
             }
         }
