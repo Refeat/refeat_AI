@@ -17,7 +17,7 @@ from elasticsearch.helpers import BulkIndexError
 
 from models.embedder.utils import get_embedder
 
-class ArxivElasticSearch:
+class CustomElasticSearch:
     mappings = {
         "properties": {
             "file_path": {
@@ -454,8 +454,8 @@ class ArxivElasticSearch:
                query, 
                query_embedding=None, 
                num_results=5, 
-               method='hybrid', 
-               search_range='document', 
+               method='similarity', 
+               search_range='chunk', 
                part='chunk',
                num_chunks=5, 
                limit_token_length=30, 
@@ -556,7 +556,7 @@ class ArxivElasticSearch:
 
 if __name__ == "__main__":
     # test elasticsearch
-    es = ArxivElasticSearch(index_name='refeat_ai')
+    es = CustomElasticSearch(index_name='refeat_ai')
     
     # # ---------- create index ---------- #
     # es._create_index(settings=es.settings, mappings=es.mappings)
@@ -580,7 +580,7 @@ if __name__ == "__main__":
         limit_token_length=100,
         match_weight=0.02, # hybrid search에서 match search의 가중치
         similarity_weight=1, # hybrid search에서 similarity search의 가중치
-        filter=['Cross-lingual Language Model Pretraining'] # topic filter
+        # filter=['Cross-lingual Language Model Pretraining'] # topic filter
         )
     
     for i, result in enumerate(response):
