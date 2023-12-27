@@ -1,5 +1,5 @@
-Write a concise summary of the following:
+Write a 5 sentences korean concise summary of the following:
 ===
 {context}
 ===
-CONCISE SUMMARY: 
+KOREAN CONCISE SUMMARY: 

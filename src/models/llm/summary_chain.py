@@ -10,7 +10,7 @@ from models.tokenizer.utils import get_tokenizer
 
 current_file_folder_path = os.path.dirname(os.path.abspath(__file__))
 
-class summaryChain(BaseChain):
+class SummaryChain(BaseChain):
     def __init__(self, 
                 summary_template=None, 
                 summary_template_path=os.path.join(current_file_folder_path, './templates/summary_chain_template.txt'), 

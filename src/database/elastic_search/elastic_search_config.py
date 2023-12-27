@@ -1,7 +1,10 @@
+import os
 import json
 
+current_path = os.path.dirname(os.path.abspath(__file__))
+
 class ElasticSearchConfig:
-    def __init__(self, json_path):
+    def __init__(self, json_path=os.path.join(current_path, './search_config/similarity_chunk.json')):
         with open(json_path, 'r') as f:
             self.config = json.load(f)
 
@@ -29,6 +32,9 @@ class ElasticSearchConfig:
     
     def __iter__(self):
         return iter(self.config)
+    
+    def reset(self):
+        self.__init__()
     
 if __name__ == "__main__":
     json_path = './search_config/hybrid_topic_similarity_chunk.json'

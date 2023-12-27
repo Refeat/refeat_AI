@@ -475,8 +475,8 @@ class CustomElasticSearch:
         return response
     
     def _create_filter_from_results(self, results):
-        topic_list = [result['document_info']['topic'] for result in results]
-        return topic_list
+        file_name_list = [result['document_info']['file_name'] for result in results]
+        return file_name_list
 
     def parse_input_query(self, search_config, filter):
         query = search_config.get('query', None)
@@ -496,7 +496,7 @@ class CustomElasticSearch:
         # args: [List of (query, query_embedding, top_k, num_results, method, search_range, part, num_chunks, limit_token_length, match_weight, similarity_weight)]
         filter = None
         for search_config in search_configs:
-            query_params = self.parse_input_query(search_config, filter)
+            query_params = self.parse_input_query(search_config, filter) # search_config에 filter가 있으면, filter를 사용하고, 없으면 이전 결과에서 추출한 filter를 사용
             response = self.search(*query_params)
             filter = self._create_filter_from_results(response)
         return response

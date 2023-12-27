@@ -16,7 +16,7 @@ Assistant can ask the user to use tools to look up information that may be helpf
 
 USER'S INPUT
 --------------------
-Here is the user's input (remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else):
+Here is the user's input (remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else. Final Answer must in **korean**):
 
 {{{{input}}}}"""
 
@@ -27,7 +27,7 @@ TEMPLATE_TOOL_RESPONSE = """TOOL RESPONSE:
 USER'S INPUT
 --------------------
 
-Okay, so what is the response to my last comment? If using information obtained from the tools you must mention it explicitly without mentioning the tool names - I have forgotten all TOOL RESPONSES! Remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else. Answer must in **korean**"""
+Okay, so what is the response to my last comment? If using information obtained from the tools you must mention it explicitly without mentioning the tool names - I have forgotten all TOOL RESPONSES! Remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else. Final Answer must in **korean**"""
 
 # PREFIX = """어시스턴트는 OpenAI로 학습된 대규모 언어 모델입니다.
 # 어시스턴트는 간단한 질문에 대한 답변부터 다양한 주제에 대한 심층적인 설명과 토론에 이르기까지 광범위한 작업을 지원할 수 있도록 설계되었습니다. 언어 모델로서 어시스턴트는 수신한 입력을 기반으로 사람과 유사한 텍스트를 생성할 수 있으므로 자연스러운 대화에 참여하고 당면한 주제와 일관성 있고 관련성 있는 답변을 제공할 수 있습니다.

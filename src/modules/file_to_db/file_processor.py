@@ -13,18 +13,20 @@ from models.tokenizer.utils import get_tokenizer
 from models.embedder.utils import get_embedder
 
 class FileProcessor:
-    def __init__(self, model_name='openai'):
+    def __init__(self, model_name='openai', save_dir='../test_data'):
         self.loader = Loader()
         self.chunker = JsonChunker(model_name=model_name)
         self.tokenizer = get_tokenizer(model_name)
         self.embedder = get_embedder(model_name)
+        self.save_dir = save_dir
+        os.makedirs(self.save_dir, exist_ok=True)
 
     def __call__(self, file_path):
         data = self.loader.load_file(file_path)
         self.get_chunked_data(data)
         self.get_token_num(data)
         self.get_embedding(data)
-        save_path = self.loader.get_save_path('../test')
+        save_path = self.loader.get_save_path(self.save_dir)
         self.save_data(data, save_path)
 
     def get_chunked_data(self, data):

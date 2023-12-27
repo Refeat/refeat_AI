@@ -1,13 +1,14 @@
 import os
 import sys
 current_path = os.path.dirname(os.path.abspath(__file__))
-for _ in range(3):
+for _ in range(2):
     current_path = os.path.dirname(current_path)
 sys.path.append(current_path)
 
 from typing import Optional, List
 
 from database.elastic_search.custom_elastic_search import CustomElasticSearch
+from database.elastic_search.elastic_search_config import ElasticSearchConfig
 from langchain.tools import BaseTool
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -15,6 +16,7 @@ from langchain.callbacks.manager import (
 )
 
 es = CustomElasticSearch(index_name='refeat_ai')
+config_path = '../../database/elastic_search/search_config/similarity_chunk.json'
 
 class DBSearchTool(BaseTool):
     name = "Database Search"
@@ -24,7 +26,9 @@ class DBSearchTool(BaseTool):
         self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
-        result_list = es.search(query)
+        es_config = ElasticSearchConfig(json_path=config_path)
+        es_config.set_query(query)
+        result_list = es.multi_search(es_config)
         result_text = self.parse_output(result_list)
         return result_text
 
@@ -39,3 +43,8 @@ class DBSearchTool(BaseTool):
         for idx, result in enumerate(result_list):
             result_text += f"result{idx+1}. {result['chunk_info']['content']}\n\n\n"
         return result_text
+    
+if __name__ == "__main__":
+    db_search_tool = DBSearchTool()
+    result = db_search_tool("Cross-lingual Language Model Pretraining bleu score")
+    print(result)

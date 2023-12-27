@@ -1,7 +1,7 @@
 import os
 import sys
 current_path = os.path.dirname(os.path.abspath(__file__))
-for _ in range(3):
+for _ in range(2):
     current_path = os.path.dirname(current_path)
 sys.path.append(current_path)
 
@@ -30,7 +30,6 @@ class ChatAgent:
     def run(self, query, chat_history: List[List[str]]):
         input_dict = self.parse_input(query, chat_history)
         result = self.agent_executor.run(input_dict, callbacks=[self.streaming_callback])
-        print(result)
         return result
 
     def parse_input(self, query, chat_history):
@@ -42,4 +41,4 @@ class ChatAgent:
     
 if __name__ == '__main__':
     chat_agent = ChatAgent()
-    chat_agent.run("multilingual embedding에서 사용하는 benchmark", [["안녕하세요", "무엇을 도와드릴까요?"]])
+    chat_agent.run("데이터베이스에 저장된 Cross-lingual Language Model Pretraining bleu score", [["안녕하세요", "무엇을 도와드릴까요?"]])
