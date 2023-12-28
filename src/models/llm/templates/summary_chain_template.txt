@@ -1,4 +1,4 @@
-Write a 5 sentences korean concise summary of the following:
+Write 5 sentences korean concise main contents summary of the following:
 ===
 {context}
 ===

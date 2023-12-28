@@ -1,10 +1,12 @@
 import os
 import sys
+# project root path를 추가
 current_path = os.path.dirname(os.path.abspath(__file__))
 for _ in range(2):
     current_path = os.path.dirname(current_path)
 sys.path.append(current_path)
 
+# openai api key를 추가
 from utils import add_api_key
 add_api_key()
 
@@ -16,99 +18,34 @@ from elasticsearch import Elasticsearch, helpers
 from elasticsearch.helpers import BulkIndexError
 
 from models.embedder.utils import get_embedder
+from database.elastic_search.db_config.refeat_db_config import MAPPINGS, SETTINGS, EMBEDDER
 
 class CustomElasticSearch:
-    mappings = {
-        "properties": {
-            "file_path": {
-                "type": "text",
-                "fields": {
-                    "keyword": {
-                        "type": "keyword"
-                    }
-                }
-            },
-            "file_name": {
-                "type": "text",
-                "fields": {
-                    "keyword": {
-                        "type": "keyword"
-                    }
-                }
-            },
-            "full_text":{
-                "type": "text"
-            },
-            "init_date": {
-                "type": "date"
-            },
-            "updated_date": {
-                "type": "date"
-            },
-            "contents": {
-                "type": "nested",
-                "properties": {
-                    "content": {
-                        "type": "text"
-                    },
-                    "bbox": {
-                        "properties": {
-                            "left_x": {
-                                "type": "integer"
-                            },
-                            "top_y": {
-                                "type": "integer"
-                            },
-                            "right_x": {
-                                "type": "integer"
-                            },
-                            "bottom_y": {
-                                "type": "integer"
-                            }
-                        }
-                    },
-                    "content_embedding": {
-                        "type": "dense_vector",
-                        "dims": 1536
-                        # "dims": 1024
-                    },
-                    "page": {
-                        "type": "integer"
-                    },
-                    "token_num": {
-                        "type": "integer"
-                    }
-                }
-            }
-        }
-    }
-    settings = {
-        "number_of_shards": 1,
-        "number_of_replicas": 1
-    }
-    def __init__(self, index_name='arxiv'):
+    mappings = MAPPINGS
+    settings = SETTINGS
+    def __init__(self, index_name='refeat_ai'):
         self.es = Elasticsearch(hosts=["http://localhost:9200"], timeout=180)
         self.index_name = index_name
-        self.embedding = get_embedder('openai')
+        self.embedding = get_embedder(EMBEDDER)
     
     def _create_index(self, settings=None, mappings=None):
+        """
+        기존의 인덱스를 삭제하고, 새로운 인덱스를 생성합니다.
+        """
         self._delete_index()
         self.es.indices.create(index=self.index_name, settings=settings, mappings=mappings)
 
     def _delete_index(self):
+        """
+        인덱스를 삭제합니다.
+        """
         if self.es.indices.exists(index=self.index_name):
             self.es.indices.delete(index=self.index_name)
 
-    def _get_files_from_json_dir(self, json_dir):
-        json_files = []
-        for root, dirs, files in os.walk(json_dir):
-            for file in files:
-                if file.endswith('.json'):
-                    json_path = os.path.join(root, file)
-                    json_files.append(json_path)
-        return json_files
-
     def add_documents_from_json_dir(self, json_dir):
+        """
+        json_dir에 있는 모든 json 파일을 읽어서, DB에 문서를 추가합니다.
+        """
         json_files = self._get_files_from_json_dir(json_dir)
         # version1: 아래는 bulk를 사용하여 한 번에 여러 문서를 추가하는 방법입니다.
         # actions = []
@@ -133,10 +70,25 @@ class CustomElasticSearch:
             except Exception as e:
                 print(f"Error adding document {json_path}")
 
-        # Refresh your index
-        self.es.indices.refresh(index=self.index_name)
+        # Refresh the index
+        self.refresh_index()
+
+    def _get_files_from_json_dir(self, json_dir):
+        """
+        json_dir에 있는 모든 json 파일의 경로를 반환합니다.
+        """
+        json_files = []
+        for root, dirs, files in os.walk(json_dir):
+            for file in files:
+                if file.endswith('.json'):
+                    json_path = os.path.join(root, file)
+                    json_files.append(json_path)
+        return json_files
 
     def _prepare_bulk_action(self, json_path):
+        """
+        json 파일을 읽어서, Elasticsearch에 넣기위한 문서 형식으로 변환합니다.
+        """
         try:
             with open(json_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -150,7 +102,9 @@ class CustomElasticSearch:
         return None
     
     def _prepare_document(self, data):
-        # Convert to Elasticsearch document format
+        """
+        json 데이터를 Elasticsearch에 넣기위한 문서 형식으로 변환합니다.
+        """
         document = {
             "file_name": data['file_name'],
             "file_path": data['file_path'],
@@ -172,18 +126,39 @@ class CustomElasticSearch:
         return document
 
     def add_document_from_json(self, json_path):
+        """
+        json 파일을 읽어서, DB에 문서를 추가합니다.
+        """
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         self._add_document(data)
+
+    def refresh_index(self):
+        """
+        인덱스를 refresh합니다.(refresh 이후 검색이 가능함)
+        """
+        self.es.indices.refresh(index=self.index_name)
     
     def _add_document(self, data):
+        """
+        json 데이터를 Elasticsearch에 넣기위한 문서 형식으로 변환한 후, Elasticsearch에 문서를 추가합니다.
+        """
         document = self._prepare_document(data)
 
         # Elasticsearch에 문서 추가
         self.es.index(index=self.index_name, document=document)
 
     def post_process_search_results(self, response, search_range):
-        # 모든 'chunk'를 저장할 리스트 초기화
+        """
+        Elasticsearch의 검색 결과를 후처리합니다.
+
+        Args:
+            response: Elasticsearch의 검색 결과
+            search_range: 검색 범위. [document, chunk]
+
+        Returns:
+            results: 후처리된 검색 결과
+        """
         if search_range == 'document':
             all_documents = []
             for hit in response['hits']['hits']:
@@ -235,39 +210,54 @@ class CustomElasticSearch:
         return results
     
     def _create_similarity_query(self, query_vector, search_range, part='chunk', num_chunks=5, limit_token_length=0, filter=None):
+        """
+        Elasticsearch의 semantic 검색 쿼리를 생성합니다.
+
+        Args:
+            query_vector: 검색어의 임베딩 벡터
+            search_range: 검색 범위. [document, chunk]
+            part: 데이터의 어떤 값으로 검색을 할지. [chunk, topic_summary]
+            num_chunks: 검색된 문서의 chunk 중에서, 몇 개의 chunk를 사용할지. chunk는 내부 점수를 기준으로 내림차순으로 정렬되어 있습니다.
+            limit_token_length: chunk에서 limit_token_length보다 작은 길이의 chunk는 검색에서 제외합니다.
+            filter: 검색 결과를 필터링할 때 사용할 file_name 리스트
+
+        Returns:
+            es_query: Elasticsearch의 semantic 검색 쿼리
+        """
         if search_range == 'document':
             # version1: title 또는 summary를 이용해서 검색했을 경우
             if part == 'topic_summary':
-                es_query = {
-                    "script_score": {
-                        "query": {"match_all": {}},
-                        "script": {
-                            "source": """
-                                double topicScore = (cosineSimilarity(params.query_vector, 'topic_embedding') + 1.0)/2.0;
-                                double summaryScore = (cosineSimilarity(params.query_vector, 'summary_embedding') + 1.0)/2.0;
-                                return topicScore + summaryScore;
-                            """,
-                            "params": {"query_vector": query_vector}
-                        }
-                    }
-                }
+                raise ValueError("part='topic_summary' is not supported when search_range='document'")
+                # es_query = {
+                #     "script_score": {
+                #         "query": {"match_all": {}},
+                #         "script": {
+                #             "source": """
+                #                 double topicScore = (cosineSimilarity(params.query_vector, 'topic_embedding') + 1.0)/2.0;
+                #                 double summaryScore = (cosineSimilarity(params.query_vector, 'summary_embedding') + 1.0)/2.0;
+                #                 return topicScore + summaryScore;
+                #             """,
+                #             "params": {"query_vector": query_vector}
+                #         }
+                #     }
+                # }
 
-                if filter and len(filter) > 0:
-                    es_query = {
-                        "bool": {
-                            "must": es_query,
-                            "filter": {
-                                "bool": {
-                                    "should": [
-                                        {"match_phrase": {"topic": topic}} for topic in filter
-                                    ],
-                                    "minimum_should_match": 1
-                                }
-                            }
-                        }
-                    }
+                # if filter and len(filter) > 0:
+                #     es_query = {
+                #         "bool": {
+                #             "must": es_query,
+                #             "filter": {
+                #                 "bool": {
+                #                     "should": [
+                #                         {"match_phrase": {"topic": topic}} for topic in filter
+                #                     ],
+                #                     "minimum_should_match": 1
+                #                 }
+                #             }
+                #         }
+                #     }
 
-                return es_query
+                # return es_query
             
             elif part == 'chunk':
                 es_query = {
@@ -295,12 +285,12 @@ class CustomElasticSearch:
                     }
                 }
 
-                # filter가 제공되고, 비어있지 않은 경우에만 필터 적용
+                # filter가 비어있지 않은 경우에만 필터 적용
                 if filter and len(filter) > 0:
                     if "filter" not in es_query["bool"]:
                         es_query["bool"]["filter"] = {"bool": {"should": []}}
                     es_query["bool"]["filter"]["bool"]["should"].extend(
-                        [{"match_phrase": {"topic": topic}} for topic in filter]
+                        [{"match_phrase": {"file_name": file_name}} for file_name in filter]
                     )
                     es_query["bool"]["filter"]["bool"]["minimum_should_match"] = 1
                 return es_query
@@ -333,7 +323,7 @@ class CustomElasticSearch:
                 }
             }
 
-            # filter가 제공되고, 비어있지 않은 경우에만 토픽 필터 추가
+            # filter가 비어있지 않은 경우에만 토픽 필터 추가
             if filter and len(filter) > 0:
                 if "filter" not in es_query["bool"]:
                     es_query["bool"]["filter"] = {"bool": {"should": []}}
@@ -344,28 +334,42 @@ class CustomElasticSearch:
             return es_query
 
     def _create_match_query(self, query, search_range, part='chunk', num_chunks=5, limit_token_length=0, filter=None):
-        if search_range == 'document':
-            # version1: title 또는 summary를 이용해서 검색했을 경우
-            # using elastic search match
-            if part == 'topic_summary':
-                es_query = {
-                    "bool": {
-                        "must": [
-                            {"match": {"topic": query}}
-                        ],
-                    }
-                }
+        """
+        Elasticsearch의 match(BM25) 검색 쿼리를 생성합니다.
 
-                # filter가 제공되고, 비어있지 않은 경우에만 토픽 필터 추가
-                if filter and len(filter) > 0:
-                    if "filter" not in es_query["bool"]:
-                        es_query["bool"]["filter"] = {"bool": {"should": []}}
-                    es_query["bool"]["filter"]["bool"]["should"].extend(
-                        [{"match_phrase": {"topic": topic}} for topic in filter]
-                    )
-                    es_query["bool"]["filter"]["bool"]["minimum_should_match"] = 1
+        Args:
+            query: 검색어
+            search_range: 검색 범위. [document, chunk]
+            part: 데이터의 어떤 값으로 검색을 할지. [chunk, topic_summary]
+            num_chunks: 검색된 문서의 chunk 중에서, 몇 개의 chunk를 사용할지. chunk는 내부 점수를 기준으로 내림차순으로 정렬되어 있습니다.
+            limit_token_length: chunk에서 limit_token_length보다 작은 길이의 chunk는 검색에서 제외합니다.
+            filter: 검색 결과를 필터링할 때 사용할 file_name 리스트
+
+        Returns:
+            es_query: Elasticsearch의 match(BM25) 검색 쿼리
+        """
+        # version1: title 또는 summary를 이용해서 검색했을 경우
+        if search_range == 'document':
+            if part == 'topic_summary':
+                raise ValueError("part='topic_summary' is not supported when search_range='document'")
+                # es_query = {
+                #     "bool": {
+                #         "must": [
+                #             {"match": {"topic": query}}
+                #         ],
+                #     }
+                # }
+
+                # # filter가 제공되고, 비어있지 않은 경우에만 토픽 필터 추가
+                # if filter and len(filter) > 0:
+                #     if "filter" not in es_query["bool"]:
+                #         es_query["bool"]["filter"] = {"bool": {"should": []}}
+                #     es_query["bool"]["filter"]["bool"]["should"].extend(
+                #         [{"match_phrase": {"topic": topic}} for topic in filter]
+                #     )
+                #     es_query["bool"]["filter"]["bool"]["minimum_should_match"] = 1
                 
-                return es_query
+                # return es_query
             # version2: chunk를 이용해서 검색했을 경우
             elif part == 'chunk':
                 es_query = {
@@ -394,12 +398,12 @@ class CustomElasticSearch:
                     }
                 }
 
-                # filter가 제공되고, 비어있지 않은 경우에만 토픽 필터 추가
+                # filter가 비어있지 않은 경우에만 토픽 필터 추가
                 if filter and len(filter) > 0:
                     if "filter" not in es_query["bool"]:
                         es_query["bool"]["filter"] = {"bool": {"should": []}}
                     es_query["bool"]["filter"]["bool"]["should"].extend(
-                        [{"match_phrase": {"topic": topic}} for topic in filter]
+                        [{"match_phrase": {"file_name": file_name}} for file_name in filter]
                     )
                     es_query["bool"]["filter"]["bool"]["minimum_should_match"] = 1
 
@@ -432,7 +436,7 @@ class CustomElasticSearch:
                 }
             }
 
-            # filter가 제공되고, 비어있지 않은 경우에만 토픽 필터 추가
+            # filter가 비어있지 않은 경우에만 토픽 필터 추가
             if filter and len(filter) > 0:
                 if "filter" not in es_query["bool"]:
                     es_query["bool"]["filter"] = {"bool": {"should": []}}
@@ -462,7 +466,26 @@ class CustomElasticSearch:
                match_weight=0.02, 
                similarity_weight=1,
                filter=None):
-        search_results_num = num_results # reranking을 사용할 경우, top_k만큼 search를을 수행
+        """
+        Elasticsearch에 검색을 요청합니다.
+
+        Args:
+            query: 검색어
+            query_embedding: 검색어의 임베딩 벡터
+            num_results: 최종 결과로 반환할 문서 수
+            method: 검색 방법. [similarity, match, hybrid]
+            search_range: 검색 범위. [document, chunk]
+            part: 데이터의 어떤 값으로 검색을 할지. [chunk, topic_summary]
+            num_chunks: 검색된 문서의 chunk 중에서, 몇 개의 chunk를 사용할지. chunk는 내부 점수를 기준으로 내림차순으로 정렬되어 있습니다.
+            limit_token_length: chunk에서 limit_token_length보다 작은 길이의 chunk는 검색에서 제외합니다.
+            match_weight: hybrid search에서 match search의 가중치
+            similarity_weight: hybrid search에서 similarity search의 가중치
+            filter: 검색 결과를 필터링할 때 사용할 file_name 리스트
+        
+        Returns:
+            response: Elasticsearch의 검색 결과
+        """
+        search_results_num = num_results 
         if method == 'similarity':            
             response = self._similarity_search(query, query_embedding, search_range, part, search_results_num, num_chunks, limit_token_length, filter)
         elif method == 'match':
@@ -475,10 +498,26 @@ class CustomElasticSearch:
         return response
     
     def _create_filter_from_results(self, results):
+        """
+        이전 검색 결과에서 file_name을 추출하여, filter를 생성합니다. 이 작업은 2단계 이상의 검색을 사용할 때 사용됩니다.
+
+        Args:
+            results: post_process_search_results 함수 이후의 검색결과
+
+        Returns:
+            file_name_list: 검색 결과에서 추출한 file_name 리스트
+        """
         file_name_list = [result['document_info']['file_name'] for result in results]
         return file_name_list
 
     def parse_input_query(self, search_config, filter):
+        """
+        검색 config로 부터 검색에 필요한 파라미터들을 추출합니다.
+
+        Args:
+            search_config: 검색 config
+            filter: 검색 결과를 필터링할 때 사용할 file_name 리스트
+        """
         query = search_config.get('query', None)
         query_embedding = search_config.get('query_embedding', None)
         num_results = search_config.get('num_results', 5)
@@ -489,39 +528,69 @@ class CustomElasticSearch:
         limit_token_length = search_config.get('limit_token_length', 0)
         match_weight = search_config.get('match_weight', 0.02)
         similarity_weight = search_config.get('similarity_weight', 1)
-        filter = search_config.get('filter', filter)
+        filter = search_config.get('filter', filter) # search config에 filter가 있으면 filter를 사용하고, 없으면 입력으로 받은 filter를 사용
         return query, query_embedding, num_results, method, search_range, part, num_chunks, limit_token_length, match_weight, similarity_weight, filter
 
     def multi_search(self, search_configs):
-        # args: [List of (query, query_embedding, top_k, num_results, method, search_range, part, num_chunks, limit_token_length, match_weight, similarity_weight)]
-        filter = None
+        """
+        여러 단계의 검색을 순차적으로 수행합니다. 이전 검색의 결과를 이후 검색에 사용합니다.
+
+        Args:
+            search_configs: 검색 config 리스트
+
+        Returns:
+            response: 검색 결과
+        """
+        filter = None # 첫 단계의 검색에서는 filter를 사용하지 않습니다(단, search config에 filter가 있으면 그 값을 사용). 이후 단계의 검색에서는 이전 검색의 결과에서 추출한 filter를 사용합니다.
         for search_config in search_configs:
             query_params = self.parse_input_query(search_config, filter) # search_config에 filter가 있으면, filter를 사용하고, 없으면 이전 결과에서 추출한 filter를 사용
             response = self.search(*query_params)
-            filter = self._create_filter_from_results(response)
+            filter = self._create_filter_from_results(response) # 이전 검색 결과에서 file_name을 추출하여, filter를 생성합니다.
         return response
 
     def _similarity_search(self, query, query_embedding=None, search_range='document', part='chunk', num_results=5, num_chunks=5, limit_token_length=0, filter=None):
+        """
+        Elasticsearch의 semantic 검색을 수행합니다.
+        """
         query_vector = self.embedding.get_embedding(query) if query_embedding is None else query_embedding
         elastic_query = self._create_similarity_query(query_vector, search_range, part, num_chunks, limit_token_length, filter)
         response = self.es.search(index=self.index_name, size=num_results, query=elastic_query)
         return response
     
     def _match_search(self, query, search_range='document', part='chunk', num_results=5, num_chunks=5, limit_token_length=0, filter=None):
+        """
+        Elasticsearch의 match(BM25) 검색을 수행합니다.
+        """
         elastic_query = self._create_match_query(query, search_range, part, num_chunks, limit_token_length, filter)
         response = self.es.search(index=self.index_name, size=num_results, query=elastic_query)
         return response
     
     def _hybrid_search(self, query, query_embedding=None, search_range='document', part='chunk', num_results=5, num_chunks=5, limit_token_length=0, match_weight=1, similarity_weight=1, filter=None):
+        """
+        Elasticsearch의 hybrid 검색(similarity + match)을 수행합니다.
+        """
         if search_range == 'chunk':
             raise ValueError("search_range='chunk' is not supported when method='hybrid'")
-        single_search_num_results = num_results * 4 # 두 개의 검색을 더하는 방법을 사용하므로, 각각의 검색 결과 수를 N배로 설정
+        num_results_multiplier = 4 # 두 개의 검색을 더하는 방법을 사용하므로, 각각의 검색 결과 수를 넉넉하게 N배로 설정
+        single_search_num_results = num_results *  num_results_multiplier
         similarity_response = self._similarity_search(query, query_embedding, search_range, part, single_search_num_results, num_chunks, limit_token_length, filter)
         match_response = self._match_search(query, search_range, part, single_search_num_results, num_chunks, limit_token_length, filter)
         response = self._combine_response(similarity_response, match_response, match_weight, similarity_weight)
         return response
     
-    def _combine_response(self, similarity_response, match_response, match_weight=1, similarity_weight=1):
+    def _combine_response(self, similarity_response, match_response, match_weight=0.02, similarity_weight=1):
+        """
+        hybrid 검색을 위해 similarity와 match 검색 결과를 합칩니다.
+        
+        Args:
+            similarity_response: Elasticsearch의 semantic 검색 결과
+            match_response: Elasticsearch의 match(BM25) 검색 결과
+            match_weight: hybrid search에서 match search의 가중치
+            similarity_weight: hybrid search에서 similarity search의 가중치
+
+        Returns:
+            final_response: hybrid 검색 결과
+        """
         similarity_hits = similarity_response['hits']['hits']
         match_hits = match_response['hits']['hits']
 
@@ -558,19 +627,18 @@ if __name__ == "__main__":
     # test elasticsearch
     es = CustomElasticSearch(index_name='refeat_ai')
     
-    # # ---------- create index ---------- #
+    # ---------- create index ---------- #
     # es._create_index(settings=es.settings, mappings=es.mappings)
-    # json_path = '../../modules/test_data/Cross-lingual Language Model Pretraining_2023-12-26 16_48_17.json'
-    # es.add_document_from_json(json_path)
-    # es.add_documents_from_json_dir('../../data/arxiv/rag_test_token_256_overlap_16_large/chunk')
-
+    json_path = '../../modules/test_data/www.asiae.co.kr_article_2023120117510759146_2023-12-27 20_45_55.json'
+    es.add_document_from_json(json_path) # add single document
+    # es.add_documents_from_json_dir('../../data/arxiv/rag_test_token_256_overlap_16_large/chunk') # add multiple documents
 
     # ---------- delete index ---------- #
     # es._delete_index()
 
     # ---------- search test ---------- #
     response = es.search(
-        query="Cross-lingual Language Model Pretraining bleu score", 
+        query="아시아 전기차 시장이 급성장한 이유", 
         query_embedding=None,
         num_results=5, # 최종 결과로 반환할 문서 수
         method='similarity', # [similarity, match, hybrid]
@@ -580,7 +648,7 @@ if __name__ == "__main__":
         limit_token_length=100,
         match_weight=0.02, # hybrid search에서 match search의 가중치
         similarity_weight=1, # hybrid search에서 similarity search의 가중치
-        # filter=['Cross-lingual Language Model Pretraining'] # topic filter
+        # filter=['Cross-lingual Language Model Pretraining'] # file_name filter
         )
     
     for i, result in enumerate(response):

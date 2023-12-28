@@ -8,6 +8,7 @@ sys.path.append(current_path)
 from utils import add_api_key
 add_api_key()
 
+import argparse
 from typing import List
 
 from langchain_core.messages import HumanMessage, AIMessage
@@ -19,15 +20,15 @@ from models.tools import WebSearchTool, DBSearchTool
 from models.llm.agent.custom_streming_callback import CustomStreamingStdOutCallbackHandler
 
 class ChatAgent:
-    def __init__(self):
+    def __init__(self, verbose=False):
         llm = ChatOpenAI(model="gpt-3.5-turbo-1106", temperature=0.0, streaming=True, seed=42)
         tools = [WebSearchTool(), DBSearchTool()]
         agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=tools)
         self.queue = [] # TODO: 나중에 backend에서 주면 삭제
-        self.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+        self.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=verbose)
         self.streaming_callback = CustomStreamingStdOutCallbackHandler(queue=self.queue)
     
-    def run(self, query, chat_history: List[List[str]]):
+    def run(self, query, chat_history: List[List[str]]=[]):
         input_dict = self.parse_input(query, chat_history)
         result = self.agent_executor.run(input_dict, callbacks=[self.streaming_callback])
         return result
@@ -38,7 +39,14 @@ class ChatAgent:
             parsed_chat_history.append(HumanMessage(content=human))
             parsed_chat_history.append(AIMessage(content=assistant))
         return {"input": query, "chat_history": parsed_chat_history}
-    
+
+# example usage
+# python chat_agent.py --query '안녕하세요'
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--query', type=str, default='안녕하세요')
+    args = parser.parse_args()
+    
     chat_agent = ChatAgent()
-    chat_agent.run("데이터베이스에 저장된 Cross-lingual Language Model Pretraining bleu score", [["안녕하세요", "무엇을 도와드릴까요?"]])
+    result = chat_agent.run(args.query)
+    print(f'chat result: {result}')

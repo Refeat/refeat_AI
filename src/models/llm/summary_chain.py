@@ -5,6 +5,11 @@ for _ in range(2):
     current_path = os.path.dirname(current_path)
 sys.path.append(current_path)
 
+from utils import add_api_key
+add_api_key()
+
+import argparse
+
 from models.llm.base_chain import BaseChain
 from models.tokenizer.utils import get_tokenizer
 
@@ -31,3 +36,23 @@ class SummaryChain(BaseChain):
             return {'context': decoded_text}
         else:
             return {'context': full_text}
+
+# example usage
+# python summary_chain.py --text_file ../test_data/summary_chain_test.txt
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--text', type=str, default=None)
+    parser.add_argument('--text_file', type=str, default=None)
+    args = parser.parse_args()
+
+    if args.text_file:
+        with open(args.text_file, 'r', encoding='utf-8') as f:
+            text = f.read()
+    elif args.text:
+        text = args.text
+    else:
+        raise ValueError('Either text or text_file should be provided')
+
+    summary_chain = SummaryChain(verbose=True)
+    result = summary_chain.run(full_text=text)
+    print(f'summary: {result}')

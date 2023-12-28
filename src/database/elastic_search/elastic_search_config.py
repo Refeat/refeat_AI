@@ -14,10 +14,10 @@ class ElasticSearchConfig:
     def __repr__(self):
         return repr(self.config)
 
-    def __getitem__(self, stage=0, key='query'):
+    def __getitem__(self, key, stage=0):
         return self.config[stage][key]
     
-    def __setitem__(self, stage=0, key='query', value=''):
+    def __setitem__(self, key, value, stage=0):
         self.config[stage][key] = value
 
     def set_query(self, query):

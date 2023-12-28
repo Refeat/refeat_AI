@@ -54,7 +54,7 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
         # ... if yes, then print tokens from now on
         if self.answer_reached:
             if token not in ['action', ' "', '_input', '}', '."', '  ', '":', '  ', '   ', '    ']: # TODO: 좀 더 깔끔하게 수정하기
-                sys.stdout.write(token)
-                sys.stdout.flush()
+                # sys.stdout.write(token)
+                # sys.stdout.flush()
                 self.queue.append(token)
                 # print(self.queue)

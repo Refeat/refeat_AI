@@ -9,7 +9,7 @@ class BaseLoader(ABC):
         self.file_path = file_path
         self.file_name = self.get_base_name(file_path)
         self.init_date = self.get_date()
-        self.updated_data = None
+        self.updated_date = None
         self.data = self.get_data(file_path)
         self.full_text = self.get_full_text()
 
@@ -32,6 +32,7 @@ class BaseLoader(ABC):
         save_data = self.to_dict()
         save_path = self.get_save_path(save_dir)
         self.save_json_file(save_data, save_path)
+        return save_path
 
     def get_save_path(self, save_dir):
         # 파일 이름에서 유효하지 않은 문자를 '_'로 대체
@@ -53,13 +54,13 @@ class BaseLoader(ABC):
             'file_path': self.file_path,
             'file_name': self.file_name,
             'init_date': self.init_date,
-            'updated_data': self.updated_data,
+            'updated_date': self.updated_date,
             'full_text': self.full_text,
             'data': self.data
         }
 
     def __str__(self):
-        return f'BaseLoader(file_path={self.file_path}, file_name={self.file_name}, init_date={self.init_date}, updated_data={self.updated_data})'
+        return f'BaseLoader(file_path={self.file_path}, file_name={self.file_name}, init_date={self.init_date}, updated_data={self.updated_date})'
 
     def __repr__(self):
         return self.__str__()

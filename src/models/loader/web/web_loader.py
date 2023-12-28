@@ -26,14 +26,13 @@ class WebLoader(BaseLoader):
         return file_path.split('//')[1]
 
 # example usage
-# python web_loader.py --file_path https://www.naver.com --save_dir ../test_data/
-# python web_loader.py --file_path "https://medium.com/thirdai-blog/neuraldb-enterprise-full-stack-llm-driven-generative-search-at-scale-f4e28fecc3af?source=author_recirc-----861ffa0516e7----0---------------------3a853758_b666_41c3_8022_3fcc7269527f-------" --save_dir ../test_data/
+# python web_loader.py --file_path https://www.naver.com --save_dir ../../test_data/
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--file_path', type=str, required=True)
-    parser.add_argument('--save_dir', type=str, default='../test_data/')
+    parser.add_argument('--save_dir', type=str, default='../../test_data/')
     args = parser.parse_args()
 
     web_loader = WebLoader(file_path=args.file_path)
-    web_loader.save_data(args.save_dir)
-    print(web_loader)
+    save_path = web_loader.save_data(args.save_dir)
+    print('file saved at', save_path)

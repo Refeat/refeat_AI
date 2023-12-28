@@ -5,6 +5,8 @@ for _ in range(3):
     current_path = os.path.dirname(current_path)
 sys.path.append(current_path)
 
+import argparse
+
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer, LTAnno
 
@@ -43,8 +45,13 @@ class PdfLoader(BaseLoader):
     def get_base_name(self, file_path):
         return os.path.basename(file_path).split('.')[0]
     
+# example usage
+# python pdf_loader.py --file_path ../../test_data/pdf_loader_test.pdf --save_dir ../../test_data/
 if __name__ == '__main__':
-    file_path = '../test_data/Cross-lingual Language Model Pretraining.pdf'
-    pdf_loader = PdfLoader(file_path=file_path)
-    pdf_loader.save_data('../test_data/')
-    print(pdf_loader)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--file_path', type=str, required=True)
+    parser.add_argument('--save_dir', type=str, default='../../test_data/')
+    args = parser.parse_args()
+    pdf_loader = PdfLoader(file_path=args.file_path)
+    save_path = pdf_loader.save_data(args.save_dir)
+    print('file saved at', save_path)
