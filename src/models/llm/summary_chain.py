@@ -20,7 +20,7 @@ class SummaryChain(BaseChain):
                 summary_template=None, 
                 summary_template_path=os.path.join(current_file_folder_path, './templates/summary_chain_template.txt'), 
                 model='gpt-3.5-turbo-1106', 
-                verbose=False) -> None:
+                verbose=False,) -> None:
         super().__init__(prompt_template=summary_template, prompt_template_path=summary_template_path, model=model, verbose=verbose)
         self.tokenizer = get_tokenizer(model_name='openai')
         self.max_token_num = 8000
@@ -42,9 +42,8 @@ class SummaryChain(BaseChain):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--text', type=str, default=None)
-    parser.add_argument('--text_file', type=str, default=None)
+    parser.add_argument('--text_file', type=str, default="../test_data/summary_chain_test.txt")
     args = parser.parse_args()
-
     if args.text_file:
         with open(args.text_file, 'r', encoding='utf-8') as f:
             text = f.read()

@@ -50,9 +50,9 @@ class FileProcessor:
 
 # example usage
 # web
-# python file_processor.py --file_path https://www.asiae.co.kr/article/2023120117510759146 --test_query 인도 경제 성장률
+# python file_processor.py --file_path https://www.asiae.co.kr/article/2023120117510759146 --test_query "인도 경제 성장률"
 # pdf
-# python file_processor.py --file_path ../test_data/pdf_test.pdf --test_query BLEU score on WMT’16 German-English
+# python file_processor.py --file_path ../test_data/pdf_test.pdf --test_query "BLEU score on WMT’16 German-English"
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--file_path', type=str, default='https://www.asiae.co.kr/article/2023120117510759146')

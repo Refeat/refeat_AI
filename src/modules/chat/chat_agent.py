@@ -29,6 +29,11 @@ class ChatAgent:
         self.streaming_callback = CustomStreamingStdOutCallbackHandler(queue=self.queue)
     
     def run(self, query, chat_history: List[List[str]]=[]):
+        """
+        Args:
+            query (str): 사용자 입력
+            chat_history (List[List[str]]): [[사용자 입력, 챗봇 출력], ...]
+        """
         input_dict = self.parse_input(query, chat_history)
         result = self.agent_executor.run(input_dict, callbacks=[self.streaming_callback])
         return result

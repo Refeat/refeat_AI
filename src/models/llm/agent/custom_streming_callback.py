@@ -9,7 +9,6 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
 
     The output will be streamed until "<END" is reached.
     """
-
     def __init__(
         self,
         *,
@@ -43,6 +42,7 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
         # Remember the last n tokens, where n = len(answer_prefix_tokens)
         self.append_to_last_tokens(token)
         # Check if the last n tokens match the answer_prefix_tokens list ...
+        self.answer_reached = True
         if self.check_if_answer_reached():
             self.answer_reached = True
             if self.stream_prefix:
@@ -54,7 +54,7 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
         # ... if yes, then print tokens from now on
         if self.answer_reached:
             if token not in ['action', ' "', '_input', '}', '."', '  ', '":', '  ', '   ', '    ']: # TODO: 좀 더 깔끔하게 수정하기
-                # sys.stdout.write(token)
-                # sys.stdout.flush()
+                sys.stdout.write(token)
+                sys.stdout.flush()
                 self.queue.append(token)
                 # print(self.queue)

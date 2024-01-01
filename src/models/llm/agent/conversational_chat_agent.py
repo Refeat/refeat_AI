@@ -130,6 +130,7 @@ class ConversationalChatAgent(Agent):
             llm=llm,
             prompt=prompt,
             callback_manager=callback_manager,
+            verbose=True
         )
         tool_names = [tool.name for tool in tools]
         return cls(

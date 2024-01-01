@@ -19,10 +19,23 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
 )
 
-search = GoogleSerperAPIWrapper(gl='kr', hl='ko')
+class CustomGoogleSerperAPIWrapper(GoogleSerperAPIWrapper):
+    def __init__(self, num_results: int = 5, country_code: str = "kr", language_code: str = "ko", **kwargs):
+        super().__init__(**kwargs)
+        self.k = num_results
+        self.gl = country_code
+        self.hl = language_code
+
+    def _parse_results(self, search_results: dict) -> str:
+        result = ''
+        for search_result in search_results['organic']:
+            result += f"{search_result['title']}\n{search_result['snippet']}\n\n"
+        return result
+
+search = CustomGoogleSerperAPIWrapper(gl='kr', hl='ko')
 
 class WebSearchTool(BaseTool):
-    name = "Current Search"
+    name = "Web Search"
     description = "useful for when you need to ask with search"
 
     def _run(
@@ -38,12 +51,15 @@ class WebSearchTool(BaseTool):
         raise NotImplementedError("custom_search does not support async")
     
 # example usage
-# python google_search_tool.py --query '2023년 롤드컵 우승팀은?'
+# python google_search_tool.py --query "2023년 롤드컵 우승팀은?"
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--query', type=str, default='2023년 롤드컵 우승팀은?')
     args = parser.parse_args()
 
-    web_search_tool = WebSearchTool()
-    result = web_search_tool(args.query)
-    print(f'"{args.query}" search result:\n{result}')
+    # web_search_tool = WebSearchTool()
+    # result = web_search_tool(args.query)
+    # print(f'"{args.query}" search result:\n{result}')
+    custom_search = CustomGoogleSerperAPIWrapper(k=2)
+    result = custom_search.run(args.query)
+    print(result)
