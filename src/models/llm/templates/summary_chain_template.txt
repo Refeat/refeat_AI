@@ -1,4 +1,4 @@
-Write 5 sentences korean concise main contents summary of the following:
+Write 3 sentences **korean** concise a main content summary of the following noisy text:
 ===
 {context}
 ===

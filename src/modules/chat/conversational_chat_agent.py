@@ -19,13 +19,13 @@ from models.llm.agent.conversational_chat_agent import ConversationalChatAgent
 from models.tools import WebSearchTool, DBSearchTool
 from models.llm.agent.custom_streming_callback import CustomStreamingStdOutCallbackHandler
 
-class ChatAgent:
+class ChatAgentModule:
     def __init__(self, verbose=False):
         llm = ChatOpenAI(model="gpt-3.5-turbo-1106", temperature=0.0, streaming=True, seed=42)
-        tools = [WebSearchTool(), DBSearchTool()]
-        agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=tools)
+        self.tools = [DBSearchTool(), WebSearchTool()]
+        agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=self.tools)
         self.queue = [] # TODO: 나중에 backend에서 주면 삭제
-        self.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=verbose)
+        self.agent_executor = AgentExecutor(agent=agent, tools=self.tools, verbose=verbose)
         self.streaming_callback = CustomStreamingStdOutCallbackHandler(queue=self.queue)
     
     def run(self, query, chat_history: List[List[str]]=[]):
@@ -34,24 +34,25 @@ class ChatAgent:
             query (str): 사용자 입력
             chat_history (List[List[str]]): [[사용자 입력, 챗봇 출력], ...]
         """
-        input_dict = self.parse_input(query, chat_history)
+        file_name_text = self.tools[0].get_summary_by_project_id(-1)
+        input_dict = self.parse_input(query, chat_history, file_name_text)
         result = self.agent_executor.run(input_dict, callbacks=[self.streaming_callback])
         return result
 
-    def parse_input(self, query, chat_history):
+    def parse_input(self, query, chat_history, file_name_text):
         parsed_chat_history = []
         for human, assistant in chat_history:
             parsed_chat_history.append(HumanMessage(content=human))
             parsed_chat_history.append(AIMessage(content=assistant))
-        return {"input": query, "chat_history": parsed_chat_history}
+        return {"input": query, "chat_history": parsed_chat_history, "database_filename": file_name_text}
 
 # example usage
 # python chat_agent.py --query '안녕하세요'
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--query', type=str, default='안녕하세요')
+    parser.add_argument('--query', type=str, default='S3 Standard의 가격 정책에 대해서 알려줘')
     args = parser.parse_args()
     
-    chat_agent = ChatAgent()
+    chat_agent = ChatAgentModule(verbose=True)
     result = chat_agent.run(args.query)
     print(f'chat result: {result}')

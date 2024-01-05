@@ -1,5 +1,11 @@
 MAPPINGS = {
     "properties": {
+        "project_id": {
+            "type": "keyword"
+        },
+        "file_uuid": {
+            "type": "keyword"
+        },
         "file_path": {
             "type": "text",
             "fields": {
@@ -24,6 +30,9 @@ MAPPINGS = {
         },
         "updated_date": {
             "type": "date"
+        },
+        'summary': {
+            'type': 'text'
         },
         "contents": {
             "type": "nested",

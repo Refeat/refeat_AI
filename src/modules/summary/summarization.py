@@ -8,7 +8,7 @@ sys.path.append(current_path)
 from utils import add_api_key
 add_api_key()
 
-from models.llm.summary_chain import SummaryChain
+from models.llm.chain.summary_chain import SummaryChain
 
 class SummaryModule:
     def __init__(self):

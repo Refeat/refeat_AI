@@ -11,9 +11,12 @@ import argparse
 from models.loader.unified_loader import Loader
 from models.chunker.json_chunker import JsonChunker
 from models.embedder.utils import get_embedder
+from models.llm.chain.summary_chain import SummaryChain
 from database.elastic_search.custom_elastic_search import CustomElasticSearch
 
 es = CustomElasticSearch(index_name='refeat_ai')
+# es._create_index()
+summary_chain = SummaryChain()
 
 class FileProcessor:
     def __init__(self, model_name='openai', save_dir='../test_data'):
@@ -23,14 +26,14 @@ class FileProcessor:
         self.save_dir = save_dir
         os.makedirs(self.save_dir, exist_ok=True)
 
-    def __call__(self, file_path):
+    def __call__(self, file_path, project_id=-1):
         data = self.loader.load_file(file_path)
         self.get_chunked_data(data)
         self.get_embedding(data)
+        self.get_summary(data)
         save_path = self.loader.get_save_path(self.save_dir)
         self.save_data(data, save_path)
-        es.add_document_from_json(save_path)
-        es.refresh_index()
+        self.add_data_to_db(save_path, project_id=project_id)
 
     def get_chunked_data(self, data):
         data['data'] = self.chunker.get_chunked_data(data['data'])
@@ -41,12 +44,22 @@ class FileProcessor:
         for chunk in data['data']:
             chunk['embedding'] = embedding_list.pop(0)
 
-    def add_data_to_db(self, file_path):
-        es.add_document_from_json(file_path)
+    def get_summary(self, data):
+        summary = summary_chain.run(full_text=data['full_text'])
+        print(data['full_text'])
+        print(summary)
+        data['summary'] = summary
+
+    def add_data_to_db(self, file_path, project_id=-1):
+        es.add_document_from_json(file_path, project_id)
+        es.refresh_index()
 
     def save_data(self, data, output_path):
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
+
+    def delete_data_from_db(self, file_uuid):
+        es.delete_document(file_uuid)
 
 # example usage
 # web

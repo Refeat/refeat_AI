@@ -147,7 +147,7 @@ class BaseChatChain(BaseChain):
 
         return ChatPromptTemplate.from_messages(messages=messages)
 
-    def run(self, callbacks=None, chat_history=[], **kwargs):
+    def run(self, chat_history=[], callbacks=None, **kwargs):
         input_dict = self.parse_input(chat_history=chat_history, **kwargs)
         for _ in range(self.max_tries):
             try:
@@ -208,7 +208,7 @@ class BaseChatToolChain(BaseChatChain):
         if system_prompt_template:
             system_prompt_template = system_prompt_template.format(tool_template=tool_template)
             messages.append(('system', system_prompt_template))
-        messages.append(MessagesPlaceholder(variable_name="chat_history"))
+        messages.append(MessagesPlaceholder(variable_name="chat_history"),)
         if user_prompt_template:
             messages.append(('human', user_prompt_template))
 
@@ -217,12 +217,12 @@ class BaseChatToolChain(BaseChatChain):
     def _get_tool_prompt(self, template, tools):        
         tool_description_list = []
         for tool in tools:
-            tool_description_list.append(f'{tool.name}: {tool.description}')
+            tool_description_list.append(f'### {tool.name}\n{tool.description}')
         tool_description = '\n'.join(tool_description_list)
         tool_template = template.format(tools=tool_description)
         return tool_template
     
-    def run(self, callbacks=None, chat_history=[], agent_scratchpad='', **kwargs):
+    def run(self, chat_history=[], agent_scratchpad='', callbacks=None, **kwargs):
         input_dict = self.parse_input(chat_history=chat_history, agent_scratchpad=agent_scratchpad, **kwargs)
         for _ in range(self.max_tries):
             try:

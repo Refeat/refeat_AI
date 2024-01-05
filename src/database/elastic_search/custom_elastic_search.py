@@ -11,6 +11,7 @@ from utils import add_api_key
 add_api_key()
 
 import json
+import uuid
 from datetime import datetime
 
 import tqdm
@@ -28,7 +29,7 @@ class CustomElasticSearch:
         self.index_name = index_name
         self.embedding = get_embedder(EMBEDDER)
     
-    def _create_index(self, settings=None, mappings=None):
+    def _create_index(self, settings=SETTINGS, mappings=MAPPINGS):
         """
         기존의 인덱스를 삭제하고, 새로운 인덱스를 생성합니다.
         """
@@ -101,14 +102,17 @@ class CustomElasticSearch:
             return [{"_index": self.index_name, "_source": document}]
         return None
     
-    def _prepare_document(self, data):
+    def _prepare_document(self, data, project_id=-1):
         """
         json 데이터를 Elasticsearch에 넣기위한 문서 형식으로 변환합니다.
         """
         document = {
+            "project_id": project_id,
+            "file_uuid": str(uuid.uuid4()),
             "file_name": data['file_name'],
             "file_path": data['file_path'],
             "full_text": data['full_text'],
+            'summary': data['summary'],
             "init_date": datetime.strptime(data['init_date'], '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%dT%H:%M:%S'),
             "updated_date": datetime.strptime(data['updated_data'], '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%dT%H:%M:%S') if data['updated_date'] else None,
             "contents": [
@@ -125,28 +129,49 @@ class CustomElasticSearch:
 
         return document
 
-    def add_document_from_json(self, json_path):
+    def add_document_from_json(self, json_path, project_id=-1):
         """
         json 파일을 읽어서, DB에 문서를 추가합니다.
         """
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        self._add_document(data)
+        document = self._prepare_document(data, project_id)
+
+        # Elasticsearch에 문서 추가
+        self.es.index(index=self.index_name, document=document)
 
     def refresh_index(self):
         """
         인덱스를 refresh합니다.(refresh 이후 검색이 가능함)
         """
         self.es.indices.refresh(index=self.index_name)
-    
-    def _add_document(self, data):
-        """
-        json 데이터를 Elasticsearch에 넣기위한 문서 형식으로 변환한 후, Elasticsearch에 문서를 추가합니다.
-        """
-        document = self._prepare_document(data)
 
-        # Elasticsearch에 문서 추가
-        self.es.index(index=self.index_name, document=document)
+    def get_all_files(self):
+        query = {
+            "query": {
+                "match_all": {}  # 모든 문서를 매치
+            }
+        }
+
+        response = self.es.search(index=self.index_name, body=query, size=10000)
+        files = [hit["_source"] for hit in response["hits"]["hits"]]
+        return files
+
+    def get_summary_by_project_id(self, project_id):
+        query = {
+            "query": {
+                "bool": {
+                    "filter": [
+                        {"term": {"project_id": project_id}}
+                    ]
+                }
+            },
+            "_source": ["summary"]  # Only return the file_name field
+        }
+
+        response = self.es.search(index=self.index_name, body=query)
+        file_names = [hit["_source"]["summary"] for hit in response["hits"]["hits"]]
+        return file_names
 
     def post_process_search_results(self, response, search_range):
         """
@@ -219,7 +244,7 @@ class CustomElasticSearch:
             part: 데이터의 어떤 값으로 검색을 할지. [chunk, topic_summary]
             num_chunks: 검색된 문서의 chunk 중에서, 몇 개의 chunk를 사용할지. chunk는 내부 점수를 기준으로 내림차순으로 정렬되어 있습니다.
             limit_token_length: chunk에서 limit_token_length보다 작은 길이의 chunk는 검색에서 제외합니다.
-            filter: 검색 결과를 필터링할 때 사용할 file_name 리스트
+            filter: 검색 결과를 필터링할 때 사용할 project_id 리스트
 
         Returns:
             es_query: Elasticsearch의 semantic 검색 쿼리
@@ -290,7 +315,7 @@ class CustomElasticSearch:
                     if "filter" not in es_query["bool"]:
                         es_query["bool"]["filter"] = {"bool": {"should": []}}
                     es_query["bool"]["filter"]["bool"]["should"].extend(
-                        [{"match_phrase": {"file_name": file_name}} for file_name in filter]
+                        [{"match_phrase": {"project_id": project_id}} for project_id in filter]
                     )
                     es_query["bool"]["filter"]["bool"]["minimum_should_match"] = 1
                 return es_query
@@ -328,7 +353,7 @@ class CustomElasticSearch:
                 if "filter" not in es_query["bool"]:
                     es_query["bool"]["filter"] = {"bool": {"should": []}}
                 es_query["bool"]["filter"]["bool"]["should"].extend(
-                    [{"match_phrase": {"file_name": file_name}} for file_name in filter]
+                    [{"match_phrase": {"project_id": project_id}} for project_id in filter]
                 )
                 es_query["bool"]["filter"]["bool"]["minimum_should_match"] = 1
             return es_query
@@ -343,7 +368,7 @@ class CustomElasticSearch:
             part: 데이터의 어떤 값으로 검색을 할지. [chunk, topic_summary]
             num_chunks: 검색된 문서의 chunk 중에서, 몇 개의 chunk를 사용할지. chunk는 내부 점수를 기준으로 내림차순으로 정렬되어 있습니다.
             limit_token_length: chunk에서 limit_token_length보다 작은 길이의 chunk는 검색에서 제외합니다.
-            filter: 검색 결과를 필터링할 때 사용할 file_name 리스트
+            filter: 검색 결과를 필터링할 때 사용할 project_id 리스트
 
         Returns:
             es_query: Elasticsearch의 match(BM25) 검색 쿼리
@@ -403,7 +428,7 @@ class CustomElasticSearch:
                     if "filter" not in es_query["bool"]:
                         es_query["bool"]["filter"] = {"bool": {"should": []}}
                     es_query["bool"]["filter"]["bool"]["should"].extend(
-                        [{"match_phrase": {"file_name": file_name}} for file_name in filter]
+                        [{"match_phrase": {"project_id": project_id}} for project_id in filter]
                     )
                     es_query["bool"]["filter"]["bool"]["minimum_should_match"] = 1
 
@@ -441,7 +466,7 @@ class CustomElasticSearch:
                 if "filter" not in es_query["bool"]:
                     es_query["bool"]["filter"] = {"bool": {"should": []}}
                 es_query["bool"]["filter"]["bool"]["should"].extend(
-                    [{"match_phrase": {"file_name": file_name}} for file_name in filter]
+                    [{"match_phrase": {"project_id": project_id}} for project_id in filter]
                 )
                 es_query["bool"]["filter"]["bool"]["minimum_should_match"] = 1
 
@@ -465,7 +490,8 @@ class CustomElasticSearch:
                limit_token_length=30, 
                match_weight=0.02, 
                similarity_weight=1,
-               filter=None):
+               filter=None,
+               project_filter=None):
         """
         Elasticsearch에 검색을 요청합니다.
 
@@ -480,7 +506,7 @@ class CustomElasticSearch:
             limit_token_length: chunk에서 limit_token_length보다 작은 길이의 chunk는 검색에서 제외합니다.
             match_weight: hybrid search에서 match search의 가중치
             similarity_weight: hybrid search에서 similarity search의 가중치
-            filter: 검색 결과를 필터링할 때 사용할 file_name 리스트
+            filter: 검색 결과를 필터링할 때 사용할 project_id 리스트
         
         Returns:
             response: Elasticsearch의 검색 결과
@@ -516,7 +542,7 @@ class CustomElasticSearch:
 
         Args:
             search_config: 검색 config
-            filter: 검색 결과를 필터링할 때 사용할 file_name 리스트
+            filter: 검색 결과를 필터링할 때 사용할 project_id 리스트
         """
         query = search_config.get('query', None)
         query_embedding = search_config.get('query_embedding', None)
@@ -628,17 +654,18 @@ if __name__ == "__main__":
     es = CustomElasticSearch(index_name='refeat_ai')
     
     # ---------- create index ---------- #
-    # es._create_index(settings=es.settings, mappings=es.mappings)
-    json_path = '../../modules/test_data/www.asiae.co.kr_article_2023120117510759146_2023-12-27 20_45_55.json'
+    es._create_index(settings=es.settings, mappings=es.mappings)
+    json_path = '../../modules/test_data/www.asiae.co.kr_article_2023120117510759146_2023-12-29 14_41_25.json'
     es.add_document_from_json(json_path) # add single document
+    es.refresh_index()
     # es.add_documents_from_json_dir('../../data/arxiv/rag_test_token_256_overlap_16_large/chunk') # add multiple documents
 
     # ---------- delete index ---------- #
     # es._delete_index()
-
+    
     # ---------- search test ---------- #
     response = es.search(
-        query="아시아 전기차 시장이 급성장한 이유", 
+        query="아시아 경제 성장", 
         query_embedding=None,
         num_results=5, # 최종 결과로 반환할 문서 수
         method='similarity', # [similarity, match, hybrid]
@@ -648,7 +675,7 @@ if __name__ == "__main__":
         limit_token_length=100,
         match_weight=0.02, # hybrid search에서 match search의 가중치
         similarity_weight=1, # hybrid search에서 similarity search의 가중치
-        # filter=['Cross-lingual Language Model Pretraining'] # file_name filter
+        filter=[1] # project_id filter
         )
     
     for i, result in enumerate(response):
@@ -667,3 +694,12 @@ if __name__ == "__main__":
         if inner_contents:
             for inner_content in inner_contents:
                 print(f"\tInner Content Score: {inner_content['score']}, Content: {inner_content['content']}")
+
+    # ---------- search file names by project id ---------- #
+    # file_names = es.search_file_names_by_project_id(-1)
+    # print(file_names)
+
+
+    # ---------- get all files ---------- #
+    # files = es.get_all_files()
+    # print(files)

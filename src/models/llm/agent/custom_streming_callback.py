@@ -42,7 +42,7 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
         # Remember the last n tokens, where n = len(answer_prefix_tokens)
         self.append_to_last_tokens(token)
         # Check if the last n tokens match the answer_prefix_tokens list ...
-        self.answer_reached = True
+        self.answer_reached = True # TODO: Test 용. 나중에 삭제
         if self.check_if_answer_reached():
             self.answer_reached = True
             if self.stream_prefix:

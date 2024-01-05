@@ -17,11 +17,15 @@ from langchain.callbacks.manager import (
 )
 
 es = CustomElasticSearch(index_name='refeat_ai')
-config_path = '../../database/elastic_search/search_config/similarity_chunk.json'
+current_file_folder_path = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(current_file_folder_path, '../../database/elastic_search/search_config/similarity_chunk.json')
 
 class DBSearchTool(BaseTool):
     name = "Database Search"
-    description = "useful for when you need to search in database. Use this tool primarily for searching."
+    description = """You can search the database. Here's a summary of the information inside the database. 
+===
+{database_filename}===
+You can get more information by call this tool with query."""
 
     def _run(
         self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
@@ -44,6 +48,13 @@ class DBSearchTool(BaseTool):
         for idx, result in enumerate(result_list):
             result_text += f"result{idx+1}. {result['chunk_info']['content']}\n\n\n"
         return result_text
+
+    def get_summary_by_project_id(self, project_id):
+        summarys = es.get_summary_by_project_id(project_id)
+        summary_text = ''
+        for idx, summary in enumerate(summarys):
+            summary_text += f'file {idx+1}: {summary}\n'
+        return summary_text
     
 # example usage
 # python db_tool.py --query 'Cross-lingual Language Model Pretraining bleu score'

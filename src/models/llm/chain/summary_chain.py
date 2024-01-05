@@ -1,7 +1,7 @@
 import os
 import sys
 current_path = os.path.dirname(os.path.abspath(__file__))
-for _ in range(2):
+for _ in range(3):
     current_path = os.path.dirname(current_path)
 sys.path.append(current_path)
 
@@ -18,7 +18,7 @@ current_file_folder_path = os.path.dirname(os.path.abspath(__file__))
 class SummaryChain(BaseChain):
     def __init__(self, 
                 summary_template=None, 
-                summary_template_path=os.path.join(current_file_folder_path, './templates/summary_chain_template.txt'), 
+                summary_template_path=os.path.join(current_file_folder_path, '../templates/summary_chain_template.txt'), 
                 model='gpt-3.5-turbo-1106', 
                 verbose=False,) -> None:
         super().__init__(prompt_template=summary_template, prompt_template_path=summary_template_path, model=model, verbose=verbose)
@@ -42,7 +42,7 @@ class SummaryChain(BaseChain):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--text', type=str, default=None)
-    parser.add_argument('--text_file', type=str, default="../test_data/summary_chain_test.txt")
+    parser.add_argument('--text_file', type=str, default="../../test_data/summary_chain_test.txt")
     args = parser.parse_args()
     if args.text_file:
         with open(args.text_file, 'r', encoding='utf-8') as f:
