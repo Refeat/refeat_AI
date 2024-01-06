@@ -22,10 +22,7 @@ config_path = os.path.join(current_file_folder_path, '../../database/elastic_sea
 
 class DBSearchTool(BaseTool):
     name = "Database Search"
-    description = """You can search the database. Here's a summary of the information inside the database. 
-===
-{database_filename}===
-You can get more information by call this tool with query."""
+    description = """You can search the database."""
 
     def _run(
         self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
@@ -44,10 +41,11 @@ You can get more information by call this tool with query."""
         raise NotImplementedError("custom_search does not support async")
     
     def parse_output(self, result_list):
-        result_text = ""
-        for idx, result in enumerate(result_list):
-            result_text += f"result{idx+1}. {result['chunk_info']['content']}\n\n\n"
-        return result_text
+        # result_text = ""
+        # for idx, result in enumerate(result_list):
+        #     result_text += f"result{idx+1}. {result['chunk_info']['content']}\n\n\n"
+        result_list = [result['chunk_info']['content'] for result in result_list]
+        return result_list
 
     def get_summary_by_project_id(self, project_id):
         summarys = es.get_summary_by_project_id(project_id)

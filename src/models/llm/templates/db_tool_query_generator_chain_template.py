@@ -1,10 +1,10 @@
 SYSTEM="""
-You are an assistant who generates queries for search. Generate a search query for the input.
+You are an assistant who generates queries for search. Generate search queries for the input.
 
 Output format:
 ```json
 {{
-    "query": string
+    "query list": list of string \\ The generated search queries.
 }}
 ```
 """

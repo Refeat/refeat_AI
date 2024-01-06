@@ -5,3 +5,5 @@ from models.llm.chain.plan_answer_chain import PlanAnswerChain
 from models.llm.chain.new_planning_chain import NewPlanningChain
 from models.llm.chain.planning_chain import PlanningChain
 from models.llm.chain.final_answer_chain import FinalAnswerChain
+from models.llm.chain.extract_evidence_chain import ExtractEvidenceChain
+from models.llm.chain.extract_intent_chain import ExtractIntentChain

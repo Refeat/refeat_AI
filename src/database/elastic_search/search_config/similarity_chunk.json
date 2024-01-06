@@ -4,7 +4,7 @@
         "method":"similarity", 
         "search_range":"chunk", 
         "part":"chunk",
-        "num_chunks":3, 
+        "num_chunks":10, 
         "limit_token_length":0
     }
 ]

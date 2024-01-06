@@ -12,12 +12,11 @@ import ast
 import argparse
 
 from models.llm.base_chain import BaseChatChain
-from models.tokenizer.utils import get_tokenizer
-from models.llm.templates.db_tool_query_generator_chain_template import SYSTEM, USER
+from models.llm.templates.extract_intent_chain_template import SYSTEM, USER
 
 current_file_folder_path = os.path.dirname(os.path.abspath(__file__))
 
-class DBToolQueryGeneratorChain(BaseChatChain):
+class ExtractIntentChain(BaseChatChain):
     def __init__(self, 
                 system_prompt_template:str=SYSTEM,
                 user_prompt_template:str=USER,
@@ -27,20 +26,21 @@ class DBToolQueryGeneratorChain(BaseChatChain):
                 verbose=False,) -> None:
         super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature)
 
-    def run(self, query=None, chat_history=[]):
-        return super().run(input=query, chat_history=chat_history)
+    def run(self, query=None, context=None, chat_history=[]):
+        return super().run(input=query, context=context, chat_history=chat_history)
     
     def parse_output(self, output):
         result = ast.literal_eval(output)
-        return result['query list']
+        return result['user words']
     
 # example usage
-# python db_tool_query_generator_chain.py --query "인공지능 분야에 대해 설명해줘"
+# python extract_intent_chain.py --query "인공지능 분야에 대해 설명해줘"
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--query', type=str, default="2021년 전기 자동차 산업의 시장 규모를 찾아보세요.")
+    parser.add_argument('--query', type=str, default="전기차 시장 규모")
     args = parser.parse_args()
-
-    db_tool_query_generator_chain = DBToolQueryGeneratorChain(verbose=True)
-    result = db_tool_query_generator_chain.run(query=args.query, chat_history=[])
+    
+    extract_evidence_chain = ExtractIntentChain(verbose=True)
+    result = extract_evidence_chain.run(query=args.query, chat_history=[])
     print(result)
+    

@@ -1,6 +1,6 @@
 SYSTEM="""
 Given the following question and answer, create a final answer. Final answer must in **korean**.
-If there's information that wasn't provided, say why it wasn't addressed (e.g., I couldn't find the information in the given documentation).
+If there's information that wasn't provided, say why it wasn't addressed (e.g. I couldn't find the information in the given documentation).
 Let's think step by step.
 
 Output format:
