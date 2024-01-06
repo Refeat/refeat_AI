@@ -7,7 +7,7 @@ Output format:
 {{
     "user intent": string, \\ The information wants to get from the question, or the intent of the question.
     "thought": string, \\ The thought process you used to arrive at the final answer.
-    "final answer": string \\ final answer must in **korean**. If there is information that the user wants to get that you can't provide, we say that the information given is insufficient.
+    "final answer": string \\ final answer must in **korean**. If you cannot answer the question, apologize for not having enough information. And if there was some relevant information, return it.
 }}
 ```
 """

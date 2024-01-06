@@ -15,6 +15,7 @@ class Loader:
         self.loader = None
 
     def load_file(self, file_path):
+        print(file_path)
         if file_path.endswith('.pdf'):
             self.loader = PdfLoader(file_path)
         elif file_path.startswith('http'):

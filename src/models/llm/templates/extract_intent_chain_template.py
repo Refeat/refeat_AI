@@ -9,7 +9,7 @@ Output format:
 ```
 
 Example:
-USER: 인공지능 분야에 대해 설명해줘
+USER: 인공지능 대해 설명해줘
 ASSISTANT: ```json
 {{
     "user words": "인공지능의 정의, 활용 분야, 인공지능 작동 방식에 대해 알려줘"
