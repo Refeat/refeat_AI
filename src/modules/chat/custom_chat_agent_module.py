@@ -44,6 +44,7 @@ class ChatAgentModule:
         db_query_list = self.db_tool_query_generator.run(query=enrich_query)
         tool_results = []
         for db_query in db_query_list:
+            print(db_query)
             tool_results.append(self.execute_tool('Database Search', db_query))
         tool_result = self.process_tool_result(tool_results)
 
@@ -95,8 +96,6 @@ class ChatAgentModule:
                     processed_tool_result.append(tool_result[i])
 
         return processed_tool_result[:12]
-
-
 
 # example usage
 # python chat_agent.py --query '안녕하세요'

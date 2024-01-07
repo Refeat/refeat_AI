@@ -7,3 +7,4 @@ from models.llm.chain.planning_chain import PlanningChain
 from models.llm.chain.final_answer_chain import FinalAnswerChain
 from models.llm.chain.extract_evidence_chain import ExtractEvidenceChain
 from models.llm.chain.extract_intent_chain import ExtractIntentChain
+from models.llm.chain.make_fake_evidence_chain import MakeFakeEvidenceChain

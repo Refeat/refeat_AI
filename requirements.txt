@@ -8,3 +8,6 @@ scrapy
 elasticsearch
 langchainhub
 google-search-results
+matplotlib
+networkx
+scikit-learn
