@@ -37,6 +37,7 @@ class ChatAgentModule:
         """
         queue = queue if queue else []
         streaming_callback = CustomStreamingStdOutCallbackHandler(queue=queue)
+        chat_history = chat_history[-3:]
         enrich_query = self.extract_intent_chain.run(query=query, chat_history=chat_history)
         instantly_answerable, answer = self.instantly_answerable_discriminator.run(query=enrich_query, chat_history=chat_history)
         

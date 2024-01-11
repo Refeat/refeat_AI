@@ -185,8 +185,10 @@ class BaseChatChain(BaseChain):
     def parse_chat_history(self, chat_history):
         parsed_chat_history = []
         for human, assistant in chat_history:
-            parsed_chat_history.append(HumanMessage(content=human))
-            parsed_chat_history.append(AIMessage(content=assistant))
+            if human:
+                parsed_chat_history.append(HumanMessage(content=human))
+            if assistant:
+                parsed_chat_history.append(AIMessage(content=assistant))
         return parsed_chat_history
     
 class BaseChatToolChain(BaseChatChain):
