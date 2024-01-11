@@ -22,7 +22,8 @@ class PlanAnswerChain(BaseChatChain):
                 system_prompt_template:str=SYSTEM,
                 user_prompt_template:str=USER,
                 response_format="json",
-                model='gpt-4-1106-preview',
+                # model='gpt-4-1106-preview',
+                model='gpt-3.5-turbo-1106',
                 temperature=0.0,
                 verbose=False,
                 streaming=False) -> None:

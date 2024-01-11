@@ -6,7 +6,7 @@ Output format:
 ```json
 {{
     "user intent": string, \\ The information wants to get from the question, or the intent of the question.
-    "final answer": string \\ final answer must in **korean**. If you cannot answer the question, apologize for not having enough information. And if there was some relevant information, return it.
+    "final answer": string \\ final answer must in **korean** and markdown format. 
 }}
 ```
 """

@@ -1,5 +1,15 @@
 import os
+import sys
+current_path = os.path.dirname(os.path.abspath(__file__))
+for _ in range(2):
+    current_path = os.path.dirname(current_path)
+sys.path.append(current_path)
+
+from utils import add_api_key
+add_api_key()
+
 import json
+import signal
 from typing import List, Any, Dict
 
 from langchain.prompts import PromptTemplate, ChatPromptTemplate, MessagesPlaceholder
@@ -7,7 +17,18 @@ from langchain_core.messages import HumanMessage, AIMessage
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
 
+from models.errors.llm_error import ChainRunError, run_chain_with_timeout, timeout_handler
+
 current_file_folder_path = os.path.dirname(os.path.abspath(__file__))
+
+LIMIT_CHAIN_TIMEOUT = 3
+def run_chain_with_timeout(chain, input_dict, callbacks, timeout_duration):
+    # signal.signal(signal.SIGALRM, timeout_handler) # UNIX 운영체제에서만 작동함
+    # signal.alarm(timeout_duration)
+
+    result = chain.run(input_dict, callbacks=callbacks)
+    # signal.alarm(0)
+    return result
 
 class BaseChain:
     def __init__(self, 
@@ -43,13 +64,12 @@ class BaseChain:
         input_dict = self.parse_input(**kwargs)
         for _ in range(self.max_tries):
             try:
-                result = self.chain.run(input_dict, callbacks=callbacks)
+                result = run_chain_with_timeout(self.chain, input_dict, callbacks, LIMIT_CHAIN_TIMEOUT)
                 return self.parse_output(result)
             except Exception as e:
                 print(e)
-                continue
-        print('Failed to run chain.')
-        return None
+                continue            
+        raise ChainRunError(class_name=self.__class__.__name__)
 
     def parse_input(self, **kwargs):
         return kwargs
@@ -124,7 +144,7 @@ class BaseChatChain(BaseChain):
         self.prompt = self._get_prompt(system_prompt_template, user_prompt_template, prompt_template_path)
         self.llm = ChatOpenAI(model=model, temperature=temperature, streaming=streaming, seed=seed, response_format=llm_response_format)
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt, verbose=verbose)
-        self.max_tries = 5
+        self.max_tries = 1
 
     def _get_prompt(self, system_prompt_template=None, user_prompt_template=None, prompt_template_path=None):
         if not (prompt_template_path or (system_prompt_template and user_prompt_template)):
@@ -151,13 +171,12 @@ class BaseChatChain(BaseChain):
         input_dict = self.parse_input(chat_history=chat_history, **kwargs)
         for _ in range(self.max_tries):
             try:
-                result = self.chain.run(input_dict, callbacks=callbacks)
+                result = run_chain_with_timeout(self.chain, input_dict, callbacks, LIMIT_CHAIN_TIMEOUT)
                 return self.parse_output(result)
             except Exception as e:
                 print(e)
                 continue
-        print('Failed to run chain.')
-        return None
+        raise ChainRunError(class_name=self.__class__.__name__)
     
     def parse_input(self, chat_history=[], **kwargs):
         chat_history = self.parse_chat_history(chat_history)
@@ -226,13 +245,12 @@ class BaseChatToolChain(BaseChatChain):
         input_dict = self.parse_input(chat_history=chat_history, agent_scratchpad=agent_scratchpad, **kwargs)
         for _ in range(self.max_tries):
             try:
-                result = self.chain.run(input_dict, callbacks=callbacks)
+                result = run_chain_with_timeout(self.chain, input_dict, callbacks, LIMIT_CHAIN_TIMEOUT)
                 return self.parse_output(result)
             except Exception as e:
                 print(e)
                 continue
-        print('Failed to run chain.')
-        return None
+        raise ChainRunError(class_name=self.__class__.__name__)
     
     def parse_input(self, chat_history=[], agent_scratchpad='', **kwargs):
         chat_history = self.parse_chat_history(chat_history)

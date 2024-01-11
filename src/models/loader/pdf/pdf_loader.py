@@ -5,20 +5,22 @@ for _ in range(3):
     current_path = os.path.dirname(current_path)
 sys.path.append(current_path)
 
+import uuid
 import argparse
 
+import PyPDF2
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer, LTAnno
-import PyPDF2
+from pdf2image import convert_from_path
 
 from models.loader.base_loader import BaseLoader
 
 class PdfLoader(BaseLoader):
-    def __init__(self, file_uuid, project_id, file_path):
-        super().__init__(file_uuid, project_id, file_path)
+    def __init__(self, file_uuid, project_id, file_path, save_dir, screenshot_dir):
+        super().__init__(file_uuid, project_id, file_path, save_dir, screenshot_dir)
         self.page_height = None
 
-    def get_data(self, file_path):
+    def get_data(self, file_path, screenshot_dir):
         data = []
         for page_num, page_layout in enumerate(extract_pages(file_path)):
             self.page_height = page_layout.height
@@ -38,6 +40,19 @@ class PdfLoader(BaseLoader):
                 basename = os.path.basename(file_path)
                 name_without_extension, _ = os.path.splitext(basename)
                 return name_without_extension
+
+    def get_screenshot(self, file_path, screenshot_dir):
+        os.makedirs(screenshot_dir, exist_ok=True)
+
+        output_path = os.path.join(screenshot_dir, f"{uuid.uuid4()}.png")
+        images = convert_from_path(file_path, first_page=1, last_page=1)
+        if images:
+            images[0].save(output_path, 'PNG')
+            return output_path
+        return None
+
+    def get_favicon(self, file_path):
+        return None
     
     def data_from_element(self, element, page_num):
         text_list = []
@@ -56,12 +71,14 @@ class PdfLoader(BaseLoader):
         return data if data['text'] else None
     
 # example usage
-# python pdf_loader.py --file_path ../../test_data/pdf_loader_test.pdf --save_dir ../../test_data/
+# python pdf_loader.py --file_path "../../test_data/pdf_loader_test.pdf" --save_dir "../../test_data/"
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--file_path', type=str, required=True)
     parser.add_argument('--save_dir', type=str, default='../../test_data/')
+    parser.add_argument('--file_uuid', type=str, default=str(uuid.uuid4()))
+    parser.add_argument('--project_id', type=str, default=-1)
     args = parser.parse_args()
-    pdf_loader = PdfLoader(file_path=args.file_path)
+    pdf_loader = PdfLoader(file_path=args.file_path, file_uuid=args.file_uuid, project_id=args.project_id)
     save_path = pdf_loader.save_data(args.save_dir)
     print('file saved at', save_path)

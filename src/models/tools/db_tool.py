@@ -24,10 +24,10 @@ class DBSearchTool(BaseTool):
     description = """You can search the database."""
 
     def _run(
-        self, query: str, filter:List[str]=None, project_id=None
+        self, query: str, file_uuid:List[str]=None, project_id=None
     ) -> str:
         """Use the tool."""
-        es_config = self.set_search_config(query, filter, project_id)
+        es_config = self.set_search_config(query, file_uuid, project_id)
         result_list = es.multi_search(es_config)
         result_list = self.parse_output(result_list)
         return result_list
@@ -42,10 +42,10 @@ class DBSearchTool(BaseTool):
         result_list = [{'document':result['document_info']['file_uuid'], 'chunk':result['chunk_info']['content'], 'bbox':result['chunk_info']['bbox']} for result in result_list]
         return result_list
     
-    def set_search_config(self, query, filter, project_id):
+    def set_search_config(self, query, file_uuid, project_id):
         es_config = ElasticSearchConfig(json_path=config_path)
         es_config.set_query(query)
-        es_config.set_filter(filter)
+        es_config.set_filter(file_uuid)
         es_config.set_project_id(project_id)
         return es_config
 

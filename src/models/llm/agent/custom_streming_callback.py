@@ -1,6 +1,8 @@
 import sys
-from typing import Any, List, Optional
+import time
+from typing import Any, List, Dict, Optional
 
+from langchain_core.outputs import LLMResult
 from langchain.callbacks.streaming_stdout_final_only import FinalStreamingStdOutCallbackHandler
 
 class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
@@ -15,7 +17,7 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
         answer_prefix_tokens: Optional[List[str]] = ['final', ' answer', '":'],
         strip_tokens: bool = True,
         stream_prefix: bool = False,
-        special_tokens: Optional[List[str]] = ['}'],
+        special_tokens: Optional[List[str]] = ['}',  ' "', '"'],
         queue,
     ) -> None:
         """Instantiate EofStreamingStdOutCallbackHandler.
@@ -43,7 +45,6 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
         # Remember the last n tokens, where n = len(answer_prefix_tokens)
         self.append_to_last_tokens(token)
         # Check if the last n tokens match the answer_prefix_tokens list ...
-        # self.answer_reached = True # TODO: Test 용. 나중에 삭제
         if self.check_if_answer_reached():
             self.answer_reached = True
             if self.stream_prefix:
@@ -55,7 +56,23 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
         # ... if yes, then print tokens from now on
         if self.answer_reached:
             if token not in self.special_tokens:
-                # sys.stdout.write(token)
-                # sys.stdout.flush()
+                sys.stdout.write(token)
+                sys.stdout.flush()
                 self.queue.append(token)
                 # print(self.queue)
+
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+        """Run when LLM ends running."""
+        self.queue.append('END')
+
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
+        """Run when LLM errors."""
+        print('ERROR')
+        print(self.queue)
+        self.queue.append('ERROR')
+        
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
+        """Run when chain errors."""
+        print('ERROR')
+        print(self.queue)
+        self.queue.append('ERROR')

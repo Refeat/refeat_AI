@@ -10,15 +10,15 @@ import argparse
 from models.loader.pdf.pdf_loader import PdfLoader
 from models.loader.web.web_loader import WebLoader
 
-class Loader:
+class UnifiedLoader:
     def __init__(self):
         self.loader = None
 
-    def load_file(self, file_uuid, project_id, file_path):
+    def load_file(self, file_uuid, project_id, file_path, save_dir, screenshot_dir):
         if file_path.endswith('.pdf'):
-            self.loader = PdfLoader(file_uuid, project_id, file_path)
+            self.loader = PdfLoader(file_uuid, project_id, file_path, save_dir, screenshot_dir)
         elif file_path.startswith('http'):
-            self.loader = WebLoader(file_uuid, project_id, file_path)
+            self.loader = WebLoader(file_uuid, project_id, file_path, save_dir, screenshot_dir)
         return self.loader.to_dict()
 
     def save_data(self, output_path):

@@ -1,14 +1,19 @@
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
+const fs = require('fs');
+const { v4: uuidv4 } = require('uuid'); 
 
 class WebLoader {
-    constructor(file_path = null) {
+    constructor(file_path = null, screenshotDir = null) {
         this.file_path = file_path;
+        this.screenshotDir = screenshotDir;
     }
 
-    async get_data(file_path) {
+    async get_data(file_path, screenshotDir) {
         const page = await this.fetch_data(file_path);
         const title = await page.title();
+        const favicon = await this.get_favicon(page);
+        const screenshotPath = await this.take_screenshot(page, screenshotDir);
     
         let data = [];
         const elementHandles = await page.$$('p, div, span, h1, h2, h3, h4, h5, h6, em, figcaption, strong, a, b');
@@ -43,7 +48,30 @@ class WebLoader {
         }
     
         await page.browser().close();
-        return { title, data };
+        return { title, data, favicon, screenshotPath };
+    }
+
+    async get_favicon(page) {
+        // Extract the favicon URL using Cheerio
+        const content = await page.content();
+        const $ = cheerio.load(content);
+        let favicon = $('link[rel="shortcut icon"]').attr('href') || $('link[rel="icon"]').attr('href');
+        return favicon ? favicon : 'No favicon found';
+    }
+
+    async take_screenshot(page, screenshotDir) {
+        const uuid = uuidv4(); // Generate a UUID
+        const screenshotPath = `${screenshotDir}/${uuid}.png`;
+
+        if (!fs.existsSync(screenshotDir)){
+            fs.mkdirSync(screenshotDir);
+        }
+
+        await page.screenshot({ 
+            path: screenshotPath,
+            fullPage: true
+        });
+        return screenshotPath;
     }
 
     async fetch_data(file_path) {
@@ -60,13 +88,14 @@ class WebLoader {
 }
 
 // example usage
-// node web_loader.js "https://www.naver.com/"
+// node web_loader.js "https://www.naver.com/" "./screenshots/"
 
 const url = process.argv[2];  // 커맨드 라인에서 URL 받기
+const screenshotDir = process.argv[3];  // 커맨드 라인에서 스크린샷 저장 경로 받기
 
 async function loadData() {
     const webLoader = new WebLoader();
-    const data = await webLoader.get_data(url);
+    const data = await webLoader.get_data(url, screenshotDir);
     console.log(JSON.stringify(data));  // JSON 형식으로 출력
     return data;
 }

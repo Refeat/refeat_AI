@@ -85,13 +85,15 @@ class ChatAgentModule:
 
     def extract_evidence(self, tool_results, enrich_query, queue):
         args_list = [(enrich_query, tool_result['document'], tool_result['chunk'], tool_result['bbox']) for tool_result in tool_results]
-        evidence_list = []
+        evidence_list, document_list = [], []
         with concurrent.futures.ThreadPoolExecutor(max_workers=12) as executor:
             future_to_chunk = {executor.submit(self.process_chunk, args): args for args in args_list}
             for future in concurrent.futures.as_completed(future_to_chunk):
                 result = future.result()
                 evidence_list.extend(result[0])
-                queue.append([result[1], result[2]])
+                if result[1] not in document_list:
+                    document_list.append(result[1])
+                    queue.append([result[1], result[2]])
         queue.append('DOCUMENT END')
         return evidence_list
         
@@ -120,11 +122,11 @@ class ChatAgentModule:
         return processed_tool_result[:12]
 
 # example usage
-# python chat_agent.py --query '안녕하세요'
+# python custom_chat_agent_module.py --query "국내 전기차 1위부터 10위까지 표로 그려줘" --file_uuid ee0f98fa-c58a-4dfb-b869-85d9587c7c4f
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--query', type=str, default='국내 전기차 1위부터 12위까지 표로 그려줘')
-    parser.add_argument('--file_uuid', type=str, default=None)
+    parser.add_argument('--query', type=str, default='국내 전기차 1위부터 10위까지 표로 그려줘')
+    parser.add_argument('--file_uuid', type=str, nargs='*', default=None)
     parser.add_argument('--project_id', type=int, default=-1)
     args = parser.parse_args()
     

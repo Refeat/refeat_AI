@@ -1,0 +1,3 @@
+npm install puppeteer
+npm install cheerio
+npm install uuid

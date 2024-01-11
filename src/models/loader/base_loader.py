@@ -5,22 +5,34 @@ import datetime
 from abc import ABC, abstractmethod
 
 class BaseLoader(ABC):
-    def __init__(self, file_uuid, project_id, file_path):
+    def __init__(self, file_uuid, project_id, file_path, save_dir, screenshot_dir):
         self.file_path = file_path
         self.file_uuid = file_uuid
         self.project_id = project_id
+        self.screenshot_dir = screenshot_dir
         self.init_date = self.get_date()
         self.updated_date = None
-        self.data = self.get_data(file_path)
+        self.data = self.get_data(file_path, screenshot_dir)
         self.title = self.get_title(file_path) # web loader에서는 title이 data를 가져오는 과정에서 결정되므로, get_data()보다 뒤에 위치해야 함
+        self.screenshot_path = self.get_screenshot(file_path, screenshot_dir) # web loader에서는 screenshot_path가 data를 가져오는 과정에서 결정되므로, get_data()보다 뒤에 위치해야 함
+        self.favicon = self.get_favicon(file_path) # web loader에서는 favicon이 data를 가져오는 과정에서 결정되므로, get_data()보다 뒤에 위치해야 함
         self.full_text = self.get_full_text()
+        self.processed_path = self.get_save_path(save_dir)
 
     @abstractmethod
-    def get_data(self, file_path):
+    def get_data(self, file_path, screenshot_dir=None):
         pass
 
     @abstractmethod
     def get_title(self, file_path):
+        pass
+
+    @abstractmethod
+    def get_screenshot(self, file_path, screenshot_dir):
+        pass
+
+    @abstractmethod
+    def get_favicon(self, file_path):
         pass
 
     def get_date(self):
@@ -48,10 +60,13 @@ class BaseLoader(ABC):
             'file_uuid': self.file_uuid,
             'project_id': self.project_id,
             'title': self.title,
+            'screenshot_path': self.screenshot_path,
+            'favicon': self.favicon,
             'init_date': self.init_date,
             'updated_date': self.updated_date,
             'full_text': self.full_text,
-            'data': self.data
+            'data': self.data,
+            'processed_path': self.processed_path,
         }
 
     def __str__(self):

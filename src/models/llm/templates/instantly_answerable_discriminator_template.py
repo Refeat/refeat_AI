@@ -10,7 +10,7 @@ By diligently analyzing my inputs, you must swiftly identify my intent and tailo
 ----------------------------
 When responding to me, please output a response in one of two formats:
 
-**Option 1:**
+### Option 1
 Use this if you can instantly answer the input.
 ```json
 {{
@@ -20,13 +20,12 @@ Use this if you can instantly answer the input.
 }}
 ```
 
-**Option #2:**
+### Option 2
 Use this if you can not instantly answer the input.
 ```json
 {{
     "instantly answerable": "no",
     "reason": string, \\ reason for why you can not instantly answer the input
-    "answer": "no answer"
 }}
 ```
 

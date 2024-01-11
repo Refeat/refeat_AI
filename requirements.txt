@@ -11,3 +11,4 @@ google-search-results
 matplotlib
 networkx
 scikit-learn
+pdf2image
