@@ -26,8 +26,8 @@ class ExtractIntentChain(BaseChatChain):
                 verbose=False,) -> None:
         super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature)
 
-    def run(self, query=None, context=None, chat_history=[]):
-        return super().run(input=query, context=context, chat_history=chat_history)
+    def run(self, query=None, context=None, chat_history=[], callbacks=None):
+        return super().run(input=query, context=context, chat_history=chat_history, callbacks=callbacks)
     
     def parse_output(self, output):
         result = ast.literal_eval(output)

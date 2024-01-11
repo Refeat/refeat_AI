@@ -26,12 +26,21 @@ class ExtractEvidenceChain(BaseChatChain):
                 verbose=False,) -> None:
         super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature)
 
-    def run(self, query=None, context=None, chat_history=[]):
-        return super().run(input=query, context=context)
+    def run(self, query=None, context=None, document=None, bbox=None, chat_history=[]):
+        input_dict = self.parse_input(input=query, context=context, chat_history=chat_history)
+        for _ in range(self.max_tries):
+            try:
+                result = self.chain.run(input_dict)
+                return self.parse_output(result, document, bbox)
+            except Exception as e:
+                print(e)
+                continue
+        print('Failed to run chain.')
+        return None
     
-    def parse_output(self, output):
+    def parse_output(self, output, document, bbox):
         result = ast.literal_eval(output)
-        return result['evidence']
+        return result['evidence'], document, bbox
     
 # example usage
 # python extract_evidence_chain.py --query "인공지능 분야에 대해 설명해줘" --context "인공지능은 인간의 지능을 컴퓨터로 구현하는 것을 말한다."

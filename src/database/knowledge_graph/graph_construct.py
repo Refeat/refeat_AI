@@ -14,6 +14,8 @@ import json
 import uuid
 import glob
 import pickle
+import argparse
+import threading
 from datetime import datetime
 
 import tqdm
@@ -22,29 +24,39 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
 
+from database.knowledge_graph.retriever import KG_retriever, KG_retriever_GPT
+
+current_file_folder_path = os.path.dirname(os.path.abspath(__file__))
+save_dir = os.path.join(current_file_folder_path, '../test_data')
+
 class KnowledgeGraphDataBase:
-    def __init__(self, save_dir='../test_data'):
-        self.G_dict = {}
+    G_dict = {}
+    retrieval = KG_retriever_GPT(k_list=[2, 2, 2])
+
+    def __init__(self, save_dir=save_dir):
         self.save_dir = save_dir
+        # self.retrieval = KG_retriever(k_list=[2, 2, 2])
         os.makedirs(self.save_dir, exist_ok=True)
         self.load_most_recent_graph()
 
-    def make_graph_constructor(self, project_id=-1):
+    def make_graph_constructor(self, project_id):
         self.G_dict[project_id] = GraphConstructor()
 
-    def add_document_from_json(self, json_path, project_id=-1):
+    def add_document_from_json(self, json_path, project_id):
         if project_id not in self.G_dict:
             self.make_graph_constructor(project_id)
         self.G_dict[project_id].add_json_file(json_path)
 
-    def visualize_graph(self, project_id=-1):
+    def visualize_graph(self, project_id):
         self.G_dict[project_id].visualize_graph()
 
     def save_graph_data(self):
         filename = f"knowledge_graph_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pkl"
         filepath = os.path.join(self.save_dir, filename)
+        dict_to_save = {pid: gc.to_dict() for pid, gc in self.G_dict.items()}
         with open(filepath, 'wb') as file:
-            pickle.dump(self.G_dict, file)
+            pickle.dump(dict_to_save, file)
+        print(f"Graph data saved to {filepath}")
 
     def load_most_recent_graph(self):
         files = glob.glob(os.path.join(self.save_dir, 'knowledge_graph_*.pkl'))
@@ -55,45 +67,75 @@ class KnowledgeGraphDataBase:
     def load_graph_data(self, filename):
         filepath = os.path.join(self.save_dir, filename)
         with open(filepath, 'rb') as file:
-            self.G_dict = pickle.load(file)
+            loaded_dict = pickle.load(file)
+        self.G_dict = {pid: GraphConstructor.from_dict(gc_dict) for pid, gc_dict in loaded_dict.items()}
+        print(f"Graph data loaded from {filepath}")
 
     def delete_project(self, project_id):
         del self.G_dict[project_id]
 
+    def delete_document(self, file_uuid, project_id):
+        self.G_dict[project_id].delete_document(file_uuid)
+
+    def __str__(self, project_id=None):
+        if project_id:
+            output.append(f"Project ID: {project_id}")
+            output.append(str(graph_constructor[project_id]))
+        else:
+            output = []
+            for project_id, graph_constructor in self.G_dict.items():
+                output.append(f"Project ID: {project_id}")
+                output.append(str(graph_constructor))
+        return '\n\n'.join(output)
+
+    def search(self, query, project_id, file_uuid=None):
+        if file_uuid is not None:
+            raise NotImplementedError("search by file_uuid is not implemented yet")
+        return self.retrieval.retrieve(query, self.G_dict[project_id])
+
 class GraphConstructor:
     def __init__(self):
         self.G = nx.DiGraph()
+        self.file_uuid_to_uuid = {}
+        self.uuid_to_file_uuid = {}
         self.uuid_to_node = {}
-        self.node_to_uuid = {}
         self.uuid_list = []
         self.embedding_list = []
+        self.lock = threading.Lock() # 동시에 add_data_to_graph가 실행되지 않도록 lock
 
     def add_json_file(self, json_path):
-        data_list = self.read_json_file(json_path)['data'] # chunk list
-        for data in tqdm.tqdm(data_list):
-            self.add_data_to_graph(data)
+        json_data = self.read_json_file(json_path)
+        file_uuid = json_data['file_uuid']
+        data_list = json_data['data'] # chunk list
+        with self.lock:
+            for data in tqdm.tqdm(data_list):
+                self.add_data_to_graph(file_uuid, data)
 
     def read_json_file(self, json_path):
         with open(json_path, encoding='utf-8') as f:
             return json.load(f)
 
-    def add_data_to_graph(self, data, k_knn=5):
+    def add_data_to_graph(self, file_uuid, data, k_knn=15):
         if not self.embedding_list: # add first node
-            self.add_first_node(data)
+            self.add_first_node(file_uuid, data)
         else:
-            self.add_node(data, k_knn)
+            self.add_node(file_uuid, data, k_knn)
 
-    def add_first_node(self, data):
+    def add_first_node(self, file_uuid, data):
         new_node_uuid = uuid.uuid4()
         new_embedding = np.array(data['embedding']).reshape(1, -1)
         
-        self.uuid_to_node[new_node_uuid] = data['text']
+        if file_uuid not in self.file_uuid_to_uuid:
+            self.file_uuid_to_uuid[file_uuid] = []
+
+        self.file_uuid_to_uuid[file_uuid].append(new_node_uuid)
+        self.uuid_to_file_uuid[new_node_uuid] = file_uuid
+        self.uuid_to_node[new_node_uuid] = data
         self.uuid_list.append(new_node_uuid)
-        self.node_to_uuid[data['text']] = new_node_uuid
         self.embedding_list.append(new_embedding[0])
         return new_node_uuid
     
-    def add_node(self, data, k_knn):
+    def add_node(self, file_uuid, data, k_knn):
         new_node_uuid = uuid.uuid4()
         new_embedding = np.array(data['embedding']).reshape(1, -1)
 
@@ -101,8 +143,12 @@ class GraphConstructor:
         similarities = self.calculate_similarities(new_embedding, existing_embeddings)
         self.update_graph(new_node_uuid, similarities, k_knn)
 
-        self.uuid_to_node[new_node_uuid] = data['text']
-        self.node_to_uuid[data['text']] = new_node_uuid
+        if file_uuid not in self.file_uuid_to_uuid:
+            self.file_uuid_to_uuid[file_uuid] = []
+
+        self.file_uuid_to_uuid[file_uuid].append(new_node_uuid)
+        self.uuid_to_file_uuid[new_node_uuid] = file_uuid
+        self.uuid_to_node[new_node_uuid] = data
         self.uuid_list.append(new_node_uuid)
         self.embedding_list.append(new_embedding[0])
 
@@ -129,8 +175,34 @@ class GraphConstructor:
         neighbors = list(self.G.neighbors(node_uuid))
         if len(neighbors) > k_knn:
             neighbors.sort(key=lambda x: self.G[node_uuid][x]['weight'], reverse=True)
-            # print neightbors weight score
             self.G.remove_edge(node_uuid, neighbors[-1])
+
+    def delete_document(self, file_uuid):
+        with self.lock:
+            if file_uuid not in self.file_uuid_to_uuid:
+                print(f"No nodes associated with file_uuid {file_uuid}")
+                return
+            
+            node_uuids_to_delete = self.file_uuid_to_uuid[file_uuid]
+
+            for node_uuid in node_uuids_to_delete:
+                if self.G.has_node(node_uuid):
+                    self.G.remove_node(node_uuid)
+
+                if node_uuid in self.uuid_to_node:
+                    del self.uuid_to_node[node_uuid]
+
+                if node_uuid in self.uuid_to_file_uuid:
+                    del self.uuid_to_file_uuid[node_uuid]
+
+                # Remove node uuid and corresponding embedding by index
+                if node_uuid in self.uuid_list:
+                    idx = self.uuid_list.index(node_uuid)
+                    self.uuid_list.pop(idx)
+                    self.embedding_list.pop(idx)
+
+            # Remove the entry from file_uuid_to_uuid
+            del self.file_uuid_to_uuid[file_uuid]
 
     def visualize_graph(self):
         font_name = 'Malgun Gothic'
@@ -150,3 +222,70 @@ class GraphConstructor:
         nx.draw_networkx_edge_labels(self.G, pos, edge_labels=edge_labels, font_color='red', font_family=font_name)
 
         plt.show()
+
+    def __str__(self):
+        output = []
+        for node_uuid in self.G.nodes():
+            neighbors = self.G[node_uuid]
+            connections = []
+            for neighbor_uuid, attrs in neighbors.items():
+                weight = attrs['weight']
+                neighbor_text = self.uuid_to_node.get(neighbor_uuid, "Unknown").get('text', "Unknown")
+                connections.append(f"{neighbor_text} (Weight: {weight:.2f})")
+            node_text = self.uuid_to_node.get(node_uuid, "Unknown").get('text', "Unknown")
+            connections_text = '\n'.join(connections)
+            output.append(f"Node '{node_text}' \nconnected to: {connections_text}")
+        return '\n\n'.join(output)
+    
+    def to_dict(self):
+        return {
+            "G": nx.node_link_data(self.G),
+            'file_uuid_to_uuid': self.file_uuid_to_uuid,
+            'uuid_to_file_uuid': self.uuid_to_file_uuid,
+            "uuid_to_node": self.uuid_to_node,
+            "uuid_list": self.uuid_list,
+            "embedding_list": self.embedding_list
+        }
+
+    @staticmethod
+    def from_dict(data):        
+        gc = GraphConstructor()
+        gc.G = nx.node_link_graph(data["G"])
+        gc.file_uuid_to_uuid = data["file_uuid_to_uuid"]
+        gc.uuid_to_file_uuid = data["uuid_to_file_uuid"]
+        gc.uuid_to_node = data["uuid_to_node"]
+        gc.uuid_list = data["uuid_list"]
+        gc.embedding_list = data["embedding_list"]
+        return gc
+
+# example usage
+# python graph_construct.py --json_path "../../modules/test_data/6feb401c-8ab2-4440-8671-fad5e7e1f115.json" --project_id 1 --query "전기차와 하이브리드차의 규모"
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--json_path', type=str, default='../../modules/test_data/6feb401c-8ab2-4440-8671-fad5e7e1f115.json')
+    parser.add_argument('--project_id', type=int, default=1)
+    parser.add_argument('--query', type=str, default='전기차와 하이브리드차의 규모')
+    args = parser.parse_args()
+
+    db = KnowledgeGraphDataBase()
+
+    # ------ add data ------ #
+    project_id = args.project_id
+    db.add_document_from_json(args.json_path, project_id)
+
+    # ------ visualize data ------ #
+    db.visualize_graph(project_id)
+
+    # ------ save graph ------ #
+    db.save_graph_data()
+
+    # ------ load graph ------ #
+    db.load_most_recent_graph()
+
+    # ------ delete data ------ #
+    delete_uuid = '6feb401c-8ab2-4440-8671-fad5e7e1f115'
+    db.delete_document(delete_uuid, project_id=project_id)
+    print(len(db.G_dict[project_id].uuid_list))
+
+    # ------ search ------ #
+    print(db.search(args.query, project_id))

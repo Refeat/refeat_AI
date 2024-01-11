@@ -3,9 +3,6 @@ MAPPINGS = {
         "project_id": {
             "type": "keyword"
         },
-        "file_uuid": {
-            "type": "keyword"
-        },
         "file_path": {
             "type": "text",
             "fields": {
@@ -14,13 +11,11 @@ MAPPINGS = {
                 }
             }
         },
-        "file_name": {
-            "type": "text",
-            "fields": {
-                "keyword": {
-                    "type": "keyword"
-                }
-            }
+        "file_uuid": {
+            "type": "keyword"
+        },
+        "title": {
+            "type": "text"
         },
         "full_text":{
             "type": "text"

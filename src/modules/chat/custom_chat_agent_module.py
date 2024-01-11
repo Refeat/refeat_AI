@@ -12,63 +12,88 @@ import argparse
 import concurrent.futures
 from typing import List
 
-from models.llm.agent.custom_chat_agent import CustomChatAgent
-from models.tools import DBSearchTool
+from models.tools import DBSearchTool, KGDBSearchTool
 from models.llm.agent.custom_streming_callback import CustomStreamingStdOutCallbackHandler
 from models.llm.chain import InstantlyAnswerableDiscriminatorChain, PlanAnswerChain, DBToolQueryGeneratorChain, ExtractEvidenceChain, ExtractIntentChain
 
 class ChatAgentModule:
     def __init__(self, verbose=False):
-        self.tools = [DBSearchTool()]
+        self.tools = [DBSearchTool(), KGDBSearchTool()]
         self.tool_dict = self.create_tool_dict(self.tools)
         self.instantly_answerable_discriminator = InstantlyAnswerableDiscriminatorChain(verbose=verbose)
         self.extract_intent_chain = ExtractIntentChain(verbose=verbose)
         self.db_tool_query_generator = DBToolQueryGeneratorChain(verbose=verbose)
         self.extract_evidence_chain = ExtractEvidenceChain(verbose=verbose)
-        self.plan_answer_chain = PlanAnswerChain(verbose=verbose)
+        self.plan_answer_chain = PlanAnswerChain(verbose=verbose, streaming=True)
     
-    def run(self, query, chat_history: List[List[str]]=[], project_id=-1):
+    def run(self, query, file_uuid:List[str]=None, project_id=None, chat_history: List[List[str]]=[], queue=None):
         """
         Args:
-            query (str): 사용자 입력
-            chat_history (List[List[str]]): [[사용자 입력, 챗봇 출력], ...]
+            query (str): user input
+            file_uuid (List[str]): file uuid list for database search
+            project_id (str): project id for database search
+            queue (Queue): queue for streaming
+            chat_history (List[List[str]]): [[user input, assistant output], ...]
         """
-        self.queue = [] # TODO: 나중에 backend에서 주면 삭제
-        self.streaming_callback = CustomStreamingStdOutCallbackHandler(queue=self.queue)
+        queue = queue if queue else []
+        streaming_callback = CustomStreamingStdOutCallbackHandler(queue=queue)
         enrich_query = self.extract_intent_chain.run(query=query, chat_history=chat_history)
-        # result = self.instantly_answerable_discriminator.run(query=enrich_query, chat_history=chat_history)
+        instantly_answerable, answer = self.instantly_answerable_discriminator.run(query=enrich_query, chat_history=chat_history)
         
-        # if result['instantly answerable'] == 'yes':
-        #     answer = result['answer']
-        # else:
-        db_query_list = self.db_tool_query_generator.run(query=enrich_query)
-        tool_results = []
-        for db_query in db_query_list:
-            print(db_query)
-            tool_results.append(self.execute_tool('Database Search', db_query))
-        tool_result = self.process_tool_result(tool_results)
-
-        args_list = [(enrich_query, chunk) for chunk in tool_result]
-        evidence_list = []
-
-        # Use ThreadPoolExecutor for multithreading
-        with concurrent.futures.ThreadPoolExecutor(max_workers=12) as executor:
-            # Submit all tasks to the executor
-            future_to_chunk = {executor.submit(self.process_chunk, args): args for args in args_list}
-
-            # Collecting results as they are completed
-            for future in concurrent.futures.as_completed(future_to_chunk):
-                evidence_list.extend(future.result())
-
+        if instantly_answerable:
+            return answer
+        
+        tool_results = self.execute_search_tools(enrich_query, file_uuid, project_id)
+        tool_result = self.process_search_tool_results(tool_results)
+        evidence_list = self.extract_evidence(tool_result, enrich_query, queue)
         evidence_text = self.evidence_list_to_text(evidence_list)
-        answer = self.plan_answer_chain.run(query=enrich_query, context=evidence_text)
-    
+
+        answer = self.plan_answer_chain.run(query=enrich_query, context=evidence_text, callbacks=[streaming_callback])
+        print('queue', queue)
         return answer
     
-    def execute_tool(self, action, action_input):
+    def execute_tool(self, args):
+        action, action_input = args[0], args[1:]
+        action_input = self.parse_tool_args(action, action_input)
         if action in self.tool_dict:
             tool = self.tool_dict[action]
             return tool.run(action_input)
+        
+    def parse_tool_args(self, action, action_input):
+        if action == 'Database Search':
+            query, file_uuid, project_id = action_input
+            return {'query': query, 'file_uuid': file_uuid, 'project_id': project_id}
+        elif action == 'Knowledge Graph Search':
+            query, project_id = action_input
+            return {'query': query, 'project_id': project_id}
+
+    def execute_search_tools(self, query, file_uuid, project_id):
+        db_query_list = self.db_tool_query_generator.run(query=query)
+        tool_results = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=12) as executor:
+            args_list = self.prepare_tool_args(db_query_list, file_uuid, project_id)
+            future_to_tool = {executor.submit(self.execute_tool, args): args for args in args_list}
+            for future in concurrent.futures.as_completed(future_to_tool):
+                tool_results.append(future.result())
+        return tool_results
+
+    def prepare_tool_args(self, db_query_list, file_uuid, project_id):
+        if file_uuid:
+            return [('Database Search', db_query, file_uuid, project_id) for db_query in db_query_list]
+        else:
+            return [('Knowledge Graph Search', db_query, project_id) for db_query in db_query_list]
+
+    def extract_evidence(self, tool_results, enrich_query, queue):
+        args_list = [(enrich_query, tool_result['document'], tool_result['chunk'], tool_result['bbox']) for tool_result in tool_results]
+        evidence_list = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=12) as executor:
+            future_to_chunk = {executor.submit(self.process_chunk, args): args for args in args_list}
+            for future in concurrent.futures.as_completed(future_to_chunk):
+                result = future.result()
+                evidence_list.extend(result[0])
+                queue.append([result[1], result[2]])
+        queue.append('DOCUMENT END')
+        return evidence_list
         
     def create_tool_dict(self, tools):
         return {tool.name: tool for tool in tools}
@@ -80,30 +105,29 @@ class ChatAgentModule:
         return evidence_text
 
     def process_chunk(self, args):
-        enrich_query, chunk = args
-        return self.extract_evidence_chain.run(query=enrich_query, context=chunk)
+        enrich_query, document, chunk, bbox = args
+        return self.extract_evidence_chain.run(query=enrich_query, context=chunk, document=document, bbox=bbox)
     
-    def process_tool_result(self, tool_results):
+    def process_search_tool_results(self, tool_results):
         processed_tool_result = []
 
-        # 가장 긴 하위 리스트의 길이 찾기
         max_length = max(len(tool_result) for tool_result in tool_results)
 
-        # 각 인덱스 위치의 원소를 추출하여 새 리스트에 추가 (중복 제외)
         for i in range(max_length):
             for tool_result in tool_results:
                 if len(tool_result) > i and tool_result[i] not in processed_tool_result:
                     processed_tool_result.append(tool_result[i])
-
         return processed_tool_result[:12]
 
 # example usage
 # python chat_agent.py --query '안녕하세요'
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--query', type=str, default='곡성군의 인구수와 혼인 비율을 알려줘.')
+    parser.add_argument('--query', type=str, default='국내 전기차 1위부터 12위까지 표로 그려줘')
+    parser.add_argument('--file_uuid', type=str, default=None)
+    parser.add_argument('--project_id', type=int, default=-1)
     args = parser.parse_args()
     
     chat_agent = ChatAgentModule(verbose=True)
-    result = chat_agent.run(args.query, chat_history=[])
+    result = chat_agent.run(args.query, args.file_uuid, args.project_id)
     print(f'chat result: {result}')

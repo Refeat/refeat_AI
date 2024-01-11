@@ -13,7 +13,6 @@ from database.elastic_search.elastic_search_config import ElasticSearchConfig
 from langchain.tools import BaseTool
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
 )
 
 es = CustomElasticSearch(index_name='refeat_ai')
@@ -25,27 +24,30 @@ class DBSearchTool(BaseTool):
     description = """You can search the database."""
 
     def _run(
-        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
+        self, query: str, filter:List[str]=None, project_id=None
     ) -> str:
         """Use the tool."""
-        es_config = ElasticSearchConfig(json_path=config_path)
-        es_config.set_query(query)
+        es_config = self.set_search_config(query, filter, project_id)
         result_list = es.multi_search(es_config)
-        result_text = self.parse_output(result_list)
-        return result_text
+        result_list = self.parse_output(result_list)
+        return result_list
 
     async def _arun(
         self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool asynchronously."""
-        raise NotImplementedError("custom_search does not support async")
+        raise NotImplementedError("Database search does not support async")
     
     def parse_output(self, result_list):
-        # result_text = ""
-        # for idx, result in enumerate(result_list):
-        #     result_text += f"result{idx+1}. {result['chunk_info']['content']}\n\n\n"
-        result_list = [result['chunk_info']['content'] for result in result_list]
+        result_list = [{'document':result['document_info']['file_uuid'], 'chunk':result['chunk_info']['content'], 'bbox':result['chunk_info']['bbox']} for result in result_list]
         return result_list
+    
+    def set_search_config(self, query, filter, project_id):
+        es_config = ElasticSearchConfig(json_path=config_path)
+        es_config.set_query(query)
+        es_config.set_filter(filter)
+        es_config.set_project_id(project_id)
+        return es_config
 
     def get_summary_by_project_id(self, project_id):
         summarys = es.get_summary_by_project_id(project_id)

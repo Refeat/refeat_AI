@@ -13,20 +13,26 @@ import argparse
 from models.loader.base_loader import BaseLoader
 
 class WebLoader(BaseLoader):
-    def __init__(self, file_path=None):
+    def __init__(self, file_uuid, project_id, file_path):
         self.js_path = js_path
-        super().__init__(file_path=file_path)
+        super().__init__(file_uuid, project_id, file_path)
 
     def get_data(self, file_path):
         result = subprocess.run(['node', self.js_path, file_path], capture_output=True, text=True, encoding='utf-8')
-        data = json.loads(result.stdout)
+        result = json.loads(result.stdout)
+        self.title, data = result['title'], result['data']
         return data
-
-    def get_base_name(self, file_path):
-        return file_path.split('//')[1]
+    
+    def get_title(self, file_path):
+        if self.title:
+            return self.title
+        else:
+            basename = os.path.basename(file_path)
+            name_without_extension, _ = os.path.splitext(basename)
+            return name_without_extension
 
 # example usage
-# python web_loader.py --file_path https://www.naver.com --save_dir ../../test_data/
+# python web_loader.py --file_path "https://www.naver.com" --save_dir ../../test_data/
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--file_path', type=str, required=True)

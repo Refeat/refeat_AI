@@ -9,12 +9,13 @@ import argparse
 
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer, LTAnno
+import PyPDF2
 
 from models.loader.base_loader import BaseLoader
 
 class PdfLoader(BaseLoader):
-    def __init__(self, file_path=None):
-        super().__init__(file_path=file_path)
+    def __init__(self, file_uuid, project_id, file_path):
+        super().__init__(file_uuid, project_id, file_path)
         self.page_height = None
 
     def get_data(self, file_path):
@@ -25,6 +26,18 @@ class PdfLoader(BaseLoader):
                 single_data = self.data_from_element(element, page_num+1)
                 data.append(single_data) if single_data else None
         return data
+
+    def get_title(self, file_path):
+        with open(file_path, 'rb') as file:
+            pdf_reader = PyPDF2.PdfReader(file)
+            info = pdf_reader.metadata
+            title = info.title
+            if title:
+                return title
+            else:
+                basename = os.path.basename(file_path)
+                name_without_extension, _ = os.path.splitext(basename)
+                return name_without_extension
     
     def data_from_element(self, element, page_num):
         text_list = []
@@ -41,9 +54,6 @@ class PdfLoader(BaseLoader):
                     bbox['bottom_y'] = int(max(bbox['bottom_y'], self.page_height-text_line.bbox[1]))
         data = {'text': ' '.join(text_list), 'page': page_num, 'bbox': bbox}
         return data if data['text'] else None
-    
-    def get_base_name(self, file_path):
-        return os.path.basename(file_path).split('.')[0]
     
 # example usage
 # python pdf_loader.py --file_path ../../test_data/pdf_loader_test.pdf --save_dir ../../test_data/

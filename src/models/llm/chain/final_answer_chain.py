@@ -13,7 +13,6 @@ import argparse
 
 from models.llm.base_chain import BaseChatChain
 from models.llm.templates.final_answer_chain_template import SYSTEM, USER
-from models.tools import WebSearchTool
 
 current_file_folder_path = os.path.dirname(os.path.abspath(__file__))
 

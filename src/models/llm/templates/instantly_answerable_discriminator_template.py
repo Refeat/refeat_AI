@@ -30,13 +30,23 @@ Use this if you can not instantly answer the input.
 }}
 ```
 
-## Example
+## Examples
 ------------
+### Example 1
 Human: 아마존의 서버 가격을 알려줘
 Assistant: ```json
 {{
     "instantly answerable": "no",
     "reason": Amazon server pricing requires web information.
+}}
+```
+
+### Example 2
+Human: 기차 시장의 규모와 성장 전망에 대해 알려줘
+Assistant: ```json
+{{
+    "instantly answerable": "no",
+    "reason": For specific train market size and growth prospects require more information.
 }}
 ```
 """

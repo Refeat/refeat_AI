@@ -31,8 +31,11 @@ class InstantlyAnswerableDiscriminatorChain(BaseChatChain):
         return super().run(input=query, chat_history=chat_history)
     
     def parse_output(self, output):
-        return ast.literal_eval(output)
-
+        result = ast.literal_eval(output)
+        if result['instantly answerable'] == 'yes':
+            return True, result['answer']
+        else:
+            return False, result.get('answer', None)
     
 # example usage
 # python instantly_answerable_discriminator_chain.py --query "안녕하세요"

@@ -1,6 +1,6 @@
 [
     {
-        "num_results":3, 
+        "num_results":10, 
         "method":"similarity", 
         "search_range":"chunk", 
         "part":"chunk",

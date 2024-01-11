@@ -25,7 +25,7 @@ class CustomElasticSearch:
     mappings = MAPPINGS
     settings = SETTINGS
     def __init__(self, index_name='refeat_ai'):
-        self.es = Elasticsearch(hosts=["http://localhost:9200"], timeout=180)
+        self.es = Elasticsearch(hosts=["http://localhost:9200"], timeout=60)
         self.index_name = index_name
         self.embedding = get_embedder(EMBEDDER)
     
@@ -71,7 +71,6 @@ class CustomElasticSearch:
             except Exception as e:
                 print(f"Error adding document {json_path}")
 
-        # Refresh the index
         self.refresh_index()
 
     def _get_files_from_json_dir(self, json_dir):
@@ -102,15 +101,15 @@ class CustomElasticSearch:
             return [{"_index": self.index_name, "_source": document}]
         return None
     
-    def _prepare_document(self, data, project_id=-1):
+    def _prepare_document(self, data):
         """
         json 데이터를 Elasticsearch에 넣기위한 문서 형식으로 변환합니다.
         """
         document = {
-            "project_id": project_id,
-            "file_uuid": str(uuid.uuid4()),
-            "file_name": data['file_name'],
+            "project_id": data['project_id'],
             "file_path": data['file_path'],
+            "file_uuid": data['file_uuid'],
+            'title': data['title'],
             "full_text": data['full_text'],
             'summary': data['summary'],
             "init_date": datetime.strptime(data['init_date'], '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%dT%H:%M:%S'),
@@ -129,16 +128,16 @@ class CustomElasticSearch:
 
         return document
 
-    def add_document_from_json(self, json_path, project_id=-1):
+    def add_document_from_json(self, json_path):
         """
         json 파일을 읽어서, DB에 문서를 추가합니다.
         """
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        document = self._prepare_document(data, project_id)
+        document = self._prepare_document(data)
 
-        # Elasticsearch에 문서 추가
         self.es.index(index=self.index_name, document=document)
+        self.refresh_index()
 
     def refresh_index(self):
         """
@@ -156,8 +155,55 @@ class CustomElasticSearch:
         response = self.es.search(index=self.index_name, body=query, size=10000)
         files = [hit["_source"] for hit in response["hits"]["hits"]]
         return files
+    
+    def delete_document(self, file_uuid):
+        """
+        file_uuid에 해당하는 문서를 삭제합니다.
+        """
+        query = {
+            "query": {
+                "match": {
+                    "file_uuid": file_uuid
+                }
+            }
+        }
+
+        response = self.es.delete_by_query(index=self.index_name, body=query)
+        self.refresh_index()
+        return response
+
+    def get_data_by_file_uuid(self, file_uuid):
+        """
+        file_uuid에 해당하는 문서의 데이터를 반환합니다.
+
+        Args:
+            file_uuid: 검색할 file_uuid
+
+        Returns:
+            data: file_uuid에 해당하는 문서의 데이터
+        """
+        query = {
+            "query": {
+                "match": {
+                    "file_uuid": file_uuid
+                }
+            }
+        }
+
+        response = self.es.search(index=self.index_name, body=query)
+        data = [hit["_source"] for hit in response["hits"]["hits"]]
+        return data
 
     def get_summary_by_project_id(self, project_id):
+        """
+        project_id에 해당하는 문서의 summary를 반환합니다.
+
+        Args:
+            project_id: 검색할 project_id
+
+        Returns:
+            summary_list: project_id에 해당하는 문서의 summary 리스트
+        """
         query = {
             "query": {
                 "bool": {
@@ -170,8 +216,8 @@ class CustomElasticSearch:
         }
 
         response = self.es.search(index=self.index_name, body=query)
-        file_names = [hit["_source"]["summary"] for hit in response["hits"]["hits"]]
-        return file_names
+        summary_list = [hit["_source"]["summary"] for hit in response["hits"]["hits"]]
+        return summary_list
 
     def post_process_search_results(self, response, search_range):
         """
@@ -234,7 +280,7 @@ class CustomElasticSearch:
 
         return results
     
-    def _create_similarity_query(self, query_vector, search_range, part='chunk', num_chunks=5, limit_token_length=0, filter=None):
+    def _create_similarity_query(self, query_vector, search_range, part='chunk', num_chunks=5, limit_token_length=0, filter=None, project_filter=None):
         """
         Elasticsearch의 semantic 검색 쿼리를 생성합니다.
 
@@ -244,7 +290,8 @@ class CustomElasticSearch:
             part: 데이터의 어떤 값으로 검색을 할지. [chunk, topic_summary]
             num_chunks: 검색된 문서의 chunk 중에서, 몇 개의 chunk를 사용할지. chunk는 내부 점수를 기준으로 내림차순으로 정렬되어 있습니다.
             limit_token_length: chunk에서 limit_token_length보다 작은 길이의 chunk는 검색에서 제외합니다.
-            filter: 검색 결과를 필터링할 때 사용할 project_id 리스트
+            filter: 검색 결과를 필터링할 때 사용할 file_uuid 리스트
+            project_filter: 검색 결과를 필터링할 때 사용할 project_id
 
         Returns:
             es_query: Elasticsearch의 semantic 검색 쿼리
@@ -310,14 +357,20 @@ class CustomElasticSearch:
                     }
                 }
 
-                # filter가 비어있지 않은 경우에만 필터 적용
+                # filter가 비어있지 않은 경우에만 토픽 필터 추가
                 if filter and len(filter) > 0:
                     if "filter" not in es_query["bool"]:
                         es_query["bool"]["filter"] = {"bool": {"should": []}}
                     es_query["bool"]["filter"]["bool"]["should"].extend(
-                        [{"match_phrase": {"project_id": project_id}} for project_id in filter]
+                        [{"match_phrase": {"file_uuid": file_uuid}} for file_uuid in filter]
                     )
                     es_query["bool"]["filter"]["bool"]["minimum_should_match"] = 1
+
+                # project_filter가 비어있지 않은 경우에만 토픽 필터 추가
+                if project_filter:
+                    if "filter" not in es_query["bool"]:
+                        es_query["bool"]["filter"] = []
+                    es_query["bool"]["filter"].append({"term": {"project_id": project_filter}})
                 return es_query
             
         elif search_range == 'chunk':
@@ -353,12 +406,20 @@ class CustomElasticSearch:
                 if "filter" not in es_query["bool"]:
                     es_query["bool"]["filter"] = {"bool": {"should": []}}
                 es_query["bool"]["filter"]["bool"]["should"].extend(
-                    [{"match_phrase": {"project_id": project_id}} for project_id in filter]
+                    [{"match_phrase": {"file_uuid": file_uuid}} for file_uuid in filter]
                 )
                 es_query["bool"]["filter"]["bool"]["minimum_should_match"] = 1
+
+            # project_filter가 비어있지 않은 경우에만 토픽 필터 추가
+            if project_filter:
+                if "filter" not in es_query["bool"]:
+                    es_query["bool"]["filter"] = {"bool": {"must": []}}
+                if "must" not in es_query["bool"]["filter"]["bool"]:
+                    es_query["bool"]["filter"]["bool"]["must"] = []
+                es_query["bool"]["filter"]["bool"]["must"].append({"term": {"project_id": project_filter}})
             return es_query
 
-    def _create_match_query(self, query, search_range, part='chunk', num_chunks=5, limit_token_length=0, filter=None):
+    def _create_match_query(self, query, search_range, part='chunk', num_chunks=5, limit_token_length=0, filter=None, project_filter=None):
         """
         Elasticsearch의 match(BM25) 검색 쿼리를 생성합니다.
 
@@ -368,7 +429,8 @@ class CustomElasticSearch:
             part: 데이터의 어떤 값으로 검색을 할지. [chunk, topic_summary]
             num_chunks: 검색된 문서의 chunk 중에서, 몇 개의 chunk를 사용할지. chunk는 내부 점수를 기준으로 내림차순으로 정렬되어 있습니다.
             limit_token_length: chunk에서 limit_token_length보다 작은 길이의 chunk는 검색에서 제외합니다.
-            filter: 검색 결과를 필터링할 때 사용할 project_id 리스트
+            filter: 검색 결과를 필터링할 때 사용할 file_uuid 리스트
+            project_filter: 검색 결과를 필터링할 때 사용할 project_id
 
         Returns:
             es_query: Elasticsearch의 match(BM25) 검색 쿼리
@@ -428,9 +490,17 @@ class CustomElasticSearch:
                     if "filter" not in es_query["bool"]:
                         es_query["bool"]["filter"] = {"bool": {"should": []}}
                     es_query["bool"]["filter"]["bool"]["should"].extend(
-                        [{"match_phrase": {"project_id": project_id}} for project_id in filter]
+                        [{"match_phrase": {"file_uuid": file_uuid}} for file_uuid in filter]
                     )
                     es_query["bool"]["filter"]["bool"]["minimum_should_match"] = 1
+
+                # project_filter가 비어있지 않은 경우에만 토픽 필터 추가
+                if project_filter:
+                    if "filter" not in es_query["bool"]:
+                        es_query["bool"]["filter"] = {"bool": {"must": []}}
+                    if "must" not in es_query["bool"]["filter"]["bool"]:
+                        es_query["bool"]["filter"]["bool"]["must"] = []
+                    es_query["bool"]["filter"]["bool"]["must"].append({"term": {"project_id": project_filter}})
 
                 return es_query
 
@@ -466,9 +536,17 @@ class CustomElasticSearch:
                 if "filter" not in es_query["bool"]:
                     es_query["bool"]["filter"] = {"bool": {"should": []}}
                 es_query["bool"]["filter"]["bool"]["should"].extend(
-                    [{"match_phrase": {"project_id": project_id}} for project_id in filter]
+                    [{"match_phrase": {"file_uuid": file_uuid}} for file_uuid in filter]
                 )
                 es_query["bool"]["filter"]["bool"]["minimum_should_match"] = 1
+
+            # project_filter가 비어있지 않은 경우에만 토픽 필터 추가
+            if project_filter:
+                if "filter" not in es_query["bool"]:
+                    es_query["bool"]["filter"] = {"bool": {"must": []}}
+                if "must" not in es_query["bool"]["filter"]["bool"]:
+                    es_query["bool"]["filter"]["bool"]["must"] = []
+                es_query["bool"]["filter"]["bool"]["must"].append({"term": {"project_id": project_filter}})
 
             return es_query
 
@@ -506,18 +584,19 @@ class CustomElasticSearch:
             limit_token_length: chunk에서 limit_token_length보다 작은 길이의 chunk는 검색에서 제외합니다.
             match_weight: hybrid search에서 match search의 가중치
             similarity_weight: hybrid search에서 similarity search의 가중치
-            filter: 검색 결과를 필터링할 때 사용할 project_id 리스트
+            filter: 검색 결과를 필터링할 때 사용할 file_uuid 리스트
+            project_filter: 검색 결과를 필터링할 때 사용할 project_id
         
         Returns:
             response: Elasticsearch의 검색 결과
         """
         search_results_num = num_results 
         if method == 'similarity':            
-            response = self._similarity_search(query, query_embedding, search_range, part, search_results_num, num_chunks, limit_token_length, filter)
+            response = self._similarity_search(query, query_embedding, search_range, part, search_results_num, num_chunks, limit_token_length, filter, project_filter)
         elif method == 'match':
-            response = self._match_search(query, search_range, part, search_results_num, num_chunks, limit_token_length, filter)
+            response = self._match_search(query, search_range, part, search_results_num, num_chunks, limit_token_length, filter, project_filter)
         elif method == 'hybrid':
-            response = self._hybrid_search(query, query_embedding, search_range, part, search_results_num, num_chunks, limit_token_length, match_weight, similarity_weight, filter)
+            response = self._hybrid_search(query, query_embedding, search_range, part, search_results_num, num_chunks, limit_token_length, match_weight, similarity_weight, filter, project_filter)
             
         response = self.post_process_search_results(response, search_range)
         response = response[:num_results] if response is not None else []
@@ -525,16 +604,16 @@ class CustomElasticSearch:
     
     def _create_filter_from_results(self, results):
         """
-        이전 검색 결과에서 file_name을 추출하여, filter를 생성합니다. 이 작업은 2단계 이상의 검색을 사용할 때 사용됩니다.
+        이전 검색 결과에서 file_uuid을 추출하여, filter를 생성합니다. 이 작업은 2단계 이상의 검색을 사용할 때 사용됩니다.
 
         Args:
             results: post_process_search_results 함수 이후의 검색결과
 
         Returns:
-            file_name_list: 검색 결과에서 추출한 file_name 리스트
+            file_uuid_list: 검색 결과에서 추출한 file_uuid 리스트
         """
-        file_name_list = [result['document_info']['file_name'] for result in results]
-        return file_name_list
+        file_uuid_list = [result['document_info']['file_uuid'] for result in results]
+        return file_uuid_list
 
     def parse_input_query(self, search_config, filter):
         """
@@ -574,24 +653,24 @@ class CustomElasticSearch:
             filter = self._create_filter_from_results(response) # 이전 검색 결과에서 file_name을 추출하여, filter를 생성합니다.
         return response
 
-    def _similarity_search(self, query, query_embedding=None, search_range='document', part='chunk', num_results=5, num_chunks=5, limit_token_length=0, filter=None):
+    def _similarity_search(self, query, query_embedding=None, search_range='document', part='chunk', num_results=5, num_chunks=5, limit_token_length=0, filter=None, project_filter=None):
         """
         Elasticsearch의 semantic 검색을 수행합니다.
         """
         query_vector = self.embedding.get_embedding(query) if query_embedding is None else query_embedding
-        elastic_query = self._create_similarity_query(query_vector, search_range, part, num_chunks, limit_token_length, filter)
+        elastic_query = self._create_similarity_query(query_vector, search_range, part, num_chunks, limit_token_length, filter, project_filter)
         response = self.es.search(index=self.index_name, size=num_results, query=elastic_query)
         return response
     
-    def _match_search(self, query, search_range='document', part='chunk', num_results=5, num_chunks=5, limit_token_length=0, filter=None):
+    def _match_search(self, query, search_range='document', part='chunk', num_results=5, num_chunks=5, limit_token_length=0, filter=None, project_filter=None):
         """
         Elasticsearch의 match(BM25) 검색을 수행합니다.
         """
-        elastic_query = self._create_match_query(query, search_range, part, num_chunks, limit_token_length, filter)
+        elastic_query = self._create_match_query(query, search_range, part, num_chunks, limit_token_length, filter, project_filter)
         response = self.es.search(index=self.index_name, size=num_results, query=elastic_query)
         return response
     
-    def _hybrid_search(self, query, query_embedding=None, search_range='document', part='chunk', num_results=5, num_chunks=5, limit_token_length=0, match_weight=1, similarity_weight=1, filter=None):
+    def _hybrid_search(self, query, query_embedding=None, search_range='document', part='chunk', num_results=5, num_chunks=5, limit_token_length=0, match_weight=1, similarity_weight=1, filter=None, project_filter=None):
         """
         Elasticsearch의 hybrid 검색(similarity + match)을 수행합니다.
         """
@@ -599,8 +678,8 @@ class CustomElasticSearch:
             raise ValueError("search_range='chunk' is not supported when method='hybrid'")
         num_results_multiplier = 4 # 두 개의 검색을 더하는 방법을 사용하므로, 각각의 검색 결과 수를 넉넉하게 N배로 설정
         single_search_num_results = num_results *  num_results_multiplier
-        similarity_response = self._similarity_search(query, query_embedding, search_range, part, single_search_num_results, num_chunks, limit_token_length, filter)
-        match_response = self._match_search(query, search_range, part, single_search_num_results, num_chunks, limit_token_length, filter)
+        similarity_response = self._similarity_search(query, query_embedding, search_range, part, single_search_num_results, num_chunks, limit_token_length, filter, project_filter)
+        match_response = self._match_search(query, search_range, part, single_search_num_results, num_chunks, limit_token_length, filter, project_filter)
         response = self._combine_response(similarity_response, match_response, match_weight, similarity_weight)
         return response
     
@@ -655,15 +734,14 @@ if __name__ == "__main__":
     
     # ---------- create index ---------- #
     es._create_index(settings=es.settings, mappings=es.mappings)
-    json_path = '../../modules/test_data/www.asiae.co.kr_article_2023120117510759146_2023-12-29 14_41_25.json'
+    json_path = '../../modules/test_data/6feb401c-8ab2-4440-8671-fad5e7e1f115.json'
     es.add_document_from_json(json_path) # add single document
-    es.refresh_index()
-    # es.add_documents_from_json_dir('../../data/arxiv/rag_test_token_256_overlap_16_large/chunk') # add multiple documents
 
     # ---------- delete index ---------- #
     # es._delete_index()
-    
+
     # ---------- search test ---------- #
+    print('11111111')
     response = es.search(
         query="아시아 경제 성장", 
         query_embedding=None,
@@ -675,7 +753,6 @@ if __name__ == "__main__":
         limit_token_length=100,
         match_weight=0.02, # hybrid search에서 match search의 가중치
         similarity_weight=1, # hybrid search에서 similarity search의 가중치
-        filter=[1] # project_id filter
         )
     
     for i, result in enumerate(response):
@@ -690,7 +767,7 @@ if __name__ == "__main__":
             print(f"Chunk score: {chunk_score}")
             print(f"Chunk content: {chunk_info['content']}")
         print(f"Document score: {document_score}")
-        print(f"Document file path: {document_info['file_name']}")
+        print(f"Document file path: {document_info['file_uuid']}")
         if inner_contents:
             for inner_content in inner_contents:
                 print(f"\tInner Content Score: {inner_content['score']}, Content: {inner_content['content']}")
@@ -703,3 +780,7 @@ if __name__ == "__main__":
     # ---------- get all files ---------- #
     # files = es.get_all_files()
     # print(files)
+
+    # ---------- delete file ---------- #
+    # file_uuid = '6feb401c-8ab2-4440-8671-fad5e7e1f115'
+    # response = es.delete_document(file_uuid)

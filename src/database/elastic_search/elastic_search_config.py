@@ -1,5 +1,6 @@
 import os
 import json
+from typing import List
 
 current_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -23,6 +24,12 @@ class ElasticSearchConfig:
     def set_query(self, query):
         for stage in range(len(self.config)):
             self.config[stage]['query'] = query
+
+    def set_filter(self, filter:List[str]):
+        self.config[0]['filter'] = filter
+
+    def set_project_id(self, project_id):
+        self.config[0]['project_id'] = project_id
 
     def __len__(self):
         return len(self.config)

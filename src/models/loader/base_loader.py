@@ -1,28 +1,30 @@
 import os
-import re
+import uuid
 import json
 import datetime
 from abc import ABC, abstractmethod
 
 class BaseLoader(ABC):
-    def __init__(self, file_path=None):
+    def __init__(self, file_uuid, project_id, file_path):
         self.file_path = file_path
-        self.file_name = self.get_base_name(file_path)
+        self.file_uuid = file_uuid
+        self.project_id = project_id
         self.init_date = self.get_date()
         self.updated_date = None
         self.data = self.get_data(file_path)
+        self.title = self.get_title(file_path) # web loader에서는 title이 data를 가져오는 과정에서 결정되므로, get_data()보다 뒤에 위치해야 함
         self.full_text = self.get_full_text()
 
     @abstractmethod
     def get_data(self, file_path):
         pass
 
+    @abstractmethod
+    def get_title(self, file_path):
+        pass
+
     def get_date(self):
         return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-    @abstractmethod
-    def get_base_name(self, file_path):
-        pass
 
     def save_json_file(self, data, save_path):
         with open(save_path, 'w', encoding='utf-8') as file:
@@ -35,24 +37,17 @@ class BaseLoader(ABC):
         return save_path
 
     def get_save_path(self, save_dir):
-        # 파일 이름에서 유효하지 않은 문자를 '_'로 대체
-        safe_file_name = re.sub(r'[\\/*?:"<>|]', '_', self.file_name)
-        safe_file_name = re.sub(r'%[0-9A-Fa-f]{2}', '_', safe_file_name)
-        if len(safe_file_name) > 100:
-            safe_file_name = safe_file_name[:80] + '...'
-        # 날짜 및 시간에서 콜론을 '_'로 대체
-        safe_date = self.init_date.replace(':', '_')
-        save_path = os.path.join(save_dir, f'{safe_file_name}_{safe_date}.json')
-        return save_path
+        return os.path.join(save_dir, f'{self.file_uuid}.json')
     
     def get_full_text(self):
-        full_text = ' '.join([chunk['text'] for chunk in self.data])
-        return full_text
+        return ' '.join([chunk['text'] for chunk in self.data])
         
     def to_dict(self):
         return {
             'file_path': self.file_path,
-            'file_name': self.file_name,
+            'file_uuid': self.file_uuid,
+            'project_id': self.project_id,
+            'title': self.title,
             'init_date': self.init_date,
             'updated_date': self.updated_date,
             'full_text': self.full_text,
@@ -60,7 +55,7 @@ class BaseLoader(ABC):
         }
 
     def __str__(self):
-        return f'BaseLoader(file_path={self.file_path}, file_name={self.file_name}, init_date={self.init_date}, updated_data={self.updated_date})'
+        return f'BaseLoader(file_path={self.file_path}, file_uuid={self.file_uuid}, project_id={self.project_id}, init_date={self.init_date}, updated_data={self.updated_date})'
 
     def __repr__(self):
         return self.__str__()

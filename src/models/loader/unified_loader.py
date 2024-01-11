@@ -14,12 +14,11 @@ class Loader:
     def __init__(self):
         self.loader = None
 
-    def load_file(self, file_path):
-        print(file_path)
+    def load_file(self, file_uuid, project_id, file_path):
         if file_path.endswith('.pdf'):
-            self.loader = PdfLoader(file_path)
+            self.loader = PdfLoader(file_uuid, project_id, file_path)
         elif file_path.startswith('http'):
-            self.loader = WebLoader(file_path)
+            self.loader = WebLoader(file_uuid, project_id, file_path)
         return self.loader.to_dict()
 
     def save_data(self, output_path):

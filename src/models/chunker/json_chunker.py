@@ -12,7 +12,7 @@ from models.tokenizer.utils import get_tokenizer
 from models.chunker.text_splitter import ChunkTextSplitter
 
 class JsonChunker:
-    def __init__(self, max_token_num=256, overlap=8, model_name='openai'):
+    def __init__(self, max_token_num=512, overlap=0, model_name='openai'):
         self.tokenizer = get_tokenizer(model_name=model_name)
         self.chunk_text_splitter = ChunkTextSplitter(self.tokenizer, max_token_num=max_token_num, overlap=overlap)
 

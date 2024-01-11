@@ -22,7 +22,7 @@ from models.llm.agent.custom_streming_callback import CustomStreamingStdOutCallb
 class ChatAgentModule:
     def __init__(self, verbose=False):
         llm = ChatOpenAI(model="gpt-3.5-turbo-1106", temperature=0.0, streaming=True, seed=42)
-        self.tools = [DBSearchTool(), WebSearchTool()]
+        self.tools = []
         agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=self.tools)
         self.queue = [] # TODO: 나중에 backend에서 주면 삭제
         self.agent_executor = AgentExecutor(agent=agent, tools=self.tools, verbose=verbose)
@@ -34,17 +34,17 @@ class ChatAgentModule:
             query (str): 사용자 입력
             chat_history (List[List[str]]): [[사용자 입력, 챗봇 출력], ...]
         """
-        file_name_text = self.tools[0].get_summary_by_project_id(-1)
-        input_dict = self.parse_input(query, chat_history, file_name_text)
+        # file_name_text = self.tools[0].get_summary_by_project_id(-1)
+        input_dict = self.parse_input(query, chat_history)
         result = self.agent_executor.run(input_dict, callbacks=[self.streaming_callback])
         return result
 
-    def parse_input(self, query, chat_history, file_name_text):
+    def parse_input(self, query, chat_history):
         parsed_chat_history = []
         for human, assistant in chat_history:
             parsed_chat_history.append(HumanMessage(content=human))
             parsed_chat_history.append(AIMessage(content=assistant))
-        return {"input": query, "chat_history": parsed_chat_history, "database_filename": file_name_text}
+        return {"input": query, "chat_history": parsed_chat_history}
 
 # example usage
 # python chat_agent.py --query '안녕하세요'

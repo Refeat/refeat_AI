@@ -10,7 +10,7 @@ import json
 from models.tokenizer.utils import get_tokenizer
 
 class TextSplitter:
-    def __init__(self, tokenizer, max_token_num=256, overlap=16):
+    def __init__(self, tokenizer, max_token_num=512, overlap=0):
         """
         token수를 기준으로 전체 text를 split하는 class
 

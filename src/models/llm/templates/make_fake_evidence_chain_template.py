@@ -4,7 +4,7 @@ What evidence do we need to answer the question given the current evidence?
 Output format:
 ```json
 {{
-    "evidence": string \\ fake evidence for answer the question
+    "evidence": string \\ Fake evidence for answer the question. If question is in Korean, answer in Korean. If question is in English, answer in English.
 }}
 ```
 

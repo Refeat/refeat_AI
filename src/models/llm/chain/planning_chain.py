@@ -14,7 +14,6 @@ import argparse
 from models.llm.base_chain import BaseChatToolChain
 from models.tokenizer.utils import get_tokenizer
 from models.llm.templates.planning_chain_template import SYSTEM, USER, TOOLS
-from models.tools import WebSearchTool, DBSearchTool
 
 current_file_folder_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -42,8 +41,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--query', type=str, default="전기차 시장의 규모를 2021, 2022년을 비교해줘")
     args = parser.parse_args()
-
+    
+    from models.tools import WebSearchTool, DBSearchTool
     tools = [WebSearchTool(), DBSearchTool()]
+    
     planning = PlanningChain(tools=tools, verbose=True)
     result = planning.run(query=args.query, chat_history=[])
     print(result)

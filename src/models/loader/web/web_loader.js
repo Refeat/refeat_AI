@@ -8,6 +8,7 @@ class WebLoader {
 
     async get_data(file_path) {
         const page = await this.fetch_data(file_path);
+        const title = await page.title();
     
         let data = [];
         const elementHandles = await page.$$('p, div, span, h1, h2, h3, h4, h5, h6, em, figcaption, strong, a, b');
@@ -42,7 +43,7 @@ class WebLoader {
         }
     
         await page.browser().close();
-        return data;
+        return { title, data };
     }
 
     async fetch_data(file_path) {

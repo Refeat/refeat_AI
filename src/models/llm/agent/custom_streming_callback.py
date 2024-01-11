@@ -12,16 +12,17 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
     def __init__(
         self,
         *,
-        answer_prefix_tokens: Optional[List[str]] = ['Final', ' Answer', '",'],
+        answer_prefix_tokens: Optional[List[str]] = ['final', ' answer', '":'],
         strip_tokens: bool = True,
         stream_prefix: bool = False,
+        special_tokens: Optional[List[str]] = ['}'],
         queue,
     ) -> None:
         """Instantiate EofStreamingStdOutCallbackHandler.
 
         Args:
             answer_prefix_tokens: Token sequence that prefixes the anwer.
-                Default is ["Final", "Answer", ":"]
+                Default is ['final', ' answer', '":']
             end_of_file_token: Token that signals end of file.
                 Default is "END"
             strip_tokens: Ignore white spaces and new lines when comparing
@@ -35,14 +36,14 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
             stream_prefix=stream_prefix,
         )
         self.queue = queue
+        self.special_tokens = special_tokens
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
-
         # Remember the last n tokens, where n = len(answer_prefix_tokens)
         self.append_to_last_tokens(token)
         # Check if the last n tokens match the answer_prefix_tokens list ...
-        self.answer_reached = True # TODO: Test 용. 나중에 삭제
+        # self.answer_reached = True # TODO: Test 용. 나중에 삭제
         if self.check_if_answer_reached():
             self.answer_reached = True
             if self.stream_prefix:
@@ -53,8 +54,8 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
 
         # ... if yes, then print tokens from now on
         if self.answer_reached:
-            if token not in ['action', ' "', '_input', '}', '."', '  ', '":', '  ', '   ', '    ']: # TODO: 좀 더 깔끔하게 수정하기
-                sys.stdout.write(token)
-                sys.stdout.flush()
+            if token not in self.special_tokens:
+                # sys.stdout.write(token)
+                # sys.stdout.flush()
                 self.queue.append(token)
                 # print(self.queue)
