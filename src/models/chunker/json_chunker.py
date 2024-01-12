@@ -9,12 +9,15 @@ import json
 import argparse
 
 from models.tokenizer.utils import get_tokenizer
-from models.chunker.text_splitter import ChunkTextSplitter
+from models.embedder.utils import get_embedder
+from models.chunker.text_splitter import ChunkTextSplitter, SemanticChunkSplitter
 
 class JsonChunker:
-    def __init__(self, max_token_num=512, overlap=0, model_name='openai'):
+    def __init__(self, max_token_num=1024, overlap=0, model_name='openai'):
         self.tokenizer = get_tokenizer(model_name=model_name)
-        self.chunk_text_splitter = ChunkTextSplitter(self.tokenizer, max_token_num=max_token_num, overlap=overlap)
+        self.embedder = get_embedder(model_name=model_name)
+        # self.chunk_splitter = ChunkTextSplitter(self.tokenizer, max_token_num=max_token_num, overlap=overlap)
+        self.chunk_splitter = SemanticChunkSplitter(self.tokenizer, self.embedder, max_token_num)
 
     def __call__(self, file_path, save_path):
         data = self.get_file_data(file_path)
@@ -27,7 +30,7 @@ class JsonChunker:
         return data
     
     def get_chunked_data(self, data):
-        chunked_data = self.chunk_text_splitter.split_chunk_list(data)
+        chunked_data = self.chunk_splitter.split_chunk_list(data)
         return chunked_data
     
     def save_chunked_data(self, data, save_path):

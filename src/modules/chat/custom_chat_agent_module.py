@@ -20,7 +20,7 @@ class ChatAgentModule:
     def __init__(self, verbose=False):
         self.tools = [DBSearchTool(), KGDBSearchTool()]
         self.tool_dict = self.create_tool_dict(self.tools)
-        self.instantly_answerable_discriminator = InstantlyAnswerableDiscriminatorChain(verbose=verbose)
+        # self.instantly_answerable_discriminator = InstantlyAnswerableDiscriminatorChain(verbose=verbose)
         self.extract_intent_chain = ExtractIntentChain(verbose=verbose)
         self.db_tool_query_generator = DBToolQueryGeneratorChain(verbose=verbose)
         self.extract_evidence_chain = ExtractEvidenceChain(verbose=verbose)
@@ -39,10 +39,10 @@ class ChatAgentModule:
         streaming_callback = CustomStreamingStdOutCallbackHandler(queue=queue)
         chat_history = chat_history[-3:]
         enrich_query = self.extract_intent_chain.run(query=query, chat_history=chat_history)
-        instantly_answerable, answer = self.instantly_answerable_discriminator.run(query=enrich_query, chat_history=chat_history)
+        # instantly_answerable, answer = self.instantly_answerable_discriminator.run(query=enrich_query, chat_history=chat_history)
         
-        if instantly_answerable:
-            return answer
+        # if instantly_answerable:
+        #     return answer
         
         tool_results = self.execute_search_tools(enrich_query, file_uuid, project_id)
         tool_result = self.process_search_tool_results(tool_results)
@@ -50,7 +50,6 @@ class ChatAgentModule:
         evidence_text = self.evidence_list_to_text(evidence_list)
 
         answer = self.plan_answer_chain.run(query=enrich_query, context=evidence_text, callbacks=[streaming_callback])
-        print('queue', queue)
         return answer
     
     def execute_tool(self, args):
@@ -126,7 +125,7 @@ class ChatAgentModule:
 # python custom_chat_agent_module.py --query "국내 전기차 1위부터 10위까지 표로 그려줘" --file_uuid ee0f98fa-c58a-4dfb-b869-85d9587c7c4f
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--query', type=str, default='국내 전기차 1위부터 10위까지 표로 그려줘')
+    parser.add_argument('--query', type=str, default='전기차 시장 규모 측면에서 가장 크게 성장하고 있는 대륙은 어디야? 그리고 성장동력은 뭐야?')
     parser.add_argument('--file_uuid', type=str, nargs='*', default=None)
     parser.add_argument('--project_id', type=int, default=-1)
     args = parser.parse_args()

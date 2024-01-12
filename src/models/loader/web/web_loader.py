@@ -40,16 +40,17 @@ class WebLoader(BaseLoader):
         return self.favicon
 
 # example usage
-# python web_loader.py --file_path "https://www.naver.com" --save_dir ../../test_data/
+# python web_loader.py --file_path "https://eiec.kdi.re.kr/publish/naraView.do?cidx=14036&fcode=00002000040000100009&sel_month=10&sel_year=2022" --save_dir ../../test_data/
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--file_path', type=str, required=True)
     parser.add_argument('--save_dir', type=str, default='../../test_data/')
+    parser.add_argument('--screenshot_dir', type=str, default='../../test_data/screenshot/')
     parser.add_argument('--file_uuid', type=str, default=str(uuid.uuid4()))
     parser.add_argument('--project_id', type=str, default=-1)
 
     args = parser.parse_args()
 
-    web_loader = WebLoader(file_path=args.file_path, file_uuid=args.file_uuid, project_id=args.project_id)
+    web_loader = WebLoader(file_path=args.file_path, file_uuid=args.file_uuid, project_id=args.project_id, save_dir=args.save_dir, screenshot_dir=args.screenshot_dir)
     save_path = web_loader.save_data(args.save_dir)
     print('file saved at', save_path)

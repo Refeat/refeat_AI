@@ -101,6 +101,7 @@ class KG_retriever_GPT(KG_retriever):
 
     def retrieve(self, query, graph_constructor):
         # Step 1: Convert query to embedding
+        # new_query = self.make_fake_evidence_chain.run(query=query, evidence=graph_constructor.uuid_to_node[node]['text'])
         query_embedding = self.embedder.get_embedding(query)
 
         # Initialize set for tracking visited nodes

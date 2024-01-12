@@ -12,3 +12,4 @@ matplotlib
 networkx
 scikit-learn
 pdf2image
+PyMuPDF

@@ -5,9 +5,18 @@ for _ in range(2):
     current_path = os.path.dirname(current_path)
 sys.path.append(current_path)
 
+from utils import add_api_key
+add_api_key()
+
+import copy
 import json
+import heapq
+
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 from models.tokenizer.utils import get_tokenizer
+from models.embedder.utils import get_embedder
 
 class TextSplitter:
     def __init__(self, tokenizer, max_token_num=512, overlap=0):
@@ -174,11 +183,210 @@ class ChunkTextSplitter:
         }
         return merge_bbox
     
+class SemanticChunkSplitter:
+    def __init__(self, tokenizer, embedder, max_token_num=1000):
+        self.tokenizer = tokenizer
+        self.embedder = embedder
+        self.max_token_num = max_token_num
+
+    def split_chunk_list(self, chunk_list):
+        self.get_token_num(chunk_list)
+        chunk_list = self.split_by_length(chunk_list)
+        init_merge_chunk_list = self.get_split_chunk_list(chunk_list)
+        merge_chunk_result_list = []
+        self.recursive_split_chunk_list(init_merge_chunk_list, merge_chunk_result_list)
+        processed_merge_chunk_list = self.postprocess_merge_chunk(merge_chunk_result_list)
+        self.get_token_num(processed_merge_chunk_list)
+        return processed_merge_chunk_list
+    
+    def split_by_length(self, chunk_list, max_length=500, split_length=400):
+        i = 0
+        while i < len(chunk_list):
+            chunk = chunk_list[i]
+            if chunk['token_num'] >= max_length:
+                # Assuming a method to split text into smaller chunks
+
+                split_texts = self.split_text(chunk['text'], split_length)
+
+                new_chunks = []
+                for text in split_texts:
+                    new_chunk = copy.deepcopy(chunk)  # Copy the original chunk's properties
+                    new_chunk['text'] = text
+                    new_chunk['token_num'] = len(self.tokenizer(text))  # Recalculate token number
+                    new_chunks.append(new_chunk)
+                chunk_list[i:i+1] = new_chunks  # Replace the original chunk with new chunks
+                i += len(split_texts)  # Move the index past the newly inserted chunks
+            else:
+                i += 1  # Move to the next chunk
+
+        return chunk_list
+
+    def split_text(self, text, max_length):
+        tokens = self.tokenizer(text)
+        split_texts = []
+
+        for i in range(0, len(tokens), max_length):
+            # 토큰을 max_length만큼 나누고 다시 텍스트로 변환
+            split_text = self.tokenizer.get_decoding(tokens[i:i+max_length])
+            split_texts.append(split_text)
+
+        return split_texts
+
+    def recursive_split_chunk_list(self, chunk_list_list, result_list):
+        for chunk_list in chunk_list_list:
+            total_token_num = self.get_total_token_num(chunk_list)
+            if total_token_num >= self.max_token_num:
+                merge_chunk_list = self.get_split_chunk_list(chunk_list, average_window_token_num=20, average_merge_token_num=500)
+                self.recursive_split_chunk_list(merge_chunk_list, result_list)
+            else:
+                result_list.append(chunk_list)
+
+    def get_split_chunk_list(self, chunk_list, average_window_token_num=20, average_merge_token_num=800):
+        chunk_num = len(chunk_list)
+        average_token_num = self.get_average_token_num(chunk_list)
+        median_token_num = self.get_median_token_num(chunk_list)
+        window_size = self.calculate_window_size(median_token_num, average_window_token_num)
+        average_merge_chunk_num = self.calculate_average_merge_chunk_num(average_token_num, average_merge_token_num)
+        split_num = (chunk_num // average_merge_chunk_num)
+        window_chunk_list = self.make_window_chunk_list(chunk_list, window_size)
+        embedding_list = self.get_embedding(window_chunk_list)
+        similarity_list = self.calculate_similarity_window_chunk_list(embedding_list)
+        split_index_list = self.get_split_index(chunk_num, similarity_list, split_num, window_size)
+        merge_chunk_list = self.get_merge_chunk_list(chunk_list, split_index_list)
+        return merge_chunk_list
+    
+    def calculate_window_size(self, average_token_num, average_window_token_num):
+        return average_window_token_num // average_token_num + 1
+    
+    def calculate_average_merge_chunk_num(self, average_token_num, average_merge_token_num):
+        return average_merge_token_num // average_token_num + 1
+
+    def get_merge_chunk_list(self, chunk_list, split_index_list):
+        merge_chunk_list = []
+        for idx in range(len(split_index_list)-1):
+            merge_chunk = chunk_list[split_index_list[idx]:split_index_list[idx+1]]
+            if merge_chunk:
+                merge_chunk_list.append(merge_chunk)
+        return merge_chunk_list
+    
+    def get_total_token_num(self, chunk_list):
+        """
+        chunk list의 총 token 수를 구함
+        """
+        total_token_num = 0
+        for chunk in chunk_list:
+            total_token_num += chunk['token_num']
+        return total_token_num
+    
+    def get_average_token_num(self, chunk_list):
+        token_num_list = list(chunk['token_num'] for chunk in chunk_list)
+        return sum(token_num_list) // len(token_num_list)
+    
+    def get_median_token_num(self, chunk_list):
+        token_num_list = [chunk['token_num'] for chunk in chunk_list]
+        token_num_list.sort()
+
+        n = len(token_num_list)
+        mid = n // 2
+
+        return int(token_num_list[mid])
+
+    def get_split_index(self, chunk_num, similarity_list, split_num, window_size):
+        min_k_similarity_index = self.get_min_k_similarity_index(similarity_list, split_num)
+        split_index_list = list(idx+window_size-(window_size//2) for idx in min_k_similarity_index)
+        split_index_list.insert(0, 0)
+        split_index_list.append(chunk_num)
+        split_index_list.sort()
+        return split_index_list
+        
+    def get_min_k_similarity_index(self, similarity_list, split_num):
+        weighted_averages = [1.1*similarity_list[i] + 1.0*similarity_list[i+1]
+                         for i in range(len(similarity_list)-1)]
+
+        return heapq.nsmallest(split_num, range(len(weighted_averages)), key=weighted_averages.__getitem__)
+
+    def calculate_similarity(self, embedding1, embedding2):
+        embedding1 = np.array(embedding1).reshape(1, -1)
+        embedding2 = np.array(embedding2).reshape(1, -1)
+        similarity = cosine_similarity(embedding1, embedding2)[0]
+        return similarity
+
+    def calculate_similarity_window_chunk_list(self, embedding_list):
+        similarity_list = []
+        for idx in range(len(embedding_list)-1):
+            similarity = self.calculate_similarity(embedding_list[idx], embedding_list[idx+1])
+            similarity_list.append(similarity)
+        return similarity_list
+
+    def make_window_chunk_list(self, chunk_list, window_size):
+        window_chunk_list = []
+        for i in range(len(chunk_list) - window_size + 1):
+            window_chunk = chunk_list[i:i + window_size]
+            window_chunk_text = ' '.join([chunk['text'] for chunk in window_chunk])
+            window_chunk_list.append(window_chunk_text)
+        return window_chunk_list
+
+    def get_embedding(self, window_chunk_list):
+        embedding_list = self.embedder.get_embedding(window_chunk_list)
+        return embedding_list
+    
+    def get_token_num(self, chunk_list):
+        """
+        chunk list의 각 chunk의 token 수를 구함
+        """
+        text_list = [chunk['text'] for chunk in chunk_list]
+        token_num_list = self.tokenizer.get_token_num(text_list)
+        for chunk, token_num in zip(chunk_list, token_num_list):
+            chunk['token_num'] = token_num
+
+    def postprocess_merge_chunk(self, merge_chunk_list):
+        """
+        merge된 chunk list를 postprocess.
+        1. merge된 chunk의 text를 merge
+        2. merge된 chunk의 bbox를 구함
+        3. merge된 chunk의 page를 구함
+        """
+        processed_merge_chunk_list = []
+        for merge_chunk in merge_chunk_list:
+            merge_text = ' '.join([chunk['text'] for chunk in merge_chunk])
+            merge_bbox = self.get_merge_bbox(merge_chunk)
+            page = merge_chunk[0]['page'] if 'page' in merge_chunk[0] else None
+            processed_merge_chunk = {
+                'text': merge_text,
+                'bbox': merge_bbox,
+                'page': page
+            }
+            processed_merge_chunk_list.append(processed_merge_chunk)                
+                
+        return processed_merge_chunk_list
+    
+    def get_merge_bbox(self, merge_chunk):
+        """
+        merge된 chunk의 bbox를 구함. 새로운 bbox는 chunk list를 모두 포함하는 가장 작은 bbox
+        """
+        if 'page' not in merge_chunk[0]:
+            merge_bbox = {
+                'left_x': min(list(chunk['bbox']['left_x'] for chunk in merge_chunk)),
+                'top_y': min(list(chunk['bbox']['top_y'] for chunk in merge_chunk)),
+                'right_x': max(list(chunk['bbox']['right_x'] for chunk in merge_chunk)),
+                'bottom_y': max(list(chunk['bbox']['bottom_y'] for chunk in merge_chunk))
+            }
+        else:
+            min_page = min(list(chunk['page'] for chunk in merge_chunk))
+            merge_bbox = {
+                'left_x': min(list(chunk['bbox']['left_x'] for chunk in merge_chunk if chunk['page'] == min_page)),
+                'top_y': min(list(chunk['bbox']['top_y'] for chunk in merge_chunk if chunk['page'] == min_page)),
+                'right_x': max(list(chunk['bbox']['right_x'] for chunk in merge_chunk if chunk['page'] == min_page)),
+                'bottom_y': max(list(chunk['bbox']['bottom_y'] for chunk in merge_chunk if chunk['page'] == min_page))
+            }
+        return merge_bbox
+
 # example usage
 # python text_splitter.py
 if __name__ == '__main__':
     # tokenizer = get_tokenizer(model_name='multilingual-e5-large')
     tokenizer = get_tokenizer(model_name='openai')
+    embedder = get_embedder(model_name='openai')
 
     # ------ text splitter test ------ #
     # text_splitter = TextSplitter(tokenizer, max_token_num=256, overlap=16)
@@ -190,12 +398,24 @@ if __name__ == '__main__':
     #     print('----------------------------------')
 
     # ------ chunk list splitter test ------ #
-    json_file_path = '../test_data/chunk_splitter_test.json'
+    # json_file_path = '../test_data/chunk_splitter_test4.json'
+    # with open(json_file_path, 'r', encoding='utf-8') as f:
+    #     data = json.load(f)['data']
+
+    # chunk_text_splitter = ChunkTextSplitter(tokenizer, max_token_num=512, overlap=0)
+    # new_data = chunk_text_splitter.split_chunk_list(data)
+    # for idx, chunk in enumerate(new_data):
+    #     print(f'chunk {idx}: {chunk}')
+    #     print('----------------------------------')
+
+    # ------ semantic chunk list splitter test ------ #
+    json_file_path = '../test_data/chunk_splitter_test2.json'
     with open(json_file_path, 'r', encoding='utf-8') as f:
         data = json.load(f)['data']
-
-    chunk_text_splitter = ChunkTextSplitter(tokenizer, max_token_num=512, overlap=0)
-    new_data = chunk_text_splitter.split_chunk_list(data)
+    
+    chunk_text_splitter = SemanticChunkSplitter(tokenizer, embedder)
+    # new_data = chunk_text_splitter.split_chunk_list(data)
+    new_data = chunk_text_splitter.get_split_chunk_list(data)
     for idx, chunk in enumerate(new_data):
         print(f'chunk {idx}: {chunk}')
         print('----------------------------------')

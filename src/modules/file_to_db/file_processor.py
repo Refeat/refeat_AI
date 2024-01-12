@@ -17,7 +17,7 @@ from database.elastic_search.custom_elastic_search import CustomElasticSearch
 from database.knowledge_graph.graph_construct import KnowledgeGraphDataBase
 
 es = CustomElasticSearch(index_name='refeat_ai')
-# es._create_index() # delete index and create new index
+es._create_index() # delete index and create new index
 summary_chain = SummaryChain()
 knowledge_graph_db = KnowledgeGraphDataBase()
 
@@ -112,7 +112,7 @@ class FileProcessor:
 # python file_processor.py --file_path "../test_data/pdf_test.pdf" --test_query "BLEU score on WMT’16 German-English"
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--file_path', type=str, default='https://www.asiae.co.kr/article/2023120117510759146')
+    parser.add_argument('--file_path', type=str, default='https://automobilepedia.com/index.php/2023/10/21/2023-ev-rank/')
     parser.add_argument('--test_query', type=str, default='인도 경제 성장률')
     parser.add_argument('--save_dir', type=str, default='../test_data')
     parser.add_argument('--screenshot_dir', type=str, default='../test_data/screenshot')

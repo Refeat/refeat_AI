@@ -35,7 +35,6 @@ class KnowledgeGraphDataBase:
 
     def __init__(self, save_dir=save_dir):
         self.save_dir = save_dir
-        # self.retrieval = KG_retriever(k_list=[2, 2, 2])
         os.makedirs(self.save_dir, exist_ok=True)
         self.load_most_recent_graph()
 
@@ -115,7 +114,7 @@ class GraphConstructor:
         with open(json_path, encoding='utf-8') as f:
             return json.load(f)
 
-    def add_data_to_graph(self, file_uuid, data, k_knn=15):
+    def add_data_to_graph(self, file_uuid, data, k_knn=5):
         if not self.embedding_list: # add first node
             self.add_first_node(file_uuid, data)
         else:

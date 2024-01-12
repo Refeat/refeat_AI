@@ -5,6 +5,7 @@ for _ in range(2):
     current_path = os.path.dirname(current_path)
 sys.path.append(current_path)
 
+import uuid
 import argparse
 
 from models.loader.pdf.pdf_loader import PdfLoader
@@ -29,16 +30,19 @@ class UnifiedLoader:
 
 # example usage
 # web
-# python unified_loader.py --file_path https://www.naver.com --save_dir ../test_data/
+# python unified_loader.py --file_path "https://automobilepedia.com/index.php/2023/10/21/2023-ev-rank/" --save_dir ../test_data/
 # pdf
-# python unified_loader.py --file_path ../test_data/pdf_loader_test.pdf --save_dir ../test_data/
+# python unified_loader.py --file_path "../test_data/전기차 시장 규모.pdf" --save_dir ../test_data/
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--file_path', type=str, required=True)
+    parser.add_argument('--project_id', type=int, default=-1)
+    parser.add_argument('--file_uuid', type=str, default=str(uuid.uuid4()))
     parser.add_argument('--save_dir', type=str, default='../test_data/')
+    parser.add_argument('--screenshot_dir', type=str, default='../test_data/')
     args = parser.parse_args()
     
-    loader = Loader()
-    data = loader.load_file(args.file_path)
+    loader = UnifiedLoader()
+    data = loader.load_file(args.file_uuid, args.project_id, args.file_path, args.save_dir, args.screenshot_dir)
     loader.save_data(args.save_dir)
     print('file saved at', loader.get_save_path(args.save_dir))

@@ -65,8 +65,8 @@ class BaseLoader(ABC):
             'init_date': self.init_date,
             'updated_date': self.updated_date,
             'full_text': self.full_text,
-            'data': self.data,
             'processed_path': self.processed_path,
+            'data': self.data,
         }
 
     def __str__(self):

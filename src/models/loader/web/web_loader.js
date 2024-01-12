@@ -56,8 +56,25 @@ class WebLoader {
         const content = await page.content();
         const $ = cheerio.load(content);
         let favicon = $('link[rel="shortcut icon"]').attr('href') || $('link[rel="icon"]').attr('href');
-        return favicon ? favicon : 'No favicon found';
+    
+        if (favicon) {
+            // Check if the favicon URL is relative
+            if (!favicon.startsWith('http://') && !favicon.startsWith('https://')) {
+                // Prepend the base URL of the page to make the URL absolute
+                const baseUrl = new URL(await page.url());
+                if (favicon.startsWith('/')){
+                    favicon = `${baseUrl.origin}${favicon}`;
+                }
+                else {
+                    favicon = `${baseUrl.origin}/${favicon}`;
+                }                
+            }
+            return favicon;
+        } else {
+            return 'No favicon found';
+        }
     }
+    
 
     async take_screenshot(page, screenshotDir) {
         const uuid = uuidv4(); // Generate a UUID
