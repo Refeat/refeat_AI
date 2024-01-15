@@ -52,21 +52,18 @@ class ParentChildRetrieval:
         query_emb = np.array(query_embedding).reshape(1, -1)
         for child_embedding in child_embeddings:
             child_embedding_array = np.array(child_embedding)
-            query_emb_tiled = np.tile(query_emb, (len(child_embedding), 1))
-            similarity = cosine_similarity(query_emb_tiled, child_embedding_array)
+            similarity = cosine_similarity(query_emb, child_embedding_array)[0]
             similarities.append(np.max(similarity))
 
         # Get indices of the top k nearest neighbors, excluding visited nodes
         k = min(len(uuids), k)
         top_k_indices = np.argsort(similarities)[-k:]
-
-        # Retrieve the UUIDs for these indices
         top_k_uuids = [uuids[i] for i in top_k_indices if uuids[i] not in visited_nodes]
 
         return top_k_uuids
 
 class KG_retriever(object):
-    def __init__(self, k_list, child=False):
+    def __init__(self, k_list, child=True):
         self.k_list = k_list  # List of k values for each step
         self.embedder = OpenAIEmbedder()
         self.child = child
