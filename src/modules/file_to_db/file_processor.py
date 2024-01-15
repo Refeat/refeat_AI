@@ -119,9 +119,9 @@ class FileProcessor:
 
 # example usage
 # web
-# python file_processor.py --file_path "https://www.asiae.co.kr/article/2023120117510759146" --test_query "인도 경제 성장률"
+# python file_processor.py --file_path "https://www.mckinsey.com/capabilities/people-and-organizational-performance/our-insights/rethinking-knowledge-work-a-strategic-approach" --test_query "인도 경제 성장률"
 # pdf
-# python file_processor.py --file_path "../test_data/pdf_test.pdf" --test_query "BLEU score on WMT’16 German-English"
+# python file_processor.py --file_path "../test_data/테스트.pdf" --test_query "BLEU score on WMT’16 German-English"
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--file_path', type=str, default='https://www.marketsandmarkets.com/Market-Reports/electric-vehicle-market-209371461.html')
@@ -136,20 +136,23 @@ if __name__ == "__main__":
     
     # ------ add data ------ #
     # version1: __call__로 호출하는 방식
-    # file_processor(file_uuid, project_id, args.file_path)
+    try:
+        file_processor(file_uuid, project_id, args.file_path)
+    except Exception as e:
+        print(e)
 
     # version2: 각 함수를 직접 호출하는 방식
-    data = file_processor.load_file(file_uuid, project_id, args.file_path)
-    title, favicon, screenshot_path = file_processor.get_title_favicon_screenshot_path(data) # backend에서 가져가는 title, favicon, screenshot_path
-    print('title:', title)
-    print('favicon:', favicon)
-    print('screenshot_path:', screenshot_path)
-    file_processor.process_data(data)
-    summary = file_processor.get_summary(data) # backend에서 가져가는 summary
-    print('summary:', summary)
-    save_path = file_processor.get_save_path(data)
-    file_processor.save_data(data, save_path)
-    file_processor.save_to_db(save_path, project_id)
+    # data = file_processor.load_file(file_uuid, project_id, args.file_path)
+    # title, favicon, screenshot_path = file_processor.get_title_favicon_screenshot_path(data) # backend에서 가져가는 title, favicon, screenshot_path
+    # print('title:', title)
+    # print('favicon:', favicon)
+    # print('screenshot_path:', screenshot_path)
+    # file_processor.process_data(data)
+    # summary = file_processor.get_summary(data) # backend에서 가져가는 summary
+    # print('summary:', summary)
+    # save_path = file_processor.get_save_path(data)
+    # file_processor.save_data(data, save_path)
+    # file_processor.save_to_db(save_path, project_id)
 
     # ------ visualize graph ------ #
     file_processor.visualize_graph(project_id)

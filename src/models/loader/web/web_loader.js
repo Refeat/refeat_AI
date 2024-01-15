@@ -92,9 +92,16 @@ class WebLoader {
     }
 
     async fetch_data(file_path) {
-        const browser = await puppeteer.launch();
+        // const browser = await puppeteer.launch();
+        const browser = await puppeteer.launch({ headless: "new" });
         const page = await browser.newPage();
-        await page.goto(file_path);
+        try {
+            await page.goto(file_path);
+        } catch (error) {
+            console.log(error);
+            await browser.close();
+            throw error;
+        }
 
         const content = await page.content();
         const $ = cheerio.load(content);

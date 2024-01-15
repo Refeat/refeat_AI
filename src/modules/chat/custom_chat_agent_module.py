@@ -22,12 +22,12 @@ class ChatAgentModule:
         self.tools = [DBSearchTool(), KGDBSearchTool()]
         self.tool_dict = self.create_tool_dict(self.tools)
         # self.instantly_answerable_discriminator = InstantlyAnswerableDiscriminatorChain(verbose=verbose)
-        self.extract_intent_chain = ExtractIntentChain(verbose=verbose)
-        self.db_tool_query_generator = DBToolQueryGeneratorChain(verbose=verbose)
-        # self.extract_intent_and_query_chain = ExtractIntentAndQueryChain(verbose=verbose)
+        # self.extract_intent_chain = ExtractIntentChain(verbose=verbose)
+        # self.db_tool_query_generator = DBToolQueryGeneratorChain(verbose=verbose)
+        self.extract_intent_and_query_chain = ExtractIntentAndQueryChain(verbose=verbose)
         self.extract_evidence_chain = ExtractEvidenceChain(verbose=verbose)
         self.plan_answer_chain = PlanAnswerChain(verbose=verbose, streaming=True)
-        self.limit_chunk_num = 100 # project의 chunk수가 50개보다 작으면 elastic search로 검색, 50개보다 크면 knowledge graph로 검색
+        self.limit_chunk_num = 40 # project의 chunk수가 50개보다 작으면 elastic search로 검색, 50개보다 크면 knowledge graph로 검색
     
     def run(self, query, file_uuid:List[str]=None, project_id=None, chat_history: List[List[str]]=[], queue=None):
         """
@@ -43,10 +43,10 @@ class ChatAgentModule:
         chat_history = chat_history[-3:]
 
         # version1: enrich_query와 db_query_list를 분리된 chain으로 실행
-        enrich_query = self.extract_intent_chain.run(query=query, chat_history=chat_history)
-        db_query_list = self.db_tool_query_generator.run(query=enrich_query)
+        # enrich_query = self.extract_intent_chain.run(query=query, chat_history=chat_history)
+        # db_query_list = self.db_tool_query_generator.run(query=enrich_query)
         # version2: enrich_query와 db_query_list를 하나의 chain으로 실행
-        # enrich_query, db_query_list = self.extract_intent_and_query_chain.run(query=query, chat_history=chat_history)
+        enrich_query, db_query_list = self.extract_intent_and_query_chain.run(query=query, chat_history=chat_history)
 
         # instantly_answerable_discriminator를 사용하여 답변 가능한지 판단
         # instantly_answerable, answer = self.instantly_answerable_discriminator.run(query=enrich_query, chat_history=chat_history)
@@ -159,16 +159,16 @@ def profile_run(query, file_uuid, project_id, chat_agent):
         chat_agent.run(query, file_uuid, project_id)
 
 # example usage
-# python custom_chat_agent_module.py --query "국내 전기차 1위부터 10위까지 표로 그려줘" --file_uuid ee0f98fa-c58a-4dfb-b869-85d9587c7c4f
+# python custom_chat_agent_module.py --query "국내 전기차 1위부터 10위까지 표로 그려줘" --file_uuid 002d8864-88c2-498c-91df-3e749489616f
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--query', type=str, default='전기차 시장 규모 측면에서 가장 크게 성장하고 있는 대륙은 어디야? 그리고 성장동력은 뭐야?')
+    parser.add_argument('--query', type=str, default='타입드의 대표가 누구야?')
     parser.add_argument('--file_uuid', type=str, nargs='*', default=None)
     parser.add_argument('--project_id', type=int, default=-1)
     args = parser.parse_args()
     
     chat_agent = ChatAgentModule(verbose=True)
-    # result = chat_agent.run(args.query, args.file_uuid, args.project_id)
-    # print(f'chat result: {result}')
-    cProfile.runctx('profile_run(args.query, args.file_uuid, args.project_id, chat_agent)', 
-                    globals(), locals(), 'base-gpt4.prof')
+    result = chat_agent.run(args.query, args.file_uuid, args.project_id)
+    print(f'chat result: {result}')
+    # cProfile.runctx('profile_run(args.query, args.file_uuid, args.project_id, chat_agent)', 
+    #                 globals(), locals(), 'base-gpt4.prof')

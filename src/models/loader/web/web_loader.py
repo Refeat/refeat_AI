@@ -12,6 +12,7 @@ import argparse
 import subprocess
 
 from models.loader.base_loader import BaseLoader
+from models.errors.error import WebLoaderError
 
 class WebLoader(BaseLoader):
     def __init__(self, file_uuid, project_id, file_path, save_dir, screenshot_dir):
@@ -20,6 +21,8 @@ class WebLoader(BaseLoader):
 
     def get_data(self, file_path, screenshot_dir):
         result = subprocess.run(['node', self.js_path, file_path, screenshot_dir], capture_output=True, text=True, encoding='utf-8')
+        if result.stderr:
+            raise WebLoaderError()
         result = json.loads(result.stdout)
         self.title, data, self.favicon, self.screenshot_path = result['title'], result['data'], result['favicon'], result['screenshotPath']
         self.favicon = None if self.favicon == 'No favicon found' else self.favicon
@@ -40,7 +43,7 @@ class WebLoader(BaseLoader):
         return self.favicon
 
 # example usage
-# python web_loader.py --file_path "https://eiec.kdi.re.kr/publish/naraView.do?cidx=14036&fcode=00002000040000100009&sel_month=10&sel_year=2022" --save_dir ../../test_data/
+# python web_loader.py --file_path "https://www.mckinsey.com/capabilities/people-and-organizational-performance/our-insights/rethinking-knowledge-work-a-strategic-approach" --save_dir ../../test_data/
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--file_path', type=str, required=True)

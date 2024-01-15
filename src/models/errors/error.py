@@ -12,6 +12,16 @@ class ChainRunError(Exception):
         class_info = f"{self.class_name}: " if self.class_name else ""
         return f"{class_info}{self.args[0]}"
     
+class WebLoaderError(Exception):
+    """WebLoader 실행 중 발생하는 에러를 나타내는 예외 클래스"""
+
+    def __init__(self, message="Failed to run WebLoader", errors=None):
+        super().__init__(message)
+        self.errors = errors
+
+    def __str__(self):
+        return f"{self.args[0]}"
+    
 class ChainTimeoutError(TimeoutError):
     """특정 Chain 실행 중 시간 초과로 발생하는 커스텀 예외 클래스"""
 
