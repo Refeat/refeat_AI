@@ -17,7 +17,7 @@ from models.llm.chain.summary_chain import SummaryChain
 from database.elastic_search.custom_elastic_search import CustomElasticSearch
 from database.knowledge_graph.graph_construct import KnowledgeGraphDataBase
 
-es = CustomElasticSearch(index_name='refeat_ai')
+es = CustomElasticSearch(index_name='refeat_ai', host="http://10.10.10.27:9200")
 es._create_index() # delete index and create new index
 summary_chain = SummaryChain()
 knowledge_graph_db = KnowledgeGraphDataBase()
