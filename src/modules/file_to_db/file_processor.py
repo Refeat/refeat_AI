@@ -8,6 +8,7 @@ sys.path.append(current_path)
 import json
 import uuid
 import argparse
+from itertools import accumulate
 
 from models.loader.unified_loader import UnifiedLoader
 from models.chunker.json_chunker import JsonChunker
@@ -44,6 +45,7 @@ class FileProcessor:
     def process_data(self, data):
         self.add_chunked_data(data)
         self.add_embedding(data)
+        self.add_child_embedding(data)
         self.add_summary(data)
 
     def get_title_favicon_screenshot_path(self, data):
@@ -71,6 +73,16 @@ class FileProcessor:
         embedding_list = self.embedder.get_embedding(text_list)
         for chunk, embedding in zip(data['data'], embedding_list):
             chunk['embedding'] = embedding
+
+    def add_child_embedding(self, data):
+        child_text_list = [chunk['child_texts'] for chunk in data['data']]
+        expand_child_text_list = [child_text for child_text_list in child_text_list for child_text in child_text_list]
+        accumulate_index_list = [0] + list(accumulate([len(child_text_list) for child_text_list in child_text_list]))
+        embedding_list = self.embedder.get_embedding(expand_child_text_list)
+        for idx in range(len(accumulate_index_list)-1):
+            start_idx = accumulate_index_list[idx]
+            end_idx = accumulate_index_list[idx+1]
+            data['data'][idx]['child_embeddings'] = embedding_list[start_idx:end_idx]
 
     def add_summary(self, data):
         summary = summary_chain.run(full_text=data['full_text'])
@@ -112,8 +124,8 @@ class FileProcessor:
 # python file_processor.py --file_path "../test_data/pdf_test.pdf" --test_query "BLEU score on WMT’16 German-English"
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--file_path', type=str, default='https://automobilepedia.com/index.php/2023/10/21/2023-ev-rank/')
-    parser.add_argument('--test_query', type=str, default='인도 경제 성장률')
+    parser.add_argument('--file_path', type=str, default='https://www.marketsandmarkets.com/Market-Reports/electric-vehicle-market-209371461.html')
+    parser.add_argument('--test_query', type=str, default='2023 EV Rank')
     parser.add_argument('--save_dir', type=str, default='../test_data')
     parser.add_argument('--screenshot_dir', type=str, default='../test_data/screenshot')
     args = parser.parse_args()

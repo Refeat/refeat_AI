@@ -191,7 +191,7 @@ class SemanticChunkSplitter:
 
     def split_chunk_list(self, chunk_list):
         self.get_token_num(chunk_list)
-        chunk_list = self.split_by_length(chunk_list)
+        self.split_by_length(chunk_list)
         init_merge_chunk_list = self.get_split_chunk_list(chunk_list)
         merge_chunk_result_list = []
         self.recursive_split_chunk_list(init_merge_chunk_list, merge_chunk_result_list)
@@ -204,8 +204,6 @@ class SemanticChunkSplitter:
         while i < len(chunk_list):
             chunk = chunk_list[i]
             if chunk['token_num'] >= max_length:
-                # Assuming a method to split text into smaller chunks
-
                 split_texts = self.split_text(chunk['text'], split_length)
 
                 new_chunks = []
@@ -219,17 +217,18 @@ class SemanticChunkSplitter:
             else:
                 i += 1  # Move to the next chunk
 
-        return chunk_list
-
-    def split_text(self, text, max_length):
+    def split_text(self, text, max_length, last_split_length=50):
         tokens = self.tokenizer(text)
         split_texts = []
 
         for i in range(0, len(tokens), max_length):
-            # 토큰을 max_length만큼 나누고 다시 텍스트로 변환
-            split_text = self.tokenizer.get_decoding(tokens[i:i+max_length])
-            split_texts.append(split_text)
-
+            if len(tokens) - i - max_length < last_split_length:
+                split_text = self.tokenizer.get_decoding(tokens[i:])
+                split_texts.append(split_text)
+                break
+            else:
+                split_text = self.tokenizer.get_decoding(tokens[i:i+max_length])
+                split_texts.append(split_text)
         return split_texts
 
     def recursive_split_chunk_list(self, chunk_list_list, result_list):
@@ -339,7 +338,7 @@ class SemanticChunkSplitter:
         for chunk, token_num in zip(chunk_list, token_num_list):
             chunk['token_num'] = token_num
 
-    def postprocess_merge_chunk(self, merge_chunk_list):
+    def postprocess_merge_chunk(self, merge_chunk_list, child_text_length=256):
         """
         merge된 chunk list를 postprocess.
         1. merge된 chunk의 text를 merge
@@ -351,8 +350,10 @@ class SemanticChunkSplitter:
             merge_text = ' '.join([chunk['text'] for chunk in merge_chunk])
             merge_bbox = self.get_merge_bbox(merge_chunk)
             page = merge_chunk[0]['page'] if 'page' in merge_chunk[0] else None
+            child_texts = self.split_text(merge_text, child_text_length)
             processed_merge_chunk = {
                 'text': merge_text,
+                'child_texts': child_texts,
                 'bbox': merge_bbox,
                 'page': page
             }
@@ -414,8 +415,7 @@ if __name__ == '__main__':
         data = json.load(f)['data']
     
     chunk_text_splitter = SemanticChunkSplitter(tokenizer, embedder)
-    # new_data = chunk_text_splitter.split_chunk_list(data)
-    new_data = chunk_text_splitter.get_split_chunk_list(data)
+    new_data = chunk_text_splitter.split_chunk_list(data)
     for idx, chunk in enumerate(new_data):
         print(f'chunk {idx}: {chunk}')
         print('----------------------------------')

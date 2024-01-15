@@ -100,6 +100,7 @@ class GraphConstructor:
         self.uuid_to_node = {}
         self.uuid_list = []
         self.embedding_list = []
+        self.child_embeddings_list = []
         self.lock = threading.Lock() # 동시에 add_data_to_graph가 실행되지 않도록 lock
 
     def add_json_file(self, json_path):
@@ -123,6 +124,7 @@ class GraphConstructor:
     def add_first_node(self, file_uuid, data):
         new_node_uuid = uuid.uuid4()
         new_embedding = np.array(data['embedding']).reshape(1, -1)
+        child_embeddings = data['child_embeddings']
         
         if file_uuid not in self.file_uuid_to_uuid:
             self.file_uuid_to_uuid[file_uuid] = []
@@ -132,11 +134,13 @@ class GraphConstructor:
         self.uuid_to_node[new_node_uuid] = data
         self.uuid_list.append(new_node_uuid)
         self.embedding_list.append(new_embedding[0])
+        self.child_embeddings_list.append(child_embeddings)
         return new_node_uuid
     
     def add_node(self, file_uuid, data, k_knn):
         new_node_uuid = uuid.uuid4()
         new_embedding = np.array(data['embedding']).reshape(1, -1)
+        child_embeddings = np.array(data['child_embeddings'])
 
         existing_embeddings = np.array(self.embedding_list)
         similarities = self.calculate_similarities(new_embedding, existing_embeddings)
@@ -150,6 +154,7 @@ class GraphConstructor:
         self.uuid_to_node[new_node_uuid] = data
         self.uuid_list.append(new_node_uuid)
         self.embedding_list.append(new_embedding[0])
+        self.child_embeddings_list.append(child_embeddings)
 
     def calculate_similarities(self, new_embedding, existing_embeddings):
         return cosine_similarity(new_embedding, existing_embeddings)[0]
@@ -199,6 +204,7 @@ class GraphConstructor:
                     idx = self.uuid_list.index(node_uuid)
                     self.uuid_list.pop(idx)
                     self.embedding_list.pop(idx)
+                    self.child_embeddings_list.pop(idx)
 
             # Remove the entry from file_uuid_to_uuid
             del self.file_uuid_to_uuid[file_uuid]
@@ -243,7 +249,8 @@ class GraphConstructor:
             'uuid_to_file_uuid': self.uuid_to_file_uuid,
             "uuid_to_node": self.uuid_to_node,
             "uuid_list": self.uuid_list,
-            "embedding_list": self.embedding_list
+            "embedding_list": self.embedding_list,
+            "child_embeddings_list": self.child_embeddings_list,
         }
 
     @staticmethod
@@ -255,6 +262,7 @@ class GraphConstructor:
         gc.uuid_to_node = data["uuid_to_node"]
         gc.uuid_list = data["uuid_list"]
         gc.embedding_list = data["embedding_list"]
+        gc.child_embeddings_list = data["child_embeddings_list"]
         return gc
 
 # example usage

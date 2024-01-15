@@ -37,11 +37,39 @@ class KNN_Retrieval:
         top_k_uuids = [uuids[i] for i in top_k_indices if uuids[i] not in visited_nodes]
 
         return top_k_uuids
+    
+class ParentChildRetrieval:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def retrieve(self, query_embedding, graph_constructor, k, visited_nodes, child_embeddings=None, uuids=None):
+        if child_embeddings is None:
+            child_embeddings = graph_constructor.child_embeddings_list
+            uuids = graph_constructor.uuid_list
+
+        similarities = []
+        query_emb = np.array(query_embedding).reshape(1, -1)
+        for child_embedding in child_embeddings:
+            child_embedding_array = np.array(child_embedding)
+            query_emb_tiled = np.tile(query_emb, (len(child_embedding), 1))
+            similarity = cosine_similarity(query_emb_tiled, child_embedding_array)
+            similarities.append(np.max(similarity))
+
+        # Get indices of the top k nearest neighbors, excluding visited nodes
+        k = min(len(uuids), k)
+        top_k_indices = np.argsort(similarities)[-k:]
+
+        # Retrieve the UUIDs for these indices
+        top_k_uuids = [uuids[i] for i in top_k_indices if uuids[i] not in visited_nodes]
+
+        return top_k_uuids
 
 class KG_retriever(object):
-    def __init__(self, k_list):
+    def __init__(self, k_list, child=False):
         self.k_list = k_list  # List of k values for each step
         self.embedder = OpenAIEmbedder()
+        self.child = child
 
     def retrieve(self, query, graph_constructor):
         # Step 1: Convert query to embedding
@@ -69,11 +97,17 @@ class KG_retriever(object):
         embeddings = []
         for neighbor in neighbors:
             neighbor_index = graph_constructor.uuid_list.index(neighbor)
-            embeddings.append(graph_constructor.embedding_list[neighbor_index])
+            if self.child:
+                embeddings.append(graph_constructor.child_embeddings_list[neighbor_index])
+            else:
+                embeddings.append(graph_constructor.embedding_list[neighbor_index])
         return embeddings
     
     def _retrieve_initial_nodes(self, query_embedding, graph_constructor, k, all_retrieved_nodes, visited_nodes):
-        initial_nodes = KNN_Retrieval.retrieve(query_embedding, graph_constructor, k, visited_nodes)
+        if self.child:
+            initial_nodes = ParentChildRetrieval.retrieve(query_embedding, graph_constructor, k, visited_nodes)
+        else:
+            initial_nodes = KNN_Retrieval.retrieve(query_embedding, graph_constructor, k, visited_nodes)
         self._update_nodes(initial_nodes, all_retrieved_nodes, visited_nodes)
         return initial_nodes, all_retrieved_nodes, visited_nodes
     
@@ -82,7 +116,10 @@ class KG_retriever(object):
         neighbor_embeddings = self._get_neighbor_embeddings(neighbors, graph_constructor)
         if not neighbor_embeddings:
             return all_retrieved_nodes, visited_nodes, related_nodes
-        retrieved_nodes = KNN_Retrieval.retrieve(query_embedding, graph_constructor, k, visited_nodes, neighbor_embeddings, neighbors)
+        if self.child:
+            retrieved_nodes = ParentChildRetrieval.retrieve(query_embedding, graph_constructor, k, visited_nodes, neighbor_embeddings, neighbors)
+        else:
+            retrieved_nodes = KNN_Retrieval.retrieve(query_embedding, graph_constructor, k, visited_nodes, neighbor_embeddings, neighbors)
         
         self._update_nodes(retrieved_nodes, all_retrieved_nodes, visited_nodes, related_nodes)
         return all_retrieved_nodes, visited_nodes, related_nodes
@@ -94,8 +131,8 @@ class KG_retriever(object):
         related_nodes.update(nodes) if related_nodes else None
 
 class KG_retriever_GPT(KG_retriever):
-    def __init__(self, k_list):
-        self.k_list = k_list  # List of k values for each step
+    def __init__(self, k_list, child=True):
+        super().__init__(k_list, child)
         self.embedder = OpenAIEmbedder()
         self.make_fake_evidence_chain = MakeFakeEvidenceChain(verbose=True)
 

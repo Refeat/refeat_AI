@@ -741,7 +741,6 @@ if __name__ == "__main__":
     # es._delete_index()
 
     # ---------- search test ---------- #
-    print('11111111')
     response = es.search(
         query="아시아 경제 성장", 
         query_embedding=None,
