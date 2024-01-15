@@ -101,10 +101,22 @@ class CustomElasticSearch:
             return [{"_index": self.index_name, "_source": document}]
         return None
     
-    def _prepare_document(self, data):
+    def _prepare_document(self, data, token_filter_length=100):
         """
         json 데이터를 Elasticsearch에 넣기위한 문서 형식으로 변환합니다.
         """
+        content_list = []
+        for content in data['data']:
+            for child_embedding in content['child_embeddings']:
+                if child_embedding and content['token_num'] > token_filter_length:
+                    content_list.append({
+                        "content": content['text'],
+                        "content_embedding": child_embedding,
+                        "bbox": content['bbox'],
+                        "page": content['page'],
+                        "token_num": content['token_num']
+                    })
+
         document = {
             "project_id": data['project_id'],
             "file_path": data['file_path'],
@@ -114,16 +126,7 @@ class CustomElasticSearch:
             'summary': data['summary'],
             "init_date": datetime.strptime(data['init_date'], '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%dT%H:%M:%S'),
             "updated_date": datetime.strptime(data['updated_data'], '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%dT%H:%M:%S') if data['updated_date'] else None,
-            "contents": [
-                {
-                    "content": content['text'],
-                    "content_embedding": content['embedding'],
-                    "bbox": content['bbox'],
-                    "page": content['page'],
-                    "token_num": content['token_num']
-                } for content in data['data']
-                    if (content['embedding'] is not None) and (content['text'] != '')
-            ]
+            "contents": content_list
         }
 
         return document
@@ -252,7 +255,7 @@ class CustomElasticSearch:
             results = all_documents
 
         elif search_range == 'chunk':
-            all_chunks = []
+            all_chunks, content_list = [], []
             # 각 문서에 대해 반복
             for hit in response['hits']['hits']:
                 # 각 문서의 'inner_hits' 접근
@@ -266,6 +269,9 @@ class CustomElasticSearch:
                     document_info = hit['_source']
                     document_score = hit['_score']
 
+                    if chunk_info['content'] in content_list:
+                        continue
+                    
                     # 모든 'chunk' 저장
                     all_chunks.append({
                         'chunk_info':chunk_info, 
@@ -273,6 +279,7 @@ class CustomElasticSearch:
                         'document_info':document_info, 
                         'document_score':document_score
                     })
+                    content_list.append(chunk_info['content'])
 
             # 'chunk'를 점수에 따라 내림차순으로 정렬
             all_chunks = sorted(all_chunks, key=lambda x: x['chunk_score'], reverse=True)
@@ -706,7 +713,7 @@ class CustomElasticSearch:
             score = hit['_score'] * similarity_weight
             doc_id = hit['_id']
             combined_results[doc_id] = {'score': score, 'hit': hit}
-        pass
+        
         # Process match hits
         for hit in match_hits:
             score = hit['_score'] * match_weight
@@ -717,10 +724,10 @@ class CustomElasticSearch:
             else:
                 combined_results[doc_id] = {'score': score, 'hit': hit}
                 combined_results[doc_id]['hit']['_score'] = score
-        pass
+        
         # Sort the combined results by their scores in descending order
         sorted_results = sorted(combined_results.values(), key=lambda x: x['score'], reverse=True)
-        pass
+        
         # Prepare the final response format
         final_response = {
             'hits': {'hits': [result['hit'] for result in sorted_results]},

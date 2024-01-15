@@ -1,5 +1,5 @@
 SYSTEM="""
-You are an assistant who generates two queries for search. Generate search queries for the input.
+You are an assistant who generates two queries for search.
 The queries created should contain both Korean and English.
 
 Output format:

@@ -31,7 +31,7 @@ save_dir = os.path.join(current_file_folder_path, '../test_data')
 
 class KnowledgeGraphDataBase:
     G_dict = {}
-    retrieval = KG_retriever_GPT(k_list=[2, 2, 2])
+    retrieval = KG_retriever_GPT(k_list=[2, 2])
 
     def __init__(self, save_dir=save_dir):
         self.save_dir = save_dir
@@ -87,6 +87,9 @@ class KnowledgeGraphDataBase:
                 output.append(str(graph_constructor))
         return '\n\n'.join(output)
 
+    def get_chunk_num(self, project_id):
+        return self.G_dict[project_id].get_chunk_num()
+
     def search(self, query, project_id, file_uuid=None):
         if file_uuid is not None:
             raise NotImplementedError("search by file_uuid is not implemented yet")
@@ -102,6 +105,7 @@ class GraphConstructor:
         self.embedding_list = []
         self.child_embeddings_list = []
         self.lock = threading.Lock() # 동시에 add_data_to_graph가 실행되지 않도록 lock
+        self.token_filter_length = 100
 
     def add_json_file(self, json_path):
         json_data = self.read_json_file(json_path)
@@ -122,6 +126,8 @@ class GraphConstructor:
             self.add_node(file_uuid, data, k_knn)
 
     def add_first_node(self, file_uuid, data):
+        if data['token_num'] < self.token_filter_length:
+            return
         new_node_uuid = uuid.uuid4()
         new_embedding = np.array(data['embedding']).reshape(1, -1)
         child_embeddings = data['child_embeddings']
@@ -133,11 +139,12 @@ class GraphConstructor:
         self.uuid_to_file_uuid[new_node_uuid] = file_uuid
         self.uuid_to_node[new_node_uuid] = data
         self.uuid_list.append(new_node_uuid)
-        self.embedding_list.append(new_embedding[0])
+        self.embedding_list.append(data['embedding'])
         self.child_embeddings_list.append(child_embeddings)
-        return new_node_uuid
     
     def add_node(self, file_uuid, data, k_knn):
+        if data['token_num'] < self.token_filter_length:
+            return
         new_node_uuid = uuid.uuid4()
         new_embedding = np.array(data['embedding']).reshape(1, -1)
         child_embeddings = np.array(data['child_embeddings'])
@@ -153,7 +160,7 @@ class GraphConstructor:
         self.uuid_to_file_uuid[new_node_uuid] = file_uuid
         self.uuid_to_node[new_node_uuid] = data
         self.uuid_list.append(new_node_uuid)
-        self.embedding_list.append(new_embedding[0])
+        self.embedding_list.append(data['embedding'])
         self.child_embeddings_list.append(child_embeddings)
 
     def calculate_similarities(self, new_embedding, existing_embeddings):
@@ -208,6 +215,9 @@ class GraphConstructor:
 
             # Remove the entry from file_uuid_to_uuid
             del self.file_uuid_to_uuid[file_uuid]
+
+    def get_chunk_num(self):
+        return len(self.uuid_list)
 
     def visualize_graph(self):
         font_name = 'Malgun Gothic'
