@@ -17,13 +17,16 @@ from models.llm.chain.summary_chain import SummaryChain
 from database.elastic_search.custom_elastic_search import CustomElasticSearch
 from database.knowledge_graph.graph_construct import KnowledgeGraphDataBase
 
-es = CustomElasticSearch(index_name='refeat_ai')
-es._create_index() # delete index and create new index
-summary_chain = SummaryChain()
-knowledge_graph_db = KnowledgeGraphDataBase()
+# es = CustomElasticSearch(index_name='refeat_ai', host="http://10.10.10.27:9200")
+# es._create_index() # delete index and create new index
+# summary_chain = SummaryChain()
+# knowledge_graph_db = KnowledgeGraphDataBase()
 
 class FileProcessor:
-    def __init__(self, model_name='openai', save_dir='../test_data', screenshot_dir='../test_data/screenshot'):
+    def __init__(self, es, summary_chain, knowledge_graph_db, model_name='openai', save_dir='../test_data', screenshot_dir='../test_data/screenshot'):
+        self.es = es
+        self.summary_chain = summary_chain
+        self.knowledge_graph_db = knowledge_graph_db
         self.chunker = JsonChunker(model_name=model_name)
         self.embedder = get_embedder(model_name)
         self.save_dir = save_dir
@@ -85,34 +88,34 @@ class FileProcessor:
             data['data'][idx]['child_embeddings'] = embedding_list[start_idx:end_idx]
 
     def add_summary(self, data):
-        summary = summary_chain.run(full_text=data['full_text'])
+        summary = self.summary_chain.run(full_text=data['full_text'])
         data['summary'] = summary
 
     def add_data_to_elastic_search(self, file_path):
-        es.add_document_from_json(file_path)
-        es.refresh_index()
+        self.es.add_document_from_json(file_path)
+        self.es.refresh_index()
 
     def save_data(self, data, output_path):
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
 
     def delete_data_from_elastic_search(self, file_uuid):
-        es.delete_document(file_uuid)
+        self.es.delete_document(file_uuid)
 
     def add_data_to_db_kg(self, file_path, project_id):
-        knowledge_graph_db.add_document_from_json(file_path, project_id)
+        self.knowledge_graph_db.add_document_from_json(file_path, project_id)
 
     def delete_data_from_db_kg(self, file_uuid, project_id):
-        knowledge_graph_db.delete_document(file_uuid, project_id)
+        self.knowledge_graph_db.delete_document(file_uuid, project_id)
 
     def save_graph(self):
-        knowledge_graph_db.save_graph_data()
+        self.knowledge_graph_db.save_graph_data()
 
     def visualize_graph(self, project_id):
-        knowledge_graph_db.visualize_graph(project_id)
+        self.knowledge_graph_db.visualize_graph(project_id)
 
     def print_graph(self):
-        print(knowledge_graph_db)
+        print(self.knowledge_graph_db)
 
     def __str__(self):
         return f"File Processor: {self.chunker}, {self.embedder}, {self.save_dir}"
@@ -129,6 +132,11 @@ if __name__ == "__main__":
     parser.add_argument('--save_dir', type=str, default='../test_data')
     parser.add_argument('--screenshot_dir', type=str, default='../test_data/screenshot')
     args = parser.parse_args()
+    
+    es = CustomElasticSearch(index_name='refeat_ai')
+    es._create_index() # delete index and create new index
+    summary_chain = SummaryChain()
+    knowledge_graph_db = KnowledgeGraphDataBase()
 
     file_processor = FileProcessor(save_dir=args.save_dir, screenshot_dir=args.screenshot_dir)
     file_uuid = str(uuid.uuid4())
