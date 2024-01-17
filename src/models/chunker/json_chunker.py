@@ -21,8 +21,7 @@ class JsonChunker:
 
     def __call__(self, file_path, save_path):
         data = self.get_file_data(file_path)
-        category = self.get_file_category(data)
-        data['data'] = self.get_chunked_data(data['data'], category)
+        data['data'] = self.get_chunked_data(data['data'])
         self.save_chunked_data(data, save_path)
 
     def get_file_data(self, file_path):
@@ -30,10 +29,10 @@ class JsonChunker:
             data = json.load(f)
         return data
     
-    def get_chunked_data(self, data, category):
-        if category == 'pdf':
-            chunked_data = self.text_chunk_splitter.split_chunk_pdf(data)
-        elif category == 'web':
+    def get_chunked_data(self, data, category=None):
+        if category == 'pdf': # In pdf, we chunk the data by text length
+            chunked_data = self.text_chunk_splitter.split_chunk_list(data)
+        elif category == 'web': # In web, we chunk the data by semantic similarity
             chunked_data = self.semantic_chunk_splitter.split_chunk_list(data)
         else:
             raise ValueError('Invalid category while chunking. Only pdf and web are allowed.')
@@ -42,15 +41,6 @@ class JsonChunker:
     def save_chunked_data(self, data, save_path):
         with open(save_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
-
-    def get_file_category(self, data):
-        file_path = data['file_path']
-        if file_path.endswith('.pdf'):
-            return 'pdf'
-        elif file_path.startswith('http'):
-            return 'web'
-        else:
-            raise ValueError('Invalid category while chunking. Only pdf and web are allowed.')
 
 # example usage
 # python json_chunker.py --file_path ../test_data/chunk_splitter_test.json --save_path ../test_data/chunk_splitter_test_chunked.json --max_token_num 256 --overlap 16 --model_name openai

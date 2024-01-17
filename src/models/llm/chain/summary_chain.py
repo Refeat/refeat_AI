@@ -23,7 +23,8 @@ class SummaryChain(BaseChain):
                 verbose=False,) -> None:
         super().__init__(prompt_template=summary_template, prompt_template_path=summary_template_path, model=model, verbose=verbose)
         self.tokenizer = get_tokenizer(model_name='openai')
-        self.max_token_num = 8000
+        self.max_token_num = 6000
+        self.first_token_index = 1000
 
     def run(self, **kwargs):
         return super().run(**kwargs)
@@ -31,7 +32,7 @@ class SummaryChain(BaseChain):
     def parse_input(self, full_text):
         encoded_text = self.tokenizer.get_encoding(full_text)
         if len(encoded_text) > self.max_token_num:
-            encoded_text = encoded_text[:self.max_token_num]
+            encoded_text = encoded_text[self.first_token_index:self.first_token_index+self.max_token_num]
             decoded_text = self.tokenizer.get_decoding(encoded_text)
             return {'context': decoded_text}
         else:

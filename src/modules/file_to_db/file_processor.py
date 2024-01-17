@@ -36,6 +36,7 @@ class FileProcessor:
 
     def __call__(self, file_uuid, project_id, file_path):
         data = self.load_file(file_uuid, project_id, file_path)
+        self.add_summary(data)
         self.process_data(data)
         save_path = self.get_save_path(data)
         self.save_data(data, save_path)
@@ -50,13 +51,13 @@ class FileProcessor:
         self.add_chunked_data(data)
         self.add_embedding(data)
         self.add_child_embedding(data)
-        self.add_summary(data)
+
+    def get_summary(self, data):
+        summary = self.add_summary(data)
+        return summary
 
     def get_title_favicon_screenshot_path(self, data):
         return data['title'], data['favicon'], data['screenshot_path']
-    
-    def get_summary(self, data):
-        return data['summary']
     
     def get_save_path(self, data):
         return data['processed_path']
@@ -70,7 +71,17 @@ class FileProcessor:
         self.delete_data_from_db_kg(file_uuid, project_id)
 
     def add_chunked_data(self, data):
-        data['data'] = self.chunker.get_chunked_data(data['data'])
+        category = self.get_file_category(data)
+        data['data'] = self.chunker.get_chunked_data(data['data'], category)
+
+    def get_file_category(self, data):
+        file_path = data['file_path']
+        if file_path.endswith('.pdf'):
+            return 'pdf'
+        elif file_path.startswith('http'):
+            return 'web'
+        else:
+            raise ValueError('Invalid category while chunking. Only pdf and web are allowed.')
 
     def add_embedding(self, data):
         text_list = [chunk['text'] for chunk in data['data']]
@@ -91,6 +102,7 @@ class FileProcessor:
     def add_summary(self, data):
         summary = self.summary_chain.run(full_text=data['full_text'])
         data['summary'] = summary
+        return summary
 
     def add_data_to_elastic_search(self, file_path):
         self.es.add_document_from_json(file_path)
@@ -134,7 +146,7 @@ def profile_run(file_uuid, project_id, file_path, file_processor):
 
 # example usage
 # web
-# python file_processor.py --file_path "https://www.mckinsey.com/capabilities/people-and-organizational-performance/our-insights/rethinking-knowledge-work-a-strategic-approach" --test_query "인도 경제 성장률"
+# python file_processor.py --file_path "https://www.marketsandmarkets.com/Market-Reports/electric-vehicle-market-209371461.html" --test_query "2023 EV Rank"
 # pdf
 # python file_processor.py --file_path "../test_data/전기차 시장 규모.pdf" --test_query "전기차 시장 규모"
 if __name__ == "__main__":
@@ -150,7 +162,7 @@ if __name__ == "__main__":
     summary_chain = SummaryChain()
     knowledge_graph_db = KnowledgeGraphDataBase()
 
-    file_processor = FileProcessor(save_dir=args.save_dir, screenshot_dir=args.screenshot_dir)
+    file_processor = FileProcessor(es, summary_chain, knowledge_graph_db, save_dir=args.save_dir, screenshot_dir=args.screenshot_dir)
     file_uuid = str(uuid.uuid4())
     project_id = -1
     
@@ -162,17 +174,17 @@ if __name__ == "__main__":
     #     print(e)
 
     # version2: 각 함수를 직접 호출하는 방식
-    # data = file_processor.load_file(file_uuid, project_id, args.file_path)
-    # title, favicon, screenshot_path = file_processor.get_title_favicon_screenshot_path(data) # backend에서 가져가는 title, favicon, screenshot_path
-    # print('title:', title)
-    # print('favicon:', favicon)
-    # print('screenshot_path:', screenshot_path)
-    # file_processor.process_data(data)
-    # summary = file_processor.get_summary(data) # backend에서 가져가는 summary
-    # print('summary:', summary)
-    # save_path = file_processor.get_save_path(data)
-    # file_processor.save_data(data, save_path)
-    # file_processor.save_to_db(save_path, project_id)
+    data = file_processor.load_file(file_uuid, project_id, args.file_path)
+    title, favicon, screenshot_path = file_processor.get_title_favicon_screenshot_path(data) # backend에서 가져가는 title, favicon, screenshot_path
+    print('title:', title)
+    print('favicon:', favicon)
+    print('screenshot_path:', screenshot_path)
+    summary = file_processor.get_summary(data) # backend에서 가져가는 summary
+    print('summary:', summary)
+    file_processor.process_data(data)
+    save_path = file_processor.get_save_path(data)
+    file_processor.save_data(data, save_path)
+    file_processor.save_to_db(save_path, project_id)
 
     # ------ Time profiling ------ #
     cProfile.runctx('profile_run(file_uuid, project_id, args.file_path, file_processor)', 
@@ -187,24 +199,24 @@ if __name__ == "__main__":
 
     # ------ add data test ------ #
     # 파일이 db에 저장되어 있다면 정상적으로 검색이 됨
-    print('------ add data test ------')
-    search_result = es.search(args.test_query) 
-    for i, result in enumerate(search_result):
-        chunk_score = result['chunk_score'] if 'chunk_score' in result else None
-        chunk_info = result['chunk_info'] if 'chunk_info' in result else None
-        document_score = result['document_score'] if 'document_score' in result else None
-        document_info = result['document_info'] if 'document_info' in result else None
-        inner_contents = result['inner_contents'] if 'inner_contents' in result else None
+    # print('------ add data test ------')
+    # search_result = es.search(args.test_query) 
+    # for i, result in enumerate(search_result):
+    #     chunk_score = result['chunk_score'] if 'chunk_score' in result else None
+    #     chunk_info = result['chunk_info'] if 'chunk_info' in result else None
+    #     document_score = result['document_score'] if 'document_score' in result else None
+    #     document_info = result['document_info'] if 'document_info' in result else None
+    #     inner_contents = result['inner_contents'] if 'inner_contents' in result else None
 
-        print(f"Result {i}:")
-        if chunk_score and chunk_info:
-            print(f"Chunk score: {chunk_score}")
-            print(f"Chunk content: {chunk_info['content']}")
-        print(f"Document score: {document_score}")
-        print(f"Document file path: {document_info['file_uuid']}")
-        if inner_contents:
-            for inner_content in inner_contents:
-                print(f"\tInner Content Score: {inner_content['score']}, Content: {inner_content['content']}")
+    #     print(f"Result {i}:")
+    #     if chunk_score and chunk_info:
+    #         print(f"Chunk score: {chunk_score}")
+    #         print(f"Chunk content: {chunk_info['content']}")
+    #     print(f"Document score: {document_score}")
+    #     print(f"Document file path: {document_info['file_uuid']}")
+    #     if inner_contents:
+    #         for inner_content in inner_contents:
+    #             print(f"\tInner Content Score: {inner_content['score']}, Content: {inner_content['content']}")
 
     # ------ delete data ------ #
     # file_processor.delete(file_uuid, project_id)

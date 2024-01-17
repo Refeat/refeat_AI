@@ -151,7 +151,21 @@ class ChunkTextSplitter:
                 return chunk_idx
         return None
     
-    def postprocess_merge_chunk(self, merge_chunk_list):
+    def split_text(self, text, max_length, last_split_length=50):
+        tokens = self.tokenizer(text)
+        split_texts = []
+
+        for i in range(0, len(tokens), max_length):
+            if len(tokens) - i - max_length < last_split_length:
+                split_text = self.tokenizer.get_decoding(tokens[i:])
+                split_texts.append(split_text)
+                break
+            else:
+                split_text = self.tokenizer.get_decoding(tokens[i:i+max_length])
+                split_texts.append(split_text)
+        return split_texts
+    
+    def postprocess_merge_chunk(self, merge_chunk_list, child_text_length=256):
         """
         merge된 chunk list를 postprocess.
         1. merge된 chunk의 text를 merge
@@ -160,28 +174,39 @@ class ChunkTextSplitter:
         """
         processed_merge_chunk_list = []
         for merge_chunk in merge_chunk_list:
-            merge_text = ''.join([chunk['text'] for chunk in merge_chunk])
+            merge_text = ' '.join([chunk['text'] for chunk in merge_chunk])
             merge_bbox = self.get_merge_bbox(merge_chunk)
             page = merge_chunk[0]['page'] if 'page' in merge_chunk[0] else None
+            child_texts = self.split_text(merge_text, child_text_length)
             processed_merge_chunk = {
                 'text': merge_text,
+                'child_texts': child_texts,
                 'bbox': merge_bbox,
                 'page': page
             }
             processed_merge_chunk_list.append(processed_merge_chunk)                
                 
         return processed_merge_chunk_list
-
+    
     def get_merge_bbox(self, merge_chunk):
         """
         merge된 chunk의 bbox를 구함. 새로운 bbox는 chunk list를 모두 포함하는 가장 작은 bbox
         """
-        merge_bbox = {
-            'left_x': min(list(chunk['bbox']['left_x'] for chunk in merge_chunk)),
-            'top_y': min(list(chunk['bbox']['top_y'] for chunk in merge_chunk)),
-            'right_x': max(list(chunk['bbox']['right_x'] for chunk in merge_chunk)),
-            'bottom_y': max(list(chunk['bbox']['bottom_y'] for chunk in merge_chunk))
-        }
+        if 'page' not in merge_chunk[0]:
+            merge_bbox = {
+                'left_x': min(list(chunk['bbox']['left_x'] for chunk in merge_chunk)),
+                'top_y': min(list(chunk['bbox']['top_y'] for chunk in merge_chunk)),
+                'right_x': max(list(chunk['bbox']['right_x'] for chunk in merge_chunk)),
+                'bottom_y': max(list(chunk['bbox']['bottom_y'] for chunk in merge_chunk))
+            }
+        else:
+            min_page = min(list(chunk['page'] for chunk in merge_chunk))
+            merge_bbox = {
+                'left_x': min(list(chunk['bbox']['left_x'] for chunk in merge_chunk if chunk['page'] == min_page)),
+                'top_y': min(list(chunk['bbox']['top_y'] for chunk in merge_chunk if chunk['page'] == min_page)),
+                'right_x': max(list(chunk['bbox']['right_x'] for chunk in merge_chunk if chunk['page'] == min_page)),
+                'bottom_y': max(list(chunk['bbox']['bottom_y'] for chunk in merge_chunk if chunk['page'] == min_page))
+            }
         return merge_bbox
     
 class SemanticChunkSplitter:
@@ -199,7 +224,6 @@ class SemanticChunkSplitter:
         self.recursive_split_chunk_list(init_merge_chunk_list, merge_chunk_result_list)
         processed_merge_chunk_list = self.postprocess_merge_chunk(merge_chunk_result_list)
         self.get_token_num(processed_merge_chunk_list)
-        print(self.idx)
         return processed_merge_chunk_list
     
     def split_by_length(self, chunk_list, max_length=500, split_length=400):
@@ -329,11 +353,7 @@ class SemanticChunkSplitter:
         return window_chunk_list
     
     def get_embedding(self, window_chunk_list):
-        # 결과를 저장할 딕셔너리
-        result = {}
-
-        # 스레드를 관리할 리스트
-        threads = []
+        result, threads = {}, []
 
         # window_chunk_list를 20개씩 끊어서 각 청크에 대해 스레드 생성
         for i in range(0, len(window_chunk_list), 20):
@@ -342,20 +362,14 @@ class SemanticChunkSplitter:
             threads.append(thread)
             thread.start()
 
-        # 모든 스레드의 작업이 완료될 때까지 대기
         for thread in threads:
             thread.join()
 
-        # 결과를 순서대로 합쳐서 반환
         embedding_list = []
         for i in sorted(result.keys()):
             embedding_list.extend(result[i])
 
         return embedding_list
-
-    # def get_embedding(self, window_chunk_list):
-    #     embedding_list = self.embedder.get_embedding(window_chunk_list)
-    #     return embedding_list
 
     def _get_embedding_chunk(self, chunk, result, index):
         """각 스레드가 수행할 작업을 정의합니다."""
