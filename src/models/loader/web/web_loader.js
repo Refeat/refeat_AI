@@ -10,9 +10,11 @@ class WebLoader {
     }
 
     async get_data(file_path, screenshotDir) {
-        const page = await this.fetch_data(file_path);
+        const page = await this.fetch_data(file_path);        
+        const content = await page.content();
+        const $ = cheerio.load(content);
         const title = await page.title();
-        const favicon = await this.get_favicon(page);
+        const favicon = await this.get_favicon(page, $);
         const screenshotPath = await this.take_screenshot(page, screenshotDir);
     
         let data = [];
@@ -46,15 +48,12 @@ class WebLoader {
                 }
             }
         }
-    
+        
         await page.browser().close();
         return { title, data, favicon, screenshotPath };
     }
 
-    async get_favicon(page) {
-        // Extract the favicon URL using Cheerio
-        const content = await page.content();
-        const $ = cheerio.load(content);
+    async get_favicon(page, $) {
         let favicon = $('link[rel="shortcut icon"]').attr('href') || $('link[rel="icon"]').attr('href');
     
         if (favicon) {
@@ -74,7 +73,6 @@ class WebLoader {
             return 'No favicon found';
         }
     }
-    
 
     async take_screenshot(page, screenshotDir) {
         const uuid = uuidv4(); // Generate a UUID
@@ -92,9 +90,9 @@ class WebLoader {
     }
 
     async fetch_data(file_path) {
-        // const browser = await puppeteer.launch();
-        const browser = await puppeteer.launch({ headless: "new" });
+        const browser = await puppeteer.launch({ headless: true });
         const page = await browser.newPage();
+        
         try {
             await page.goto(file_path);
         } catch (error) {
@@ -102,10 +100,6 @@ class WebLoader {
             await browser.close();
             throw error;
         }
-
-        const content = await page.content();
-        const $ = cheerio.load(content);
-        $('script, style').remove();
 
         return page;
     }

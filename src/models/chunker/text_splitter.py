@@ -11,6 +11,7 @@ add_api_key()
 import copy
 import json
 import heapq
+import threading
 
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
@@ -188,6 +189,7 @@ class SemanticChunkSplitter:
         self.tokenizer = tokenizer
         self.embedder = embedder
         self.max_token_num = max_token_num
+        self.idx = 0
 
     def split_chunk_list(self, chunk_list):
         self.get_token_num(chunk_list)
@@ -197,6 +199,7 @@ class SemanticChunkSplitter:
         self.recursive_split_chunk_list(init_merge_chunk_list, merge_chunk_result_list)
         processed_merge_chunk_list = self.postprocess_merge_chunk(merge_chunk_result_list)
         self.get_token_num(processed_merge_chunk_list)
+        print(self.idx)
         return processed_merge_chunk_list
     
     def split_by_length(self, chunk_list, max_length=500, split_length=400):
@@ -240,7 +243,7 @@ class SemanticChunkSplitter:
             else:
                 result_list.append(chunk_list)
 
-    def get_split_chunk_list(self, chunk_list, average_window_token_num=20, average_merge_token_num=800):
+    def get_split_chunk_list(self, chunk_list, average_window_token_num=20, average_merge_token_num=800, window_chunk_list=None, embedding_list=None):
         chunk_num = len(chunk_list)
         average_token_num = self.get_average_token_num(chunk_list)
         median_token_num = self.get_median_token_num(chunk_list)
@@ -324,10 +327,40 @@ class SemanticChunkSplitter:
             window_chunk_text = ' '.join([chunk['text'] for chunk in window_chunk])
             window_chunk_list.append(window_chunk_text)
         return window_chunk_list
-
+    
     def get_embedding(self, window_chunk_list):
-        embedding_list = self.embedder.get_embedding(window_chunk_list)
+        # 결과를 저장할 딕셔너리
+        result = {}
+
+        # 스레드를 관리할 리스트
+        threads = []
+
+        # window_chunk_list를 20개씩 끊어서 각 청크에 대해 스레드 생성
+        for i in range(0, len(window_chunk_list), 20):
+            chunk = window_chunk_list[i:i + 20]
+            thread = threading.Thread(target=self._get_embedding_chunk, args=(chunk, result, i))
+            threads.append(thread)
+            thread.start()
+
+        # 모든 스레드의 작업이 완료될 때까지 대기
+        for thread in threads:
+            thread.join()
+
+        # 결과를 순서대로 합쳐서 반환
+        embedding_list = []
+        for i in sorted(result.keys()):
+            embedding_list.extend(result[i])
+
         return embedding_list
+
+    # def get_embedding(self, window_chunk_list):
+    #     embedding_list = self.embedder.get_embedding(window_chunk_list)
+    #     return embedding_list
+
+    def _get_embedding_chunk(self, chunk, result, index):
+        """각 스레드가 수행할 작업을 정의합니다."""
+        embedding = self.embedder.get_embedding(chunk)
+        result[index] = embedding
     
     def get_token_num(self, chunk_list):
         """

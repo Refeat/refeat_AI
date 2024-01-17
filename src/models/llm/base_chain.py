@@ -17,11 +17,18 @@ from langchain_core.messages import HumanMessage, AIMessage
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
 
-from models.errors.error import ChainRunError, run_chain_with_timeout
+from models.errors.error import ChainRunError, run_chain_with_timeout, timeout_handler
 
 current_file_folder_path = os.path.dirname(os.path.abspath(__file__))
 
 LIMIT_CHAIN_TIMEOUT = 3
+def run_chain_with_timeout(chain, input_dict, callbacks, timeout_duration):
+    # signal.signal(signal.SIGALRM, timeout_handler) # UNIX 운영체제에서만 작동함
+    # signal.alarm(timeout_duration)
+
+    result = chain.run(input_dict, callbacks=callbacks)
+    # signal.alarm(0)
+    return result
 
 class BaseChain:
     def __init__(self, 

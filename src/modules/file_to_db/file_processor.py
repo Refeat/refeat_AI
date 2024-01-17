@@ -8,6 +8,7 @@ sys.path.append(current_path)
 import json
 import uuid
 import argparse
+import cProfile
 from itertools import accumulate
 
 from models.loader.unified_loader import UnifiedLoader
@@ -117,11 +118,22 @@ class FileProcessor:
     def __str__(self):
         return f"File Processor: {self.chunker}, {self.embedder}, {self.save_dir}"
 
+def profile_run(file_uuid, project_id, file_path, file_processor):
+    """
+    Function for profiling the file processor.
+
+    Args:
+        file_uuid (List[str]): file uuid list for database search
+        project_id (str): project id for database search
+        file_path (str): file path for database search
+    """
+    file_processor(file_uuid, project_id, file_path)
+
 # example usage
 # web
 # python file_processor.py --file_path "https://www.mckinsey.com/capabilities/people-and-organizational-performance/our-insights/rethinking-knowledge-work-a-strategic-approach" --test_query "인도 경제 성장률"
 # pdf
-# python file_processor.py --file_path "../test_data/테스트.pdf" --test_query "BLEU score on WMT’16 German-English"
+# python file_processor.py --file_path "../test_data/전기차 시장 규모.pdf" --test_query "전기차 시장 규모"
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--file_path', type=str, default='https://www.marketsandmarkets.com/Market-Reports/electric-vehicle-market-209371461.html')
@@ -136,10 +148,10 @@ if __name__ == "__main__":
     
     # ------ add data ------ #
     # version1: __call__로 호출하는 방식
-    try:
-        file_processor(file_uuid, project_id, args.file_path)
-    except Exception as e:
-        print(e)
+    # try:
+    #     file_processor(file_uuid, project_id, args.file_path)
+    # except Exception as e:
+    #     print(e)
 
     # version2: 각 함수를 직접 호출하는 방식
     # data = file_processor.load_file(file_uuid, project_id, args.file_path)
@@ -153,6 +165,10 @@ if __name__ == "__main__":
     # save_path = file_processor.get_save_path(data)
     # file_processor.save_data(data, save_path)
     # file_processor.save_to_db(save_path, project_id)
+
+    # ------ Time profiling ------ #
+    cProfile.runctx('profile_run(file_uuid, project_id, args.file_path, file_processor)', 
+                    globals(), locals(), 'output.prof')
 
     # ------ visualize graph ------ #
     file_processor.visualize_graph(project_id)

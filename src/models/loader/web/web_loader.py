@@ -21,9 +21,10 @@ class WebLoader(BaseLoader):
 
     def get_data(self, file_path, screenshot_dir):
         result = subprocess.run(['node', self.js_path, file_path, screenshot_dir], capture_output=True, text=True, encoding='utf-8')
-        if result.stderr:
+        if result.stdout:
+            result = json.loads(result.stdout)
+        else:
             raise WebLoaderError()
-        result = json.loads(result.stdout)
         self.title, data, self.favicon, self.screenshot_path = result['title'], result['data'], result['favicon'], result['screenshotPath']
         self.favicon = None if self.favicon == 'No favicon found' else self.favicon
         return data
