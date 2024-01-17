@@ -24,8 +24,8 @@ from database.elastic_search.db_config.refeat_db_config import MAPPINGS, SETTING
 class CustomElasticSearch:
     mappings = MAPPINGS
     settings = SETTINGS
-    def __init__(self, index_name='refeat_ai'):
-        self.es = Elasticsearch(hosts=["http://localhost:9200"], timeout=60)
+    def __init__(self, index_name='refeat_ai', host="http://localhost:9200"):
+        self.es = Elasticsearch(hosts=[host], timeout=60)
         self.index_name = index_name
         self.embedding = get_embedder(EMBEDDER)
     

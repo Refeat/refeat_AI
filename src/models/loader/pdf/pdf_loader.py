@@ -9,11 +9,6 @@ import uuid
 import argparse
 
 import fitz
-import PyPDF2
-from pdfminer.high_level import extract_pages
-from pdfminer.layout import LTTextContainer, LTAnno
-from pdf2image import convert_from_path
-
 from models.loader.base_loader import BaseLoader
 
 class PdfLoader(BaseLoader):
