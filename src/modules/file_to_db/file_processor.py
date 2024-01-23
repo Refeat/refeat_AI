@@ -157,7 +157,8 @@ if __name__ == "__main__":
     parser.add_argument('--screenshot_dir', type=str, default='../test_data/screenshot')
     args = parser.parse_args()
     
-    es = CustomElasticSearch(index_name='refeat_ai')
+    es = CustomElasticSearch(index_name='refeat_ai') # default host is localhost:9200
+    # es = CustomElasticSearch(index_name='refeat_ai', host="http://10.10.10.27:9200")
     es._create_index() # delete index and create new index
     summary_chain = SummaryChain()
     knowledge_graph_db = KnowledgeGraphDataBase()
@@ -174,21 +175,21 @@ if __name__ == "__main__":
     #     print(e)
 
     # version2: 각 함수를 직접 호출하는 방식
-    data = file_processor.load_file(file_uuid, project_id, args.file_path)
-    title, favicon, screenshot_path = file_processor.get_title_favicon_screenshot_path(data) # backend에서 가져가는 title, favicon, screenshot_path
-    print('title:', title)
-    print('favicon:', favicon)
-    print('screenshot_path:', screenshot_path)
-    summary = file_processor.get_summary(data) # backend에서 가져가는 summary
-    print('summary:', summary)
-    file_processor.process_data(data)
-    save_path = file_processor.get_save_path(data)
-    file_processor.save_data(data, save_path)
-    file_processor.save_to_db(save_path, project_id)
+    # data = file_processor.load_file(file_uuid, project_id, args.file_path)
+    # title, favicon, screenshot_path = file_processor.get_title_favicon_screenshot_path(data) # backend에서 가져가는 title, favicon, screenshot_path
+    # print('title:', title)
+    # print('favicon:', favicon)
+    # print('screenshot_path:', screenshot_path)
+    # summary = file_processor.get_summary(data) # backend에서 가져가는 summary
+    # print('summary:', summary)
+    # file_processor.process_data(data)
+    # save_path = file_processor.get_save_path(data)
+    # file_processor.save_data(data, save_path)
+    # file_processor.save_to_db(save_path, project_id)
 
     # ------ Time profiling ------ #
     cProfile.runctx('profile_run(file_uuid, project_id, args.file_path, file_processor)', 
-                    globals(), locals(), 'output.prof')
+                    globals(), locals(), 'output1.prof')
 
     # ------ visualize graph ------ #
     file_processor.visualize_graph(project_id)

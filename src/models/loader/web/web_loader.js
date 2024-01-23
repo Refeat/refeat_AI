@@ -90,17 +90,26 @@ class WebLoader {
     }
 
     async fetch_data(file_path) {
-        const browser = await puppeteer.launch({ headless: true });
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
         const page = await browser.newPage();
-        
+    
+        // 일반적인 브라우저처럼 보이게 사용자 에이전트 설정
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36');
+    
         try {
-            await page.goto(file_path);
+            const navigationPromise = page.waitForNavigation({ waitUntil: 'networkidle2' });
+            await page.goto(file_path, { waitUntil: 'networkidle2' });
+            await navigationPromise;
+    
         } catch (error) {
-            console.log(error);
+            console.error(error);
             await browser.close();
             throw error;
         }
-
+    
         return page;
     }
 }

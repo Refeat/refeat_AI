@@ -35,6 +35,8 @@ class OpenAIEmbedder:
             except Exception as e:
                 print(e)
                 return None
+        else:
+            raise ValueError(f'query should be str or list. but {type(query)} is given')
         return embedding
 
 # example usage

@@ -59,7 +59,6 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
                 sys.stdout.write(token)
                 sys.stdout.flush()
                 self.queue.append(token)
-                # print(self.queue)
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
