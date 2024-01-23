@@ -15,15 +15,14 @@ from typing import List
 
 from models.tools import DBSearchTool, KGDBSearchTool
 from models.llm.agent.custom_streming_callback import CustomStreamingStdOutCallbackHandler
-from models.llm.chain import InstantlyAnswerableDiscriminatorChain, PlanAnswerChain, DBToolQueryGeneratorChain, ExtractEvidenceChain, ExtractIntentChain, ExtractIntentAndQueryChain
+from models.llm.chain import CommonChatChain, PlanAnswerChain, DBToolQueryGeneratorChain, ExtractEvidenceChain, ExtractIntentChain, ExtractIntentAndQueryChain
 
 class ChatAgentModule:
-    def __init__(self, verbose=False):
-        self.tools = [DBSearchTool(), KGDBSearchTool()]
+    def __init__(self, es, knowledge_graph_db, verbose=False):
+        self.tools = [DBSearchTool(es), KGDBSearchTool(knowledge_graph_db)]
         self.tool_dict = self.create_tool_dict(self.tools)
-        # self.instantly_answerable_discriminator = InstantlyAnswerableDiscriminatorChain(verbose=verbose)
-        # self.extract_intent_chain = ExtractIntentChain(verbose=verbose)
-        # self.db_tool_query_generator = DBToolQueryGeneratorChain(verbose=verbose)
+        
+        self.common_chat_chain = CommonChatChain(verbose=verbose)
         self.extract_intent_and_query_chain = ExtractIntentAndQueryChain(verbose=verbose)
         self.extract_evidence_chain = ExtractEvidenceChain(verbose=verbose)
         self.plan_answer_chain = PlanAnswerChain(verbose=verbose, streaming=True)
@@ -48,10 +47,9 @@ class ChatAgentModule:
         # version2: enrich_query와 db_query_list를 하나의 chain으로 실행
         enrich_query, db_query_list = self.extract_intent_and_query_chain.run(query=query, chat_history=chat_history)
 
-        # instantly_answerable_discriminator를 사용하여 답변 가능한지 판단
-        # instantly_answerable, answer = self.instantly_answerable_discriminator.run(query=enrich_query, chat_history=chat_history)
-        # if instantly_answerable:
-        #     return answer
+        if len(db_query_list) == 0:
+            answer = self.common_chat_chain.run(query=query, chat_history=chat_history, callbacks=[streaming_callback])
+            return answer
         
         chunk_num = self.get_chunk_num(project_id)
         tool_results = self.execute_search_tools(db_query_list, file_uuid, project_id, chunk_num)
@@ -68,7 +66,7 @@ class ChatAgentModule:
         action_input = self.parse_tool_args(action, action_input)
         if action in self.tool_dict:
             tool = self.tool_dict[action]
-            return tool.run(action_input)
+            return tool.run(**action_input)
         
     def parse_tool_args(self, action, action_input):
         if action == 'Database Search':
@@ -81,6 +79,8 @@ class ChatAgentModule:
         elif action == 'Knowledge Graph Search':
             query, project_id = action_input
             return {'query': query, 'project_id': project_id}
+        else:
+            raise ValueError(f'Invalid action: {action}. Only Database Search and Knowledge Graph Search are supported')
 
     def execute_search_tools(self, db_query_list, file_uuid, project_id, chunk_num):
         tool_results = []

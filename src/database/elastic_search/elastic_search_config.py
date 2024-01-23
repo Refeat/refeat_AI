@@ -29,7 +29,7 @@ class ElasticSearchConfig:
         self.config[0]['filter'] = filter
 
     def set_project_id(self, project_id):
-        self.config[0]['project_id'] = project_id
+        self.config[0]['project_filter'] = project_id
 
     def __len__(self):
         return len(self.config)

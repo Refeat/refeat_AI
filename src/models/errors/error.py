@@ -1,5 +1,7 @@
+import functools
+import threading
+import ctypes
 import signal
-
 class ChainRunError(Exception):
     """Chain 실행 중 발생하는 에러를 나타내는 커스텀 예외 클래스"""
 
@@ -34,15 +36,43 @@ class ChainTimeoutError(TimeoutError):
 def timeout_handler(signum, frame):
     raise ChainTimeoutError("Operation took more than the allowed time")
 
-def run_chain_with_timeout(chain, input_dict, callbacks, timeout_duration):
-    signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(timeout_duration)
+# pthread_kill 함수를 가져옴
+libc = ctypes.CDLL('libc.so.6')
+pthread_kill = libc.pthread_kill
+pthread_kill.argtypes = [ctypes.c_void_p, ctypes.c_int]
 
-    try:
-        result = chain.run(input_dict, callbacks=callbacks)
-        signal.alarm(0)  # 타이머 해제
-        return result
-    except ChainTimeoutError as e:
-        print(e)
-        # 추가적인 정리 작업이 필요한 경우 여기서 수행
-        raise
+def terminate_thread(thread):
+    if not thread.is_alive():
+        return
+
+    res = pthread_kill(ctypes.c_void_p(thread.ident), signal.SIGTERM)
+    if res != 0:
+        raise ValueError("스레드 종료 실패")
+
+def timeout(timeout_duration):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            res = [Exception('function [%s] timeout [%s seconds] exceeded!' % (func.__name__, timeout_duration))]
+            
+            def newFunc():
+                try:
+                    res[0] = func(*args, **kwargs)
+                except Exception as e:
+                    res[0] = e
+
+            t = threading.Thread(target=newFunc)
+            t.daemon = True
+            t.start()
+            t.join(timeout_duration)
+
+            if t.is_alive():
+                terminate_thread(t)  # 스레드 강제 종료
+                t.join()
+
+            ret = res[0]
+            if isinstance(ret, BaseException):
+                raise ret
+            return ret
+        return wrapper
+    return decorator

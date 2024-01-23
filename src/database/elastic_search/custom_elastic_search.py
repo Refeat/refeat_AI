@@ -11,7 +11,6 @@ from utils import add_api_key
 add_api_key()
 
 import json
-import uuid
 from datetime import datetime
 
 import tqdm
@@ -598,7 +597,7 @@ class CustomElasticSearch:
             response: Elasticsearch의 검색 결과
         """
         search_results_num = num_results 
-        if method == 'similarity':            
+        if method == 'similarity':
             response = self._similarity_search(query, query_embedding, search_range, part, search_results_num, num_chunks, limit_token_length, filter, project_filter)
         elif method == 'match':
             response = self._match_search(query, search_range, part, search_results_num, num_chunks, limit_token_length, filter, project_filter)
@@ -622,7 +621,7 @@ class CustomElasticSearch:
         file_uuid_list = [result['document_info']['file_uuid'] for result in results]
         return file_uuid_list
 
-    def parse_input_query(self, search_config, filter):
+    def parse_input_query(self, search_config, filter, project_filter):
         """
         검색 config로 부터 검색에 필요한 파라미터들을 추출합니다.
 
@@ -641,7 +640,8 @@ class CustomElasticSearch:
         match_weight = search_config.get('match_weight', 0.02)
         similarity_weight = search_config.get('similarity_weight', 1)
         filter = search_config.get('filter', filter) # search config에 filter가 있으면 filter를 사용하고, 없으면 입력으로 받은 filter를 사용
-        return query, query_embedding, num_results, method, search_range, part, num_chunks, limit_token_length, match_weight, similarity_weight, filter
+        project_filter = search_config.get('project_filter', project_filter) # search config에 project_filter가 있으면 project_filter를 사용하고, 없으면 입력으로 받은 project_filter를 사용
+        return query, query_embedding, num_results, method, search_range, part, num_chunks, limit_token_length, match_weight, similarity_weight, filter, project_filter
 
     def multi_search(self, search_configs):
         """
@@ -654,8 +654,9 @@ class CustomElasticSearch:
             response: 검색 결과
         """
         filter = None # 첫 단계의 검색에서는 filter를 사용하지 않습니다(단, search config에 filter가 있으면 그 값을 사용). 이후 단계의 검색에서는 이전 검색의 결과에서 추출한 filter를 사용합니다.
+        project_filter = None
         for search_config in search_configs:
-            query_params = self.parse_input_query(search_config, filter) # search_config에 filter가 있으면, filter를 사용하고, 없으면 이전 결과에서 추출한 filter를 사용
+            query_params = self.parse_input_query(search_config, filter, project_filter) # search_config에 filter가 있으면, filter를 사용하고, 없으면 이전 결과에서 추출한 filter를 사용
             response = self.search(*query_params)
             filter = self._create_filter_from_results(response) # 이전 검색 결과에서 file_name을 추출하여, filter를 생성합니다.
         return response
@@ -737,12 +738,13 @@ class CustomElasticSearch:
 
 if __name__ == "__main__":
     # test elasticsearch
-    es = CustomElasticSearch(index_name='refeat_ai')
+    es = CustomElasticSearch(index_name='refeat_ai') # default host: http://localhost:9200
+    # es = CustomElasticSearch(index_name='refeat_ai', host="http://10.10.10.27:9200")
     
     # ---------- create index ---------- #
-    es._create_index(settings=es.settings, mappings=es.mappings)
-    json_path = '../../modules/test_data/6feb401c-8ab2-4440-8671-fad5e7e1f115.json'
-    es.add_document_from_json(json_path) # add single document
+    # es._create_index(settings=es.settings, mappings=es.mappings)
+    # json_path = '../../modules/test_data/88b52de3-3b9e-4d09-a876-e67d060fdbce.json'
+    # es.add_document_from_json(json_path) # add single document
 
     # ---------- delete index ---------- #
     # es._delete_index()

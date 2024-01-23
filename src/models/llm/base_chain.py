@@ -9,7 +9,6 @@ from utils import add_api_key
 add_api_key()
 
 import json
-import signal
 from typing import List, Any, Dict
 
 from langchain.prompts import PromptTemplate, ChatPromptTemplate, MessagesPlaceholder
@@ -17,18 +16,11 @@ from langchain_core.messages import HumanMessage, AIMessage
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
 
-from models.errors.error import ChainRunError, run_chain_with_timeout, timeout_handler
+from models.errors.error import ChainRunError, timeout
 
 current_file_folder_path = os.path.dirname(os.path.abspath(__file__))
 
-LIMIT_CHAIN_TIMEOUT = 3
-def run_chain_with_timeout(chain, input_dict, callbacks, timeout_duration):
-    # signal.signal(signal.SIGALRM, timeout_handler) # UNIX 운영체제에서만 작동함
-    # signal.alarm(timeout_duration)
-
-    result = chain.run(input_dict, callbacks=callbacks)
-    # signal.alarm(0)
-    return result
+LIMIT_CHAIN_TIMEOUT = 10
 
 class BaseChain:
     def __init__(self, 
@@ -40,13 +32,14 @@ class BaseChain:
                  temperature=0.0,
                  seed=42,
                  response_format="text",
-                 callbacks=None) -> None:
+                 callbacks=None,
+                 request_timeout=LIMIT_CHAIN_TIMEOUT) -> None:
         if response_format == "text":
             llm_response_format = {"type":"text"}
         elif response_format == "json":
             llm_response_format = {"type":"json_object"}
         self.prompt = self._get_prompt(prompt_template, prompt_template_path)
-        self.llm = ChatOpenAI(model=model, temperature=temperature, streaming=streaming, seed=seed, response_format=llm_response_format)
+        self.llm = ChatOpenAI(model=model, temperature=temperature, streaming=streaming, seed=seed, response_format=llm_response_format, request_timeout=request_timeout)
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt, verbose=verbose, callbacks=callbacks)
         self.max_tries = 5
 
@@ -59,12 +52,12 @@ class BaseChain:
         if not template:
             raise ValueError("Either template or template_path should be provided.")
         return PromptTemplate.from_template(template=template)
-
+    
     def run(self, callbacks=None, **kwargs):
         input_dict = self.parse_input(**kwargs)
         for _ in range(self.max_tries):
             try:
-                result = run_chain_with_timeout(self.chain, input_dict, callbacks, LIMIT_CHAIN_TIMEOUT)
+                result = self.chain.run(input_dict, callbacks=callbacks)
                 return self.parse_output(result)
             except Exception as e:
                 print(e)
@@ -89,13 +82,14 @@ class BaseToolChain(BaseChain):
                  seed=42,
                  response_format="text",
                  callbacks=None,
-                 tools=None) -> None:
+                 tools=None,
+                 request_timeout=LIMIT_CHAIN_TIMEOUT) -> None:
         if response_format == "text":
             llm_response_format = {"type":"text"}
         elif response_format == "json":
             llm_response_format = {"type":"json_object"}
         self.prompt = self._get_prompt(prompt_template, tool_prompt_template, prompt_template_path, tools)
-        self.llm = ChatOpenAI(model=model, temperature=temperature, streaming=streaming, seed=seed, response_format=llm_response_format)
+        self.llm = ChatOpenAI(model=model, temperature=temperature, streaming=streaming, seed=seed, response_format=llm_response_format, request_timeout=request_timeout)
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt, verbose=verbose, callbacks=callbacks)
         self.max_tries = 5
 
@@ -136,13 +130,14 @@ class BaseChatChain(BaseChain):
                  temperature=0.0,
                  seed=42,
                  response_format="text",
-                 verbose=False,) -> None:
+                 verbose=False,
+                 request_timeout=LIMIT_CHAIN_TIMEOUT) -> None:
         if response_format == "text":
             llm_response_format = {"type":"text"}
         elif response_format == "json":
             llm_response_format = {"type":"json_object"}
         self.prompt = self._get_prompt(system_prompt_template, user_prompt_template, prompt_template_path)
-        self.llm = ChatOpenAI(model=model, temperature=temperature, streaming=streaming, seed=seed, response_format=llm_response_format)
+        self.llm = ChatOpenAI(model=model, temperature=temperature, streaming=streaming, seed=seed, response_format=llm_response_format, request_timeout=request_timeout)
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt, verbose=verbose)
         self.max_tries = 1
 
@@ -171,7 +166,7 @@ class BaseChatChain(BaseChain):
         input_dict = self.parse_input(chat_history=chat_history, **kwargs)
         for _ in range(self.max_tries):
             try:
-                result = run_chain_with_timeout(self.chain, input_dict, callbacks, LIMIT_CHAIN_TIMEOUT)
+                result = self.chain.run(input_dict, callbacks=callbacks)
                 return self.parse_output(result)
             except Exception as e:
                 print(e)
@@ -203,13 +198,14 @@ class BaseChatToolChain(BaseChatChain):
                  seed=42,
                  response_format="text",
                  verbose=False,
-                 tools=None,) -> None:
+                 tools=None,
+                 request_timeout=LIMIT_CHAIN_TIMEOUT) -> None:
         if response_format == "text":
             llm_response_format = {"type":"text"}
         elif response_format == "json":
             llm_response_format = {"type":"json_object"}
         self.prompt = self._get_prompt(system_prompt_template, user_prompt_template, tool_prompt_template, prompt_template_path, tools)
-        self.llm = ChatOpenAI(model=model, temperature=temperature, streaming=streaming, seed=seed, response_format=llm_response_format)
+        self.llm = ChatOpenAI(model=model, temperature=temperature, streaming=streaming, seed=seed, response_format=llm_response_format, request_timeout=request_timeout)
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt, verbose=verbose)
         self.max_tries = 5
 
@@ -247,7 +243,7 @@ class BaseChatToolChain(BaseChatChain):
         input_dict = self.parse_input(chat_history=chat_history, agent_scratchpad=agent_scratchpad, **kwargs)
         for _ in range(self.max_tries):
             try:
-                result = run_chain_with_timeout(self.chain, input_dict, callbacks, LIMIT_CHAIN_TIMEOUT)
+                result = self.chain.run(input_dict, callbacks=callbacks)
                 return self.parse_output(result)
             except Exception as e:
                 print(e)
