@@ -25,18 +25,21 @@ class ExtractColumnValueChain(BaseChatChain):
                 # model='gpt-4-1106-preview',
                 model='gpt-3.5-turbo-1106',
                 temperature=0.0,
+                top_p=0.0,
                 verbose=False) -> None:
-        super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature)
+        super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature, top_p=top_p)
 
     def run(self, query=None, context=None, chat_history=[], callbacks=None):
         return super().run(input=query, context=context, chat_history=chat_history, callbacks=callbacks)
     
     def parse_output(self, output):
-        extracted_data = ast.literal_eval(output)['extracted data']
-        extracted_data_text = ''
-        for data in extracted_data:
-            extracted_data_text += f"· {data}\n"
-        return extracted_data_text
+        result = ast.literal_eval(output)
+        print(result)
+        final_answer = result['Final Answer']
+        final_answer_text = ''
+        for data in final_answer:
+            final_answer_text += f"· {data}\n"
+        return final_answer_text
     
 # example usage
 # python extract_column_value_chain.py --query "인공지능 분야에 대해 설명해줘" --context "인공지능 분야는 컴퓨터 공학의 한 분야로서 인간의 지능을 컴퓨터로 구현하는 것을 연구한다."

@@ -214,7 +214,6 @@ class CustomElasticSearch:
         Returns:
             data: file_uuid에 해당하는 문서의 schema에 해당하는 데이터
         """
-        print(self.schema_list)
         if schema not in self.schema_list:
             raise ValueError(f"schema {schema} does not exist")
         data = self.get_data_by_file_uuid(file_uuid)

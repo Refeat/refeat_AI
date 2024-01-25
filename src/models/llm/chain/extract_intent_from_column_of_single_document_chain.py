@@ -36,7 +36,8 @@ class ExtractIntentFromColumnOfSingleDocumentChain(BaseChatChain):
     
     def parse_output(self, output):
         result = ast.literal_eval(output)
-        return result.get('Search Query', '')
+        print(result)
+        return result.get('Enriched User Query', '')
     
 # example usage
 # python extract_intent_from_column_of_single_document_chain.py --column "저자" --document_summary "이 논문의 내용은 인공지능 분야에 대해 설명하고 있습니다. 인공지능은 인간의 지능을 컴퓨터로 구현하는 것을 말한다."
