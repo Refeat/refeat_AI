@@ -27,6 +27,10 @@ class CustomElasticSearch:
         self.es = Elasticsearch(hosts=[host], timeout=60)
         self.index_name = index_name
         self.embedding = get_embedder(EMBEDDER)
+        
+    @property
+    def schema_list(self):
+        return list(self.mappings['properties'].keys())
     
     def _create_index(self, settings=SETTINGS, mappings=MAPPINGS):
         """
@@ -125,6 +129,7 @@ class CustomElasticSearch:
             'summary': data['summary'],
             "init_date": datetime.strptime(data['init_date'], '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%dT%H:%M:%S'),
             "updated_date": datetime.strptime(data['updated_data'], '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%dT%H:%M:%S') if data['updated_date'] else None,
+            "chunk_list_by_text_rank": data['chunk_list_by_text_rank'],
             "contents": content_list
         }
 
@@ -191,35 +196,69 @@ class CustomElasticSearch:
                 }
             }
         }
-
+        
         response = self.es.search(index=self.index_name, body=query)
         data = [hit["_source"] for hit in response["hits"]["hits"]]
+        if len(data) == 0:
+            raise ValueError(f"file_uuid {file_uuid} does not exist")
         return data
-
-    def get_summary_by_project_id(self, project_id):
+    
+    def get_schema_data_by_file_uuid(self, file_uuid, schema):
         """
-        project_id에 해당하는 문서의 summary를 반환합니다.
+        file_uuid에 해당하는 문서의 schema에 해당하는 데이터를 반환합니다.
+        
+        Args:
+            file_uuid: 검색할 file_uuid
+            schema: 검색할 schema
+            
+        Returns:
+            data: file_uuid에 해당하는 문서의 schema에 해당하는 데이터
+        """
+        print(self.schema_list)
+        if schema not in self.schema_list:
+            raise ValueError(f"schema {schema} does not exist")
+        data = self.get_data_by_file_uuid(file_uuid)
+        return data[0][schema]
+
+    def get_data_by_project_id(self, project_id):
+        """
+        project_id에 해당하는 문서의 데이터를 반환합니다.
 
         Args:
             project_id: 검색할 project_id
 
         Returns:
-            summary_list: project_id에 해당하는 문서의 summary 리스트
+            data: project_id에 해당하는 문서의 데이터
         """
         query = {
             "query": {
-                "bool": {
-                    "filter": [
-                        {"term": {"project_id": project_id}}
-                    ]
+                "match": {
+                    "project_id": project_id
                 }
-            },
-            "_source": ["summary"]  # Only return the file_name field
+            }
         }
 
         response = self.es.search(index=self.index_name, body=query)
-        summary_list = [hit["_source"]["summary"] for hit in response["hits"]["hits"]]
-        return summary_list
+        data = [hit["_source"] for hit in response["hits"]["hits"]]
+        if len(data) == 0:
+            raise ValueError(f"project_id {project_id} does not exist")
+        return data
+
+    def get_schema_data_by_project_id(self, project_id, schema):
+        """
+        project_id에 해당하는 문서의 schema에 해당하는 데이터를 반환합니다.
+
+        Args:
+            project_id: 검색할 project_id
+            schema: 검색할 schema
+
+        Returns:
+            data: project_id에 해당하는 문서의 schema에 해당하는 데이터
+        """
+        if schema not in self.schema_list:
+            raise ValueError(f"schema {schema} does not exist")
+        data = self.get_data_by_project_id(project_id)
+        return [d[schema] for d in data]
 
     def post_process_search_results(self, response, search_range):
         """
@@ -738,13 +777,13 @@ class CustomElasticSearch:
 
 if __name__ == "__main__":
     # test elasticsearch
-    es = CustomElasticSearch(index_name='refeat_ai') # default host: http://localhost:9200
-    # es = CustomElasticSearch(index_name='refeat_ai', host="http://10.10.10.27:9200")
+    # es = CustomElasticSearch(index_name='refeat_ai') # default host: http://localhost:9200
+    es = CustomElasticSearch(index_name='refeat_ai', host="http://10.10.10.27:9200")
     
     # ---------- create index ---------- #
     # es._create_index(settings=es.settings, mappings=es.mappings)
-    # json_path = '../../modules/test_data/88b52de3-3b9e-4d09-a876-e67d060fdbce.json'
-    # es.add_document_from_json(json_path) # add single document
+    json_path = '../../modules/test_data/test.json'
+    es.add_document_from_json(json_path) # add single document
 
     # ---------- delete index ---------- #
     # es._delete_index()

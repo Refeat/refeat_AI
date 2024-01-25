@@ -87,8 +87,8 @@ class KnowledgeGraphDataBase:
                 output.append(str(graph_constructor))
         return '\n\n'.join(output)
 
-    def get_chunk_num(self, project_id):
-        return self.G_dict[project_id].get_chunk_num()
+    def get_chunk_num(self, project_id, file_uuid=None):
+        return self.G_dict[project_id].get_chunk_num(file_uuid)
 
     def search(self, query, project_id, file_uuid=None):
         if file_uuid is not None:
@@ -128,8 +128,7 @@ class GraphConstructor:
     def add_first_node(self, file_uuid, data):
         if data['token_num'] < self.token_filter_length:
             return
-        new_node_uuid = uuid.uuid4()
-        new_embedding = np.array(data['embedding']).reshape(1, -1)
+        new_node_uuid = data['uuid']
         child_embeddings = data['child_embeddings']
         
         if file_uuid not in self.file_uuid_to_uuid:
@@ -145,7 +144,7 @@ class GraphConstructor:
     def add_node(self, file_uuid, data, k_knn):
         if data['token_num'] < self.token_filter_length:
             return
-        new_node_uuid = uuid.uuid4()
+        new_node_uuid = data['uuid']
         new_embedding = np.array(data['embedding']).reshape(1, -1)
         child_embeddings = np.array(data['child_embeddings'])
 
@@ -216,8 +215,11 @@ class GraphConstructor:
             # Remove the entry from file_uuid_to_uuid
             del self.file_uuid_to_uuid[file_uuid]
 
-    def get_chunk_num(self):
-        return len(self.uuid_list)
+    def get_chunk_num(self, file_uuid=None):
+        if file_uuid:
+            return len(self.file_uuid_to_uuid.get(file_uuid, []))
+        else:
+            return len(self.uuid_list)
 
     def visualize_graph(self):
         font_name = 'Malgun Gothic'

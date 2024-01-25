@@ -8,6 +8,7 @@ sys.path.append(current_path)
 from utils import add_api_key
 add_api_key()
 
+import uuid
 import copy
 import json
 import heapq
@@ -178,11 +179,13 @@ class ChunkTextSplitter:
             merge_bbox = self.get_merge_bbox(merge_chunk)
             page = merge_chunk[0]['page'] if 'page' in merge_chunk[0] else None
             child_texts = self.split_text(merge_text, child_text_length)
+            chunk_uuid = str(uuid.uuid4())
             processed_merge_chunk = {
                 'text': merge_text,
                 'child_texts': child_texts,
                 'bbox': merge_bbox,
-                'page': page
+                'page': page,
+                'uuid': chunk_uuid
             }
             processed_merge_chunk_list.append(processed_merge_chunk)                
                 
@@ -398,11 +401,13 @@ class SemanticChunkSplitter:
             merge_bbox = self.get_merge_bbox(merge_chunk)
             page = merge_chunk[0]['page'] if 'page' in merge_chunk[0] else None
             child_texts = self.split_text(merge_text, child_text_length)
+            chunk_uuid = str(uuid.uuid4())
             processed_merge_chunk = {
                 'text': merge_text,
                 'child_texts': child_texts,
                 'bbox': merge_bbox,
-                'page': page
+                'page': page,
+                'uuid': chunk_uuid
             }
             processed_merge_chunk_list.append(processed_merge_chunk)                
                 

@@ -44,8 +44,8 @@ class KGDBSearchTool(BaseTool):
     def parse_output(self, result_list):
         return result_list
     
-    def get_chunk_num(self, project_id):
-        return self.knowledge_graph_db.get_chunk_num(project_id)
+    def get_chunk_num(self, project_id, file_uuid=None):
+        return self.knowledge_graph_db.get_chunk_num(project_id, file_uuid)
     
 # example usage
 # python knowledge_graph_tool.py --query "전기차 시장의 규모"

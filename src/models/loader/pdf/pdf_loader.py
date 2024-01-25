@@ -63,7 +63,7 @@ class PdfLoader(BaseLoader):
 
     def get_screenshot(self, file_path, screenshot_dir):
         os.makedirs(screenshot_dir, exist_ok=True)
-        output_path = os.path.join(screenshot_dir, f"{uuid.uuid4()}.png")
+        output_path = os.path.join(screenshot_dir, f"{str(uuid.uuid4())}.png")
         
         doc = fitz.open(file_path)
         if len(doc) > 0:

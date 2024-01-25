@@ -15,6 +15,7 @@ from models.loader.unified_loader import UnifiedLoader
 from models.chunker.json_chunker import JsonChunker
 from models.embedder.utils import get_embedder
 from models.llm.chain.summary_chain import SummaryChain
+from models.text_ranker.text_ranker import TextRanker
 from database.elastic_search.custom_elastic_search import CustomElasticSearch
 from database.knowledge_graph.graph_construct import KnowledgeGraphDataBase
 
@@ -30,6 +31,7 @@ class FileProcessor:
         self.knowledge_graph_db = knowledge_graph_db
         self.chunker = JsonChunker(model_name=model_name)
         self.embedder = get_embedder(model_name)
+        self.text_ranker = TextRanker()
         self.save_dir = save_dir
         self.screenshot_dir = screenshot_dir
         os.makedirs(self.save_dir, exist_ok=True)
@@ -51,6 +53,7 @@ class FileProcessor:
         self.add_chunked_data(data)
         self.add_embedding(data)
         self.add_child_embedding(data)
+        self.add_chunk_list_by_text_rank(data)
 
     def get_summary(self, data):
         summary = self.add_summary(data)
@@ -103,6 +106,10 @@ class FileProcessor:
         summary = self.summary_chain.run(full_text=data['full_text'])
         data['summary'] = summary
         return summary
+    
+    def add_chunk_list_by_text_rank(self, data):
+        ranked_chunks = self.text_ranker.get_text_rank(data['data'])
+        data['chunk_list_by_text_rank'] = ranked_chunks
 
     def add_data_to_elastic_search(self, file_path):
         self.es.add_document_from_json(file_path)
@@ -151,15 +158,16 @@ def profile_run(file_uuid, project_id, file_path, file_processor):
 # python file_processor.py --file_path "../test_data/전기차 시장 규모.pdf" --test_query "전기차 시장 규모"
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--file_path', type=str, default='https://www.marketsandmarkets.com/Market-Reports/electric-vehicle-market-209371461.html')
+    parser.add_argument('--file_path', type=str, default='https://automobilepedia.com/index.php/2023/10/21/2023-ev-rank/')
     parser.add_argument('--test_query', type=str, default='2023 EV Rank')
     parser.add_argument('--save_dir', type=str, default='../test_data')
     parser.add_argument('--screenshot_dir', type=str, default='../test_data/screenshot')
     args = parser.parse_args()
     
-    es = CustomElasticSearch(index_name='refeat_ai') # default host is localhost:9200
-    # es = CustomElasticSearch(index_name='refeat_ai', host="http://10.10.10.27:9200")
-    es._create_index() # delete index and create new index
+    # es = CustomElasticSearch(index_name='refeat_ai') # default host is localhost:9200
+    es = CustomElasticSearch(index_name='refeat_ai', host="http://10.10.10.27:9200")
+    # es._create_index() # delete index and create new index
+
     summary_chain = SummaryChain()
     knowledge_graph_db = KnowledgeGraphDataBase()
 

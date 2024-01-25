@@ -10,3 +10,7 @@ from models.llm.chain.extract_intent_chain import ExtractIntentChain
 from models.llm.chain.make_fake_evidence_chain import MakeFakeEvidenceChain
 from models.llm.chain.extract_intent_and_query_chain import ExtractIntentAndQueryChain
 from models.llm.chain.common_chat_chain import CommonChatChain
+from models.llm.chain.document_coverage_checker_chain import DocumentCoverageCheckerChain
+from models.llm.chain.extract_intent_from_column_of_multi_documents_chain import ExtractIntentFromColumnOfMultiDocumentsChain
+from models.llm.chain.extract_intent_from_column_of_single_document_chain import ExtractIntentFromColumnOfSingleDocumentChain
+from models.llm.chain.extract_column_value_chain import ExtractColumnValueChain

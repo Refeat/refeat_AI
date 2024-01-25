@@ -40,7 +40,10 @@ class ExtractEvidenceChain(BaseChatChain):
     
     def parse_output(self, output, document, bbox):
         result = ast.literal_eval(output)
-        return result['evidence'], document, bbox
+        if (document is not None) and (bbox is not None):
+            return result['evidence'], document, bbox
+        else:
+            return result['evidence']
     
 # example usage
 # python extract_evidence_chain.py --query "인공지능 분야에 대해 설명해줘" --context "인공지능은 인간의 지능을 컴퓨터로 구현하는 것을 말한다."
