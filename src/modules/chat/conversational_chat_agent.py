@@ -34,7 +34,6 @@ class ChatAgentModule:
             query (str): 사용자 입력
             chat_history (List[List[str]]): [[사용자 입력, 챗봇 출력], ...]
         """
-        # file_name_text = self.tools[0].get_summary_by_project_id(-1)
         input_dict = self.parse_input(query, chat_history)
         result = self.agent_executor.run(input_dict, callbacks=[self.streaming_callback])
         return result

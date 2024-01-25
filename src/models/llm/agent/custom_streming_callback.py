@@ -56,13 +56,14 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
         # ... if yes, then print tokens from now on
         if self.answer_reached:
             if token not in self.special_tokens:
-                sys.stdout.write(token)
-                sys.stdout.flush()
+                # sys.stdout.write(token)
+                # sys.stdout.flush()
                 self.queue.append(token)
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
-        self.queue.append('END')
+        # self.queue.append('END')
+        pass
 
     def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when LLM errors."""

@@ -20,7 +20,7 @@ from models.errors.error import ChainRunError, timeout
 
 current_file_folder_path = os.path.dirname(os.path.abspath(__file__))
 
-LIMIT_CHAIN_TIMEOUT = 10
+LIMIT_CHAIN_TIMEOUT = 60
 
 class BaseChain:
     def __init__(self, 
@@ -30,6 +30,7 @@ class BaseChain:
                  verbose=False,
                  streaming=False,
                  temperature=0.0,
+                 top_p=1.0,
                  seed=42,
                  response_format="text",
                  callbacks=None,
@@ -39,7 +40,7 @@ class BaseChain:
         elif response_format == "json":
             llm_response_format = {"type":"json_object"}
         self.prompt = self._get_prompt(prompt_template, prompt_template_path)
-        self.llm = ChatOpenAI(model=model, temperature=temperature, streaming=streaming, seed=seed, response_format=llm_response_format, request_timeout=request_timeout)
+        self.llm = ChatOpenAI(model=model, temperature=temperature, top_p=top_p, streaming=streaming, seed=seed, response_format=llm_response_format, request_timeout=request_timeout)
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt, verbose=verbose, callbacks=callbacks)
         self.max_tries = 5
 
@@ -79,6 +80,7 @@ class BaseToolChain(BaseChain):
                  verbose=False,
                  streaming=False,
                  temperature=0.0,
+                 top_p=1.0,
                  seed=42,
                  response_format="text",
                  callbacks=None,
@@ -89,7 +91,7 @@ class BaseToolChain(BaseChain):
         elif response_format == "json":
             llm_response_format = {"type":"json_object"}
         self.prompt = self._get_prompt(prompt_template, tool_prompt_template, prompt_template_path, tools)
-        self.llm = ChatOpenAI(model=model, temperature=temperature, streaming=streaming, seed=seed, response_format=llm_response_format, request_timeout=request_timeout)
+        self.llm = ChatOpenAI(model=model, temperature=temperature, top_p=top_p, streaming=streaming, seed=seed, response_format=llm_response_format, request_timeout=request_timeout)
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt, verbose=verbose, callbacks=callbacks)
         self.max_tries = 5
 
@@ -128,6 +130,7 @@ class BaseChatChain(BaseChain):
                  model="gpt-3.5-turbo-1106",
                  streaming=False,
                  temperature=0.0,
+                 top_p=1.0,
                  seed=42,
                  response_format="text",
                  verbose=False,
@@ -137,7 +140,7 @@ class BaseChatChain(BaseChain):
         elif response_format == "json":
             llm_response_format = {"type":"json_object"}
         self.prompt = self._get_prompt(system_prompt_template, user_prompt_template, prompt_template_path)
-        self.llm = ChatOpenAI(model=model, temperature=temperature, streaming=streaming, seed=seed, response_format=llm_response_format, request_timeout=request_timeout)
+        self.llm = ChatOpenAI(model=model, temperature=temperature, top_p=top_p, streaming=streaming, seed=seed, response_format=llm_response_format, request_timeout=request_timeout)
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt, verbose=verbose)
         self.max_tries = 1
 
@@ -195,6 +198,7 @@ class BaseChatToolChain(BaseChatChain):
                  model="gpt-3.5-turbo-1106",
                  streaming=False,
                  temperature=0.0,
+                 top_p=1.0,
                  seed=42,
                  response_format="text",
                  verbose=False,
@@ -205,7 +209,7 @@ class BaseChatToolChain(BaseChatChain):
         elif response_format == "json":
             llm_response_format = {"type":"json_object"}
         self.prompt = self._get_prompt(system_prompt_template, user_prompt_template, tool_prompt_template, prompt_template_path, tools)
-        self.llm = ChatOpenAI(model=model, temperature=temperature, streaming=streaming, seed=seed, response_format=llm_response_format, request_timeout=request_timeout)
+        self.llm = ChatOpenAI(model=model, temperature=temperature, top_p=top_p, streaming=streaming, seed=seed, response_format=llm_response_format, request_timeout=request_timeout)
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt, verbose=verbose)
         self.max_tries = 5
 

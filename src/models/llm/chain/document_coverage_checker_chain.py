@@ -12,12 +12,11 @@ import ast
 import argparse
 
 from models.llm.base_chain import BaseChatChain
-from models.tokenizer.utils import get_tokenizer
-from models.llm.templates.db_tool_query_generator_chain_template import SYSTEM, USER
+from models.llm.templates.document_coverage_checker_chain_template import SYSTEM, USER
 
 current_file_folder_path = os.path.dirname(os.path.abspath(__file__))
 
-class DBToolQueryGeneratorChain(BaseChatChain):
+class DocumentCoverageCheckerChain(BaseChatChain):
     def __init__(self, 
                 system_prompt_template:str=SYSTEM,
                 user_prompt_template:str=USER,
@@ -28,19 +27,35 @@ class DBToolQueryGeneratorChain(BaseChatChain):
         super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature)
 
     def run(self, query=None, chat_history=[]):
+        """
+        Returns:
+            bool: True if query is searchable, False otherwise
+            
+        Examples:
+            query = "한국 전자 기업의 주주 수"
+            return True
+            
+            query = "한국 전자 기업의 키워드"
+            return False
+        """
         return super().run(input=query, chat_history=chat_history)
     
     def parse_output(self, output):
         result = ast.literal_eval(output)
-        return result['query list']
+        if result['Do I only need to see certain content?'] == 'yes':
+            return False
+        elif result['Do I only need to see certain content?'] == 'no':
+            return True
+        else:
+            raise ValueError(f"Unexpected output: {output}. Expected: 'yes' or 'no'")        
     
 # example usage
-# python db_tool_query_generator_chain.py --query "2021년 전기 자동차 산업의 시장 규모와 판매 대수를 찾아보세요."
+# python document_coverage_checker_chain.py --query "한국 전자 기업의 주주 수"
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--query', type=str, default="2021년 전기 자동차 산업의 시장 규모를 찾아보세요.")
+    parser.add_argument('--query', type=str, default="한국 전자 기업의 키워드")
     args = parser.parse_args()
-
-    db_tool_query_generator_chain = DBToolQueryGeneratorChain(verbose=True)
-    result = db_tool_query_generator_chain.run(query=args.query, chat_history=[])
+    
+    document_coverage_checker_chain = DocumentCoverageCheckerChain(verbose=True)
+    result = document_coverage_checker_chain.run(query=args.query, chat_history=[])
     print(result)

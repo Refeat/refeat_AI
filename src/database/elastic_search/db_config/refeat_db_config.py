@@ -29,6 +29,9 @@ MAPPINGS = {
         'summary': {
             'type': 'text'
         },
+        "chunk_list_by_text_rank": {
+            "type": "text"
+        },
         "contents": {
             "type": "nested",
             "properties": {

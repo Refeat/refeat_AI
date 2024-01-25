@@ -58,12 +58,11 @@ class DBSearchTool(BaseTool):
         es_config.set_project_id(project_id)
         return es_config
 
-    def get_summary_by_project_id(self, project_id):
-        summarys = self.es.get_summary_by_project_id(project_id)
-        summary_text = ''
-        for idx, summary in enumerate(summarys):
-            summary_text += f'file {idx+1}: {summary}\n'
-        return summary_text
+    def get_schema_data_by_project_id(self, project_id, schema):
+        return self.es.get_schema_data_by_project_id(project_id, schema)
+    
+    def get_schema_data_by_file_uuid(self, file_uuid, schema):
+        return self.es.get_schema_data_by_file_uuid(file_uuid, schema)
     
 # example usage
 # python db_tool.py --query 'Cross-lingual Language Model Pretraining bleu score'

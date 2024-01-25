@@ -38,6 +38,7 @@ class FinalAnswerChain(BaseChatChain):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--query', type=str, default="아마존 aws s3의 가격 정책에 대해 알려줘")
+    parser.add_argument('--answer', type=str, default="아마존 aws s3의 가격 정책은 다음과 같다.")
     args = parser.parse_args()
     
     final_answer_chain = FinalAnswerChain(verbose=True)
