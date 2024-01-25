@@ -23,8 +23,9 @@ class DocumentCoverageCheckerChain(BaseChatChain):
                 response_format="json",
                 model='gpt-3.5-turbo-1106',
                 temperature=0.0,
+                top_p=0.0,
                 verbose=False,) -> None:
-        super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature)
+        super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature, top_p=top_p)
 
     def run(self, query=None, chat_history=[]):
         """
@@ -42,6 +43,7 @@ class DocumentCoverageCheckerChain(BaseChatChain):
     
     def parse_output(self, output):
         result = ast.literal_eval(output)
+        print(result)
         if result['Do I only need to see certain content?'] == 'yes':
             return False
         elif result['Do I only need to see certain content?'] == 'no':

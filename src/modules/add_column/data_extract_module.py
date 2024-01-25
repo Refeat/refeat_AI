@@ -65,10 +65,10 @@ class AddColumnModule:
             chunks = self.db_tool.run(query=query, file_uuid=[file_uuid])
             chunks = [chunk['chunk'] for chunk in chunks]
         chunks = chunks[:self.chunks_num]
-        # context = self.chunks_list_to_text(evidence_list)
+        context = self.chunks_list_to_text(chunks)
         
-        evidence_list = self.extract_evidence(query, chunks)
-        context = self.evidence_list_to_text(evidence_list)
+        # evidence_list = self.extract_evidence(query, chunks)
+        # context = self.evidence_list_to_text(evidence_list)
         
         column_value = self.extract_column_value_chain.run(query=query, context=context)
         return column_value
@@ -76,7 +76,7 @@ class AddColumnModule:
     def chunks_list_to_text(self, chunks_list):
         chunks_text = ''
         for idx, chunk in enumerate(chunks_list[:self.chunks_num]):
-            chunks_text += f'- Document {idx+1}: {chunk}\n'
+            chunks_text += f'- Content {idx+1}: {chunk}\n'
         return chunks_text
 
     def evidence_list_to_text(self, evidence_list):
@@ -99,9 +99,9 @@ class AddColumnModule:
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--column', type=str, default="키워드")
+    parser.add_argument('--column', type=str, default="저자")
     parser.add_argument('--project_id', type=str, default="-1")
-    parser.add_argument('--file_uuid', type=str, default="bfb7ca33-8ba4-4881-a32a-ac0e4adbe66c")
+    parser.add_argument('--file_uuid', type=str, default="19f3a95a-2623-49b0-a911-03a6d3aa7ad2")
     args = parser.parse_args()
     
     es = CustomElasticSearch(index_name='refeat_ai', host="http://10.10.10.27:9200")
