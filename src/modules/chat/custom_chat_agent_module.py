@@ -12,8 +12,11 @@ import argparse
 import concurrent.futures
 from typing import List
 
+from database.elastic_search.custom_elastic_search import CustomElasticSearch
+from database.knowledge_graph.graph_construct import KnowledgeGraphDataBase
 from models.tools import DBSearchTool, KGDBSearchTool
 from models.llm.agent.custom_streming_callback import CustomStreamingStdOutCallbackHandler
+from models.llm.agent.streaming_queue import StreamingQueue
 from models.llm.chain import CommonChatChain, PlanAnswerChain, DBToolQueryGeneratorChain, ExtractEvidenceChain, ExtractIntentChain, ExtractIntentAndQueryChain
 
 class ChatAgentModule:
@@ -38,7 +41,7 @@ class ChatAgentModule:
             chain_input_chat_history_num (int): number of chat history to input to chain
         """
         if queue is None:
-            queue = []
+            queue = StreamingQueue()
         callbacks = [CustomStreamingStdOutCallbackHandler(queue=queue)] if self.streaming else None
         chat_history = chat_history[-chain_input_chat_history_num:]
 
@@ -153,7 +156,7 @@ class ChatAgentModule:
         return evidence_num
 
     def get_chunk_num(self, project_id, file_uuid=None):        
-        return self.tool_dict['Knowledge Graph Search'].get_chunk_num(project_id)
+        return self.tool_dict['Knowledge Graph Search'].get_chunk_num(project_id, file_uuid)
 
 def profile_run(query, file_uuid, project_id, chat_agent):
     """
@@ -177,7 +180,10 @@ if __name__ == '__main__':
     parser.add_argument('--project_id', type=int, default=-1)
     args = parser.parse_args()
     
-    chat_agent = ChatAgentModule(verbose=True)
+    es = CustomElasticSearch(index_name='refeat_ai', host="http://10.10.10.27:9200")
+    knowledge_graph_db = KnowledgeGraphDataBase()
+    
+    chat_agent = ChatAgentModule(es, knowledge_graph_db, verbose=True)
     result = chat_agent.run(args.query, args.file_uuid, args.project_id)
     print(f'chat result: {result}')
     # cProfile.runctx('profile_run(args.query, args.file_uuid, args.project_id, chat_agent)', 
