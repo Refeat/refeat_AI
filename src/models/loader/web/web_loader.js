@@ -167,10 +167,10 @@ class WebLoader {
             fs.mkdirSync(htmlSaveDir);
         }
 
-        // 이미지 제대로 id가 추가되었는지 확인
+        // 이미지 제대로 id가 추가되었는지 확인(테스트용)
         // const style = `
         //     <style>
-        //         [id^='image-element-']:hover {
+        //         [id^='image-']:hover {
         //             border: 4px solid red; /* 빨간색 테두리 추가 */
         //             box-sizing: border-box; /* 테두리 너비가 요소 크기에 포함되도록 설정 */
         //         }

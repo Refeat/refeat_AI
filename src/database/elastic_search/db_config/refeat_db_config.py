@@ -56,7 +56,7 @@ MAPPINGS = {
                 },
                 "content_embedding": {
                     "type": "dense_vector",
-                    "dims": 1536
+                    "dims": 3072
                 },
                 "page": {
                     "type": "integer"

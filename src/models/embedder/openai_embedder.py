@@ -11,10 +11,10 @@ import argparse
 from openai import OpenAI
 
 class OpenAIEmbedder:
-    def __init__(self, model="text-embedding-ada-002"):
+    def __init__(self, model="text-embedding-3-large"):
         self.embedding_model = OpenAI(api_key=openai_api_key).embeddings
         self.model = model
-        self.dimensions = 1536
+        self.dimensions = 3072
 
     def get_embedding(self, query, prefix=None):
         if isinstance(query, str):
