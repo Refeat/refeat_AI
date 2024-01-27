@@ -25,16 +25,17 @@ from database.knowledge_graph.graph_construct import KnowledgeGraphDataBase
 # knowledge_graph_db = KnowledgeGraphDataBase()
 
 class FileProcessor:
-    def __init__(self, es, summary_chain, knowledge_graph_db, model_name='openai', save_dir='../test_data', screenshot_dir='../test_data/screenshot'):
+    def __init__(self, es, summary_chain, knowledge_graph_db, model_name='openai', json_save_dir='../test_data', screenshot_dir='../test_data/screenshots', html_save_dir='../test_data/html'):
         self.es = es
         self.summary_chain = summary_chain
         self.knowledge_graph_db = knowledge_graph_db
         self.chunker = JsonChunker(model_name=model_name)
         self.embedder = get_embedder(model_name)
         self.text_ranker = TextRanker()
-        self.save_dir = save_dir
+        self.json_save_dir = json_save_dir
         self.screenshot_dir = screenshot_dir
-        os.makedirs(self.save_dir, exist_ok=True)
+        self.html_save_dir = html_save_dir
+        os.makedirs(self.json_save_dir, exist_ok=True)
 
     def __call__(self, file_uuid, project_id, file_path):
         data = self.load_file(file_uuid, project_id, file_path)
@@ -46,7 +47,7 @@ class FileProcessor:
 
     def load_file(self, file_uuid, project_id, file_path):
         loader = UnifiedLoader()
-        data = loader.load_file(file_uuid, project_id, file_path, self.save_dir, self.screenshot_dir)
+        data = loader.load_file(file_uuid, project_id, file_path, self.json_save_dir, self.screenshot_dir, self.html_save_dir)
         return data
     
     def process_data(self, data):
@@ -160,8 +161,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--file_path', type=str, default='https://automobilepedia.com/index.php/2023/10/21/2023-ev-rank/')
     parser.add_argument('--test_query', type=str, default='2023 EV Rank')
-    parser.add_argument('--save_dir', type=str, default='../test_data')
-    parser.add_argument('--screenshot_dir', type=str, default='../test_data/screenshot')
+    parser.add_argument('--json_save_dir', type=str, default='../test_data')
+    parser.add_argument('--screenshot_dir', type=str, default='../test_data/screenshots')
+    parser.add_argument('--html_save_dir', type=str, default='../test_data/html')
     args = parser.parse_args()
     
     # es = CustomElasticSearch(index_name='refeat_ai') # default host is localhost:9200
@@ -171,7 +173,7 @@ if __name__ == "__main__":
     summary_chain = SummaryChain()
     knowledge_graph_db = KnowledgeGraphDataBase()
 
-    file_processor = FileProcessor(es, summary_chain, knowledge_graph_db, save_dir=args.save_dir, screenshot_dir=args.screenshot_dir)
+    file_processor = FileProcessor(es, summary_chain, knowledge_graph_db, json_save_dir=args.json_save_dir, screenshot_dir=args.screenshot_dir, html_save_dir=args.html_save_dir)
     file_uuid = str(uuid.uuid4())
     project_id = -1
     
