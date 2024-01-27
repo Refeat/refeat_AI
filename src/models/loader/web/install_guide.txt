@@ -1,3 +1,4 @@
 npm install puppeteer
 npm install cheerio
 npm install uuid
+npm install js-beautify

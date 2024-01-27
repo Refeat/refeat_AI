@@ -7,16 +7,18 @@ sys.path.append(current_path)
 
 import uuid
 import argparse
+import subprocess
 
 import fitz
+from bs4 import BeautifulSoup
 from models.loader.base_loader import BaseLoader
 
 class PdfLoader(BaseLoader):
-    def __init__(self, file_uuid, project_id, file_path, save_dir, screenshot_dir):
-        super().__init__(file_uuid, project_id, file_path, save_dir, screenshot_dir)
+    def __init__(self, file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir):
+        super().__init__(file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir)
         self.page_height = None
 
-    def get_data(self, file_path, screenshot_dir):
+    def get_data(self, file_path, file_uuid, screenshot_dir, html_save_dir):
         data = []
         doc = fitz.open(file_path)
 
@@ -61,9 +63,9 @@ class PdfLoader(BaseLoader):
             name_without_extension, _ = os.path.splitext(basename)
             return name_without_extension
 
-    def get_screenshot(self, file_path, screenshot_dir):
+    def get_screenshot(self, file_path, file_uuid, screenshot_dir):
         os.makedirs(screenshot_dir, exist_ok=True)
-        output_path = os.path.join(screenshot_dir, f"{str(uuid.uuid4())}.png")
+        output_path = os.path.join(screenshot_dir, f"{file_uuid}.png")
         
         doc = fitz.open(file_path)
         if len(doc) > 0:
@@ -73,20 +75,48 @@ class PdfLoader(BaseLoader):
         
         doc.close()
         return output_path if os.path.exists(output_path) else None
+    
+    def get_html_path(self, file_path, file_uuid, html_save_dir):
+        command = ["pdf2htmlEX", "--dest-dir", html_save_dir, "--embed-javascript", "0", "--zoom", "1.3", file_path]
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        html_path = self.change_html_name_to_uuid(file_path, file_uuid, html_save_dir)        
+        self.postprocess_html(html_path)
+        return html_path
+    
+    def postprocess_html(self, html_path):
+        with open(html_path, 'r', encoding='utf-8') as file:
+            html_content = file.read()
+        soup = BeautifulSoup(html_content, 'html.parser')
 
+        for script_tag in soup.find_all('script'):
+            script_tag.decompose()
+
+        with open(html_path, 'w', encoding='utf-8') as file:
+            file.write(str(soup))
+    
+    def change_html_name_to_uuid(self, file_path, file_uuid, html_save_dir):
+        basename = os.path.basename(file_path)
+        name_without_extension, _ = os.path.splitext(basename)
+        html_path = os.path.join(html_save_dir, f'{name_without_extension}.html')
+        new_html_path = os.path.join(html_save_dir, f'{file_uuid}.html')
+        os.rename(html_path, new_html_path)
+        return new_html_path
+        
     def get_favicon(self, file_path):
         return None
     
 # example usage
-# python pdf_loader.py --file_path "../../test_data/pdf_loader_test.pdf" --save_dir "../../test_data/"
+# python pdf_loader.py --file_path "../../test_data/pdf_loader_test.pdf" --json_save_dir "../../test_data/" 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--file_path', type=str, required=True)
-    parser.add_argument('--save_dir', type=str, default='../../test_data/')
-    parser.add_argument('--screenshot_dir', type=str, default='../../test_data/')
+    parser.add_argument('--json_save_dir', type=str, default='../../test_data/') 
+    parser.add_argument('--screenshot_dir', type=str, default='../../test_data/screenshots/')
+    parser.add_argument('--html_save_dir', type=str, default='../../test_data/html/')
     parser.add_argument('--file_uuid', type=str, default=str(uuid.uuid4()))
     parser.add_argument('--project_id', type=str, default=-1)
     args = parser.parse_args()
-    pdf_loader = PdfLoader(file_path=args.file_path, file_uuid=args.file_uuid, project_id=args.project_id, save_dir=args.save_dir, screenshot_dir=args.save_dir)
-    save_path = pdf_loader.save_data(args.save_dir)
+    pdf_loader = PdfLoader(file_path=args.file_path, file_uuid=args.file_uuid, project_id=args.project_id, json_save_dir=args.json_save_dir, screenshot_dir=args.screenshot_dir, html_save_dir=args.html_save_dir)
+    save_path = pdf_loader.save_data(args.json_save_dir)
     print('file saved at', save_path)
