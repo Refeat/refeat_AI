@@ -162,7 +162,7 @@ def profile_run(file_uuid, project_id, file_path, file_processor):
 
 # example usage
 # web
-# python file_processor.py --file_path "https://zdnet.co.kr/view/?no=20230925133558" --test_query "2023 EV Rank"
+# python file_processor.py --file_path "https://lobste.rs/s/clfulh/big_tdd_misunderstanding_2022" --test_query "2023 EV Rank"
 # pdf
 # python file_processor.py --file_path "../test_data/전기차 시장 규모.pdf" --test_query "전기차 시장 규모"
 if __name__ == "__main__":

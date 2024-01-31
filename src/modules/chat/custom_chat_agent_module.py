@@ -30,7 +30,7 @@ class ChatAgentModule:
         self.plan_answer_chain = PlanAnswerChain(verbose=verbose, streaming=self.streaming)        
         self.limit_chunk_num = limit_chunk_num # project의 chunk수가 limit_chunk_num보다 작으면 elastic search로 검색, limit_chunk_num보다 크면 knowledge graph로 검색
     
-    def run(self, query, file_uuid:List[str]=None, project_id=None, chat_history: List[List[str]]=[], queue=None, chain_input_chat_history_num=3):
+    def run(self, query, file_uuid:List[str]=None, project_id=None, chat_history: List[List[str]]=[], queue=None, chain_input_chat_history_num=2):
         """
         Args:
             query (str): user input
@@ -161,7 +161,8 @@ class ChatAgentModule:
                     processed_tool_result.append(tool_result[i])
         return processed_tool_result[:evidence_num]
     
-    def calculate_evidence_num(self, chunk_num, chunk_evidence_ratio=0.2, min_evidence_num=8, max_evidence_num=20):
+    def calculate_evidence_num(self, chunk_num, chunk_evidence_ratio=0.2, min_evidence_num=10, max_evidence_num=20):
+        print(chunk_num)
         evidence_num = min(max(min_evidence_num, int(chunk_num*chunk_evidence_ratio)), max_evidence_num)
         return evidence_num
 
