@@ -25,15 +25,19 @@ class PlanAnswerChain(BaseChatChain):
                 # model='gpt-4-0125-preview',
                 model='gpt-3.5-turbo-1106',
                 temperature=0.0,
+                top_p=0.0,
                 verbose=False,
                 streaming=False) -> None:
-        super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature, streaming=streaming)
+        super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature, streaming=streaming, top_p=top_p)
 
     def run(self, query=None, context=None, chat_history=[], callbacks=None):
         return super().run(input=query, context=context, chat_history=chat_history, callbacks=callbacks)
     
     def parse_output(self, output):
-        return ast.literal_eval(output)['final answer']
+        result = ast.literal_eval(output)
+        final_answer, used_evidence_idx_list = result['final answer'], result['evidence used']
+        used_evidence_idx_list = [int(idx) for idx in used_evidence_idx_list]
+        return final_answer, used_evidence_idx_list
     
 # example usage
 # python plan_answer_chain.py --query "인공지능 분야에 대해 설명해줘"

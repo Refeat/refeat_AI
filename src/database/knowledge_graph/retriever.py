@@ -148,8 +148,10 @@ class KG_retriever_GPT(KG_retriever):
         for k in self.k_list[1:]:
             related_nodes = set()
             for node in initial_nodes:
-                new_query = self.make_fake_evidence_chain.run(query=query, evidence=graph_constructor.uuid_to_node[node]['text'])
-                new_query_embedding = self.embedder.get_embedding(new_query)
+                # new_query = self.make_fake_evidence_chain.run(query=query, evidence=graph_constructor.uuid_to_node[node]['text'])
+                # new_query_embedding = self.embedder.get_embedding(new_query)
+                new_query = query
+                new_query_embedding = query_embedding
                 all_retrieved_nodes, visited_nodes, related_nodes = self._retrieve_neighbor_nodes(node, new_query_embedding, graph_constructor, k, all_retrieved_nodes, visited_nodes, related_nodes)
             initial_nodes = list(related_nodes)
 

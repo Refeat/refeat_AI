@@ -23,8 +23,9 @@ class ExtractEvidenceChain(BaseChatChain):
                 response_format="json",
                 model='gpt-3.5-turbo-1106',
                 temperature=0.0,
+                top_p=0.0,
                 verbose=False,) -> None:
-        super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature)
+        super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature, top_p=top_p)
 
     def run(self, query=None, context=None, document=None, bbox=None, chat_history=[]):
         input_dict = self.parse_input(input=query, context=context, chat_history=chat_history)
@@ -41,9 +42,9 @@ class ExtractEvidenceChain(BaseChatChain):
     def parse_output(self, output, document, bbox):
         result = ast.literal_eval(output)
         if (document is not None) and (bbox is not None):
-            return result['evidence'], document, bbox
+            return result['consise evidence'], document, bbox
         else:
-            return result['evidence']
+            return result['consise evidence']
     
 # example usage
 # python extract_evidence_chain.py --query "인공지능 분야에 대해 설명해줘" --context "인공지능은 인간의 지능을 컴퓨터로 구현하는 것을 말한다."

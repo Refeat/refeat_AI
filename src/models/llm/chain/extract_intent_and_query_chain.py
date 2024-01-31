@@ -23,24 +23,28 @@ class ExtractIntentAndQueryChain(BaseChatChain):
                 response_format="json",
                 model='gpt-3.5-turbo-1106',
                 temperature=0.0,
+                top_p=0.0,
                 verbose=False,) -> None:
-        super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature)
+        super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature, top_p=top_p)
+        self.input_keys = ['query', 'chat_history']
+        self.output_keys = ['enriched user question', "search query"]
 
-    def run(self, query=None, context=None, chat_history=[], callbacks=None):
-        return super().run(input=query, context=context, chat_history=chat_history, callbacks=callbacks)
+    def run(self, query=None, chat_history=[], callbacks=None):
+        return super().run(input=query, chat_history=chat_history, callbacks=callbacks)
     
     def parse_output(self, output):
         result = ast.literal_eval(output)
-        return result['user words'], result['query list']
+        print(result)
+        return result['enriched user question'], result['search query']
     
 # example usage
 # python extract_intent_and_query_chain.py --query "인공지능 분야에 대해 설명해줘"
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--query', type=str, default="전기차 시장 규모 측면에서 가장 크게 성장하고 있는 대륙은 어디야? 그리고 성장동력은 뭐야?")
+    parser.add_argument('--query', type=str, default="현재 시장 규모랑 앞으로 성장한 시장 규모를 비교해서  그래프로 그려줘")
     args = parser.parse_args()
     
     extract_intent_and_query_chain = ExtractIntentAndQueryChain(verbose=True)
-    result = extract_intent_and_query_chain.run(query=args.query, chat_history=[])
+    result = extract_intent_and_query_chain.run(query=args.query, chat_history=[['글로벌 SaaS 시장의 규모와 국내 SaaS 시장의 규모를 알려주세요', '글로벌 SaaS 시장은 2025년까지 723조8천억원으로 예상되고, 국내 SaaS 시장은 2025년에 2조5천억원으로 예상됩니다.']])
     print(result)
     

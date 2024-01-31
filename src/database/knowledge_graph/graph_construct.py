@@ -217,7 +217,10 @@ class GraphConstructor:
 
     def get_chunk_num(self, file_uuid=None):
         if file_uuid:
-            return len(self.file_uuid_to_uuid.get(file_uuid, []))
+            chunk_num = 0
+            for uuid in file_uuid:
+                chunk_num += len(self.file_uuid_to_uuid.get(uuid, []))
+            return chunk_num
         else:
             return len(self.uuid_list)
 

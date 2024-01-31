@@ -11,6 +11,7 @@ from utils import add_api_key
 add_api_key()
 
 import json
+import time
 from datetime import datetime
 
 import tqdm
@@ -142,7 +143,7 @@ class CustomElasticSearch:
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         document = self._prepare_document(data)
-
+        
         self.es.index(index=self.index_name, document=document)
         self.refresh_index()
 

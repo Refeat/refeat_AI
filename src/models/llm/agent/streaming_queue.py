@@ -42,7 +42,7 @@ class StreamingQueue:
     
     def __str__(self) -> str:
         if len(self.main_queue)>0:
-            return self.main_queue[-1]
+            return f"{self.document_info}\n{self.main_queue}"
         else:
             return "empty"
 

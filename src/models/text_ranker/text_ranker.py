@@ -19,7 +19,6 @@ class TextRanker:
     def get_text_rank(self, data):
         graph = self.generate_graph(data)
         scores = nx.pagerank(graph.graph)
-
         sorted_chunks = sorted(data, key=lambda chunk: scores[chunk['uuid']], reverse=True)
         return [chunk['text'] for chunk in sorted_chunks]
 
@@ -30,14 +29,14 @@ class TextRanker:
 # python text_ranker.py --data_path ../../modules/test_data/944d4a8c-118d-4eb3-b1d4-f3d8b123b49d.json
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, default='../../modules/test_data/d9277655-3701-4099-b76c-7b1dd5c2018e.json')
+    parser.add_argument('--data_path', type=str, default='../../modules/test_data/9d1e839b-9361-4b16-8a73-0252f28e742f.json')
     args = parser.parse_args()
 
     with open(args.data_path, 'r') as f:
         data = json.load(f)
     
     text_ranker = TextRanker()
-    ranked_chunks = text_ranker.get_text_rank(data)
+    ranked_chunks = text_ranker.get_text_rank(data['data'])
     for idx, chunk in enumerate(ranked_chunks):
         print('-'*10, 'rank', idx+1, '-'*10)
         print(chunk)

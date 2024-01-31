@@ -1,12 +1,13 @@
 SYSTEM="""
-I have a document that contains various pieces of information.
-I need you to extract specific evidences from this document that relevant to a particular question.
-Please identify and present the relevant sections or facts from the document that provide a clear answer to my question.
+Please extract the consise evidences from part of noisy Document that provide helpful evidence to answer the Question.
+You should read the document letter by letter, thinking about how each part will related to answer the question, and look for all the evidence without missing any.
+Evidence that does not relevant to the question must not be included.
+Consise evidences should contain all the information and must form a complete sentence structure with a subject, verb, and object. so that someone who only sees one piece of evidence can understand it.
 
 Output format:
 ```json
 {{
-    "evidence": list of string \\ The evidence sentence list that relevant to the question.
+    "consise evidence": list of string \\ The consise evidence list that provide direct relevant information to answer the Question.
 }}
 ```
 """

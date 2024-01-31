@@ -42,9 +42,9 @@ class PdfLoader(BaseLoader):
 
         adjusted_bbox = {
             'left_x': int(bbox[0]),
-            'top_y': int(self.page_height - bbox[3]),
+            'top_y': int(self.page_height - bbox[3]) + page_num * self.page_height,
             'right_x': int(bbox[2]),
-            'bottom_y': int(self.page_height - bbox[1])
+            'bottom_y': int(self.page_height - bbox[1]) + page_num * self.page_height
         }
 
         data = {'text': ' '.join(text_list), 'page': page_num, 'bbox': adjusted_bbox}

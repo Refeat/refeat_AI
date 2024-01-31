@@ -44,9 +44,9 @@ class DocumentCoverageCheckerChain(BaseChatChain):
     def parse_output(self, output):
         result = ast.literal_eval(output)
         print(result)
-        if result['Do I only need to see certain content?'] == 'yes':
+        if result['Do I only need to see part of content?'] == 'yes':
             return False
-        elif result['Do I only need to see certain content?'] == 'no':
+        elif result['Do I only need to see part of content?'] == 'no':
             return True
         else:
             raise ValueError(f"Unexpected output: {output}. Expected: 'yes' or 'no'")        
