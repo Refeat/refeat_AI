@@ -13,7 +13,7 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
     def __init__(
         self,
         *,
-        answer_prefix_tokens: Optional[List[str]] = ['final', ' answer', '":'],
+        answer_prefix_tokens: Optional[List[str]] = ['"', ' answer', '":'],
         answer_suffix_tokens: Optional[List[str]] = ['"',  'e', 'vidence'],
         strip_tokens: bool = True,
         stream_prefix: bool = False,

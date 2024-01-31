@@ -14,7 +14,7 @@ import threading
 
 from prettytable import PrettyTable, ALL
 
-from models.llm.chain import ExtractIntentAndQueryChain
+from models.llm.chain import ExtractIntentAndQueryChain, ExtractEvidenceChain, PlanAnswerChain
 
 class TestChain:
     def __init__(self, chain, test_json_path, save_dir='./'):
@@ -33,11 +33,11 @@ class TestChain:
         input_dict, golden_output = test_case['input'], test_case['golden output']
         test_case['output'] = {}
         result = self.chain.run(**input_dict)
-        for idx, output_key in enumerate(self.output_keys):
-            if type(result) == str:
-                result_value = result
-            elif type(result) == tuple:
+        for idx, output_key in enumerate(self.output_keys):                
+            if type(result) == tuple:
                 result_value = result[idx]
+            else:
+                result_value = result
             test_case['output'][output_key] = result_value
 
     def test(self):
@@ -86,11 +86,13 @@ class TestChain:
                     cell = self.format_cell(cell_input)
                 row.append(cell)
             table.add_row(row)
+        with open(f"./plan_answer_chain_results_table.txt", "w") as f:
+            f.write(str(table))
         print(table)
         
     def save_results(self, results):
         output_data = {"data": results}
-        with open(f"{self.save_dir}/test_results.json", "w") as f:
+        with open(f"{self.save_dir}/plan_answer_chain_results.json", "w") as f:
             json.dump(output_data, f, ensure_ascii=False, indent=4)
             
     def parse_chat_history(self, chat_history):
@@ -101,14 +103,18 @@ class TestChain:
         return chat_history_text
     
     def parse_list(self, result_list):
+        result_list = [str(item) for item in result_list]
         list_text = ', '.join(result_list)        
         return list_text
             
     def format_cell(self, data):
-        max_width = 24
+        max_width = 28 # input, ouput key 수가 합쳐서 6개
+        # max_width = 32 # input, ouput key 수가 합쳐서 4개
         return '\n'.join([data[i:i+max_width] for i in range(0, len(data), max_width)])
 
 if __name__ == "__main__":
-    extract_intent_and_query_chain = ExtractIntentAndQueryChain(verbose=True)
-    test_chain = TestChain(extract_intent_and_query_chain, './extract_intent_and_query_chain_test.json')
+    # extract_intent_and_query_chain = ExtractEvidenceChain(verbose=True)
+    # test_chain = TestChain(extract_intent_and_query_chain, './extract_evidence_chain_test.json')
+    plan_answer_chain = PlanAnswerChain(verbose=True)
+    test_chain = TestChain(plan_answer_chain, './plan_answer_chain_test.json')
     test_chain.test()
