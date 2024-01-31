@@ -18,6 +18,7 @@ class JsonChunker:
         self.embedder = get_embedder(model_name=model_name)
         self.text_chunk_splitter = ChunkTextSplitter(self.tokenizer, max_token_num=max_token_num, overlap=overlap)
         self.semantic_chunk_splitter = SemanticChunkSplitter(self.tokenizer, self.embedder, max_token_num)
+        # self.pdf_semantic_chunk_splitter = SemanticChunkSplitter(self.tokenizer, self.embedder, max_token_num=1000, init_average_window_token_num=1, init_average_merge_token_num=600, recursive_average_window_token_num=5, recursive_average_merge_token_num=500)
 
     def __call__(self, file_path, save_path):
         data = self.get_file_data(file_path)
@@ -32,6 +33,7 @@ class JsonChunker:
     def get_chunked_data(self, data, category=None):
         if category == 'pdf': # In pdf, we chunk the data by text length
             chunked_data = self.text_chunk_splitter.split_chunk_list(data)
+            # chunked_data = self.pdf_semantic_chunk_splitter.split_chunk_list(data)
         elif category == 'web': # In web, we chunk the data by semantic similarity
             chunked_data = self.semantic_chunk_splitter.split_chunk_list(data)
         else:

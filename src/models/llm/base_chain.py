@@ -20,7 +20,7 @@ from models.errors.error import ChainRunError, timeout
 
 current_file_folder_path = os.path.dirname(os.path.abspath(__file__))
 
-LIMIT_CHAIN_TIMEOUT = 60
+LIMIT_CHAIN_TIMEOUT = 40
 
 class BaseChain:
     def __init__(self, 

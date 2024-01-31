@@ -20,7 +20,7 @@ from models.llm.agent.streaming_queue import StreamingQueue
 from models.llm.chain import CommonChatChain, PlanAnswerChain, DBToolQueryGeneratorChain, ExtractEvidenceChain, ExtractIntentChain, ExtractIntentAndQueryChain
 
 class ChatAgentModule:
-    def __init__(self, es, knowledge_graph_db, streaming=True, verbose=False, limit_chunk_num=40):
+    def __init__(self, es, knowledge_graph_db, streaming=True, verbose=False, limit_chunk_num=100):
         self.tools = [DBSearchTool(es), KGDBSearchTool(knowledge_graph_db)]
         self.tool_dict = self.create_tool_dict(self.tools)
         self.streaming = streaming
@@ -51,20 +51,33 @@ class ChatAgentModule:
         
         # version2: enrich_query와 db_query_list를 하나의 chain으로 실행
         enrich_query, db_query_list = self.extract_intent_and_query_chain.run(query=query, chat_history=chat_history)
-
         if len(db_query_list) == 0:
             answer = self.common_chat_chain.run(query=query, chat_history=chat_history, callbacks=callbacks)
-            return answer
+            return dict(), answer
         
         chunk_num = self.get_chunk_num(file_uuid=file_uuid, project_id=project_id)
         tool_results = self.execute_search_tools(db_query_list, file_uuid, project_id, chunk_num)
         evidence_num = self.calculate_evidence_num(chunk_num)
         tool_result = self.process_search_tool_results(tool_results, evidence_num)
-        evidence_list = self.extract_evidence(tool_result, enrich_query, queue, evidence_num)
+        evidence_list = self.extract_evidence(tool_result, enrich_query, evidence_num)
         evidence_text = self.evidence_list_to_text(evidence_list)
 
-        answer = self.plan_answer_chain.run(query=enrich_query, context=evidence_text, callbacks=callbacks)
-        return answer
+        answer, used_evidence_idx_list = self.plan_answer_chain.run(query=enrich_query, context=evidence_text, callbacks=callbacks)
+        file_uuid_bbox_dict= self.post_process_evidence(evidence_list, used_evidence_idx_list, queue)
+        return file_uuid_bbox_dict, answer
+    
+    def post_process_evidence(self, evidence_list, used_evidence_idx_list, queue):
+        document_list, file_uuid_bbox_list = [], []
+        used_evidence_list = [evidence_list[idx] for idx in used_evidence_idx_list]
+        for used_evidence in used_evidence_list:
+            evidence, document, bbox = used_evidence[0], used_evidence[1], used_evidence[2]
+            if document not in document_list:
+                document_list.append(document)
+                file_uuid_bbox_list.append({document: bbox}) # queue는 backend에서 넘겨준다
+        file_uuid_bbox_dict = self.merge_dict(file_uuid_bbox_list)
+        queue.set_document_info(file_uuid_bbox_dict) 
+        queue.document_end()
+        return file_uuid_bbox_dict
     
     def execute_tool(self, args):
         action, action_input = args[0], args[1:]
@@ -105,20 +118,17 @@ class ChatAgentModule:
             else:
                 return [('Knowledge Graph Search', db_query, project_id) for db_query in db_query_list]
 
-    def extract_evidence(self, tool_results, enrich_query, queue, evidence_num):
+    def extract_evidence(self, tool_results, enrich_query, evidence_num):
         args_list = [(enrich_query, tool_result['document'], tool_result['chunk'], tool_result['bbox']) for tool_result in tool_results]
         evidence_list, document_list, file_uuid_bbox_list = [], [], []
         with concurrent.futures.ThreadPoolExecutor(max_workers=evidence_num) as executor:
             future_to_chunk = {executor.submit(self.process_chunk, args): args for args in args_list}
             for future in concurrent.futures.as_completed(future_to_chunk):
                 result = future.result()
-                evidence_list.extend(result[0])
-                if result[1] not in document_list:
-                    document_list.append(result[1])
-                    file_uuid_bbox_list.append({result[1]: result[2]}) # queue는 backend에서 넘겨준다
-        file_uuid_bbox_dict = self.merge_dict(file_uuid_bbox_list)
-        queue.set_document_info(file_uuid_bbox_dict) 
-        queue.document_end()
+                evidences, document, bbox = result[0], result[1], result[2]
+                for evidence in evidences:
+                    evidence_list.append([evidence, document, bbox])
+        
         return evidence_list
         
     def create_tool_dict(self, tools):
@@ -126,8 +136,8 @@ class ChatAgentModule:
     
     def evidence_list_to_text(self, evidence_list):
         evidence_text = ''
-        for evidence in evidence_list:
-            evidence_text += f'- {evidence}\n'
+        for idx, (evidence, document, bbox) in enumerate(evidence_list):
+            evidence_text += f'- Evidence {idx}: {evidence}\n'
         return evidence_text
 
     def process_chunk(self, args):
@@ -151,7 +161,7 @@ class ChatAgentModule:
                     processed_tool_result.append(tool_result[i])
         return processed_tool_result[:evidence_num]
     
-    def calculate_evidence_num(self, chunk_num, chunk_evidence_ratio=0.1, min_evidence_num=4, max_evidence_num=12):
+    def calculate_evidence_num(self, chunk_num, chunk_evidence_ratio=0.2, min_evidence_num=8, max_evidence_num=20):
         evidence_num = min(max(min_evidence_num, int(chunk_num*chunk_evidence_ratio)), max_evidence_num)
         return evidence_num
 
@@ -172,19 +182,20 @@ def profile_run(query, file_uuid, project_id, chat_agent):
         chat_agent.run(query, file_uuid, project_id)
 
 # example usage
-# python custom_chat_agent_module.py --query "국내 전기차 1위부터 10위까지 표로 그려줘" --file_uuid 002d8864-88c2-498c-91df-3e749489616f
+# python custom_chat_agent_module.py --query "글로벌 SaaS 시장 규모를 알려줘." --file_uuid 631d9795-43e7-45b1-9c24-aaa006861f4c
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--query', type=str, default='타입드의 대표가 누구야?')
     parser.add_argument('--file_uuid', type=str, nargs='*', default=None)
-    parser.add_argument('--project_id', type=int, default=-1)
+    parser.add_argument('--project_id', type=int, default=-5)
     args = parser.parse_args()
     
     es = CustomElasticSearch(index_name='refeat_ai', host="http://10.10.10.27:9200")
     knowledge_graph_db = KnowledgeGraphDataBase()
     
     chat_agent = ChatAgentModule(es, knowledge_graph_db, verbose=True)
-    result = chat_agent.run(args.query, args.file_uuid, args.project_id)
+    file_uuid_bbox_dict, result = chat_agent.run(args.query, args.file_uuid, args.project_id, chat_history=[])
+    print(f'file_uuid_bbox_dict: {file_uuid_bbox_dict}')
     print(f'chat result: {result}')
     # cProfile.runctx('profile_run(args.query, args.file_uuid, args.project_id, chat_agent)', 
     #                 globals(), locals(), 'base-gpt4.prof')

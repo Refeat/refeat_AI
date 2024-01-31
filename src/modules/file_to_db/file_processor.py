@@ -10,6 +10,7 @@ import uuid
 import argparse
 import cProfile
 from itertools import accumulate
+import time
 
 from models.loader.unified_loader import UnifiedLoader
 from models.chunker.json_chunker import JsonChunker
@@ -25,7 +26,7 @@ from database.knowledge_graph.graph_construct import KnowledgeGraphDataBase
 # knowledge_graph_db = KnowledgeGraphDataBase()
 
 class FileProcessor:
-    def __init__(self, es, summary_chain, knowledge_graph_db, model_name='openai', json_save_dir='../test_data', screenshot_dir='../test_data/screenshots', html_save_dir='../test_data/html'):
+    def __init__(self, es: CustomElasticSearch, summary_chain, knowledge_graph_db, model_name='openai', json_save_dir='../test_data', screenshot_dir='../test_data/screenshots', html_save_dir='../test_data/html'):
         self.es = es
         self.summary_chain = summary_chain
         self.knowledge_graph_db = knowledge_graph_db
@@ -67,12 +68,19 @@ class FileProcessor:
         return data['processed_path']
 
     def save_to_db(self, saved_json_path, project_id):
+        start  = time.time()
         self.add_data_to_elastic_search(saved_json_path)
         self.add_data_to_db_kg(saved_json_path, project_id)
 
     def delete(self, file_uuid, project_id):
-        self.delete_data_from_elastic_search(file_uuid)
-        self.delete_data_from_db_kg(file_uuid, project_id)
+        try:
+            self.delete_data_from_elastic_search(file_uuid)
+        except Exception as e:
+            print(e)
+        try:
+            self.delete_data_from_db_kg(file_uuid, project_id)
+        except Exception as e:
+            print(e)
 
     def add_chunked_data(self, data):
         category = self.get_file_category(data)
@@ -154,7 +162,7 @@ def profile_run(file_uuid, project_id, file_path, file_processor):
 
 # example usage
 # web
-# python file_processor.py --file_path "https://www.marketsandmarkets.com/Market-Reports/electric-vehicle-market-209371461.html" --test_query "2023 EV Rank"
+# python file_processor.py --file_path "https://zdnet.co.kr/view/?no=20230925133558" --test_query "2023 EV Rank"
 # pdf
 # python file_processor.py --file_path "../test_data/전기차 시장 규모.pdf" --test_query "전기차 시장 규모"
 if __name__ == "__main__":
@@ -175,7 +183,8 @@ if __name__ == "__main__":
 
     file_processor = FileProcessor(es, summary_chain, knowledge_graph_db, json_save_dir=args.json_save_dir, screenshot_dir=args.screenshot_dir, html_save_dir=args.html_save_dir)
     file_uuid = str(uuid.uuid4())
-    project_id = -1
+    project_id = -5
+    print('file_uuid:', file_uuid)
     
     # ------ add data ------ #
     # version1: __call__로 호출하는 방식

@@ -195,34 +195,38 @@ class ChunkTextSplitter:
         """
         merge된 chunk의 bbox를 구함. 새로운 bbox는 chunk list를 모두 포함하는 가장 작은 bbox
         """
-        if 'page' not in merge_chunk[0]:
-            merge_bbox = {
-                'left_x': min(list(chunk['bbox']['left_x'] for chunk in merge_chunk)),
-                'top_y': min(list(chunk['bbox']['top_y'] for chunk in merge_chunk)),
-                'right_x': max(list(chunk['bbox']['right_x'] for chunk in merge_chunk)),
-                'bottom_y': max(list(chunk['bbox']['bottom_y'] for chunk in merge_chunk))
-            }
-        else:
-            min_page = min(list(chunk['page'] for chunk in merge_chunk))
-            merge_bbox = {
-                'left_x': min(list(chunk['bbox']['left_x'] for chunk in merge_chunk if chunk['page'] == min_page)),
-                'top_y': min(list(chunk['bbox']['top_y'] for chunk in merge_chunk if chunk['page'] == min_page)),
-                'right_x': max(list(chunk['bbox']['right_x'] for chunk in merge_chunk if chunk['page'] == min_page)),
-                'bottom_y': max(list(chunk['bbox']['bottom_y'] for chunk in merge_chunk if chunk['page'] == min_page))
-            }
+        # if 'page' not in merge_chunk[0]:
+        merge_bbox = {
+            'left_x': min(list(chunk['bbox']['left_x'] for chunk in merge_chunk)),
+            'top_y': min(list(chunk['bbox']['top_y'] for chunk in merge_chunk)),
+            'right_x': max(list(chunk['bbox']['right_x'] for chunk in merge_chunk)),
+            'bottom_y': max(list(chunk['bbox']['bottom_y'] for chunk in merge_chunk))
+        }
+        # else:
+        #     min_page = min(list(chunk['page'] for chunk in merge_chunk))
+        #     merge_bbox = {
+        #         'left_x': min(list(chunk['bbox']['left_x'] for chunk in merge_chunk if chunk['page'] == min_page)),
+        #         'top_y': min(list(chunk['bbox']['top_y'] for chunk in merge_chunk if chunk['page'] == min_page)),
+        #         'right_x': max(list(chunk['bbox']['right_x'] for chunk in merge_chunk if chunk['page'] == min_page)),
+        #         'bottom_y': max(list(chunk['bbox']['bottom_y'] for chunk in merge_chunk if chunk['page'] == min_page))
+        #     }
         return merge_bbox
     
 class SemanticChunkSplitter:
-    def __init__(self, tokenizer, embedder, max_token_num=1000):
+    def __init__(self, tokenizer, embedder, max_token_num=1000, init_average_window_token_num=20, init_average_merge_token_num=800, recursive_average_window_token_num=20, recursive_average_merge_token_num=500):
         self.tokenizer = tokenizer
         self.embedder = embedder
         self.max_token_num = max_token_num
         self.idx = 0
+        self.init_average_window_token_num = init_average_window_token_num
+        self.init_average_merge_token_num = init_average_merge_token_num
+        self.recursive_average_window_token_num = recursive_average_window_token_num
+        self.recursive_average_merge_token_num = recursive_average_merge_token_num
 
     def split_chunk_list(self, chunk_list):
         self.get_token_num(chunk_list)
         self.split_by_length(chunk_list)
-        init_merge_chunk_list = self.get_split_chunk_list(chunk_list)
+        init_merge_chunk_list = self.get_split_chunk_list(chunk_list, average_window_token_num=self.init_average_window_token_num, average_merge_token_num=self.init_average_merge_token_num)
         merge_chunk_result_list = []
         self.recursive_split_chunk_list(init_merge_chunk_list, merge_chunk_result_list)
         processed_merge_chunk_list = self.postprocess_merge_chunk(merge_chunk_result_list)
@@ -265,7 +269,7 @@ class SemanticChunkSplitter:
         for chunk_list in chunk_list_list:
             total_token_num = self.get_total_token_num(chunk_list)
             if total_token_num >= self.max_token_num:
-                merge_chunk_list = self.get_split_chunk_list(chunk_list, average_window_token_num=20, average_merge_token_num=500)
+                merge_chunk_list = self.get_split_chunk_list(chunk_list, average_window_token_num=self.recursive_average_window_token_num, average_merge_token_num=self.recursive_average_merge_token_num)
                 self.recursive_split_chunk_list(merge_chunk_list, result_list)
             else:
                 result_list.append(chunk_list)

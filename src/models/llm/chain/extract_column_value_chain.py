@@ -22,7 +22,7 @@ class ExtractColumnValueChain(BaseChatChain):
                 system_prompt_template:str=SYSTEM,
                 user_prompt_template:str=USER,
                 response_format="json",
-                # model='gpt-4-1106-preview',
+                # model='gpt-4-0125-preview',
                 model='gpt-3.5-turbo-1106',
                 temperature=0.0,
                 top_p=0.0,
@@ -35,7 +35,7 @@ class ExtractColumnValueChain(BaseChatChain):
     def parse_output(self, output):
         result = ast.literal_eval(output)
         print(result)
-        final_answer = result['Final Answer']
+        final_answer = result['Summary Answer List']
         final_answer_text = ''
         for data in final_answer:
             final_answer_text += f"· {data}\n"

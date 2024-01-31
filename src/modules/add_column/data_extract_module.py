@@ -24,7 +24,7 @@ class AddColumnModule:
         self.extract_evidence_chain = ExtractEvidenceChain(verbose=verbose)
         self.trigger_file_num = trigger_file_num
         self.db_tool = DBSearchTool(es=es)
-        self.chunks_num = 3
+        self.chunks_num = 5
 
     def get_column_value_by_project(self, column, project_id):
         # summaries = self.db_tool.get_schema_data_by_project_id(project_id, 'summary')
@@ -59,11 +59,13 @@ class AddColumnModule:
     def get_column_value_by_file_and_query(self, query, file_uuid, is_general_query=False):
         if is_general_query:
             chunks = self.db_tool.get_schema_data_by_file_uuid(file_uuid, 'chunk_list_by_text_rank')
+            chunks = [chunk for chunk in chunks if len(chunk) > 50]
         else:
-            document_summary = self.db_tool.get_schema_data_by_file_uuid(file_uuid, 'summary')
-            query = self.extract_intent_from_column_of_single_document_chain.run(column=query, document_summary=document_summary)
+            # document_summary = self.db_tool.get_schema_data_by_file_uuid(file_uuid, 'summary')
+            # query = self.extract_intent_from_column_of_single_document_chain.run(column=query, document_summary=document_summary)
             chunks = self.db_tool.run(query=query, file_uuid=[file_uuid])
             chunks = [chunk['chunk'] for chunk in chunks]
+            chunks = [chunk for chunk in chunks if len(chunk) > 50]
         chunks = chunks[:self.chunks_num]
         context = self.chunks_list_to_text(chunks)
         
@@ -99,9 +101,9 @@ class AddColumnModule:
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--column', type=str, default="저자")
-    parser.add_argument('--project_id', type=str, default="-1")
-    parser.add_argument('--file_uuid', type=str, default="19f3a95a-2623-49b0-a911-03a6d3aa7ad2")
+    parser.add_argument('--column', type=str, default="주요 소비자 행동 차이")
+    parser.add_argument('--project_id', type=str, default="41")
+    parser.add_argument('--file_uuid', type=str, default="8fa39d39-1ec6-408a-b498-aba46bfd5249") # d5d9aa48-1778-4c3d-89c7-f4decfa95224, 71a6c721-4c2a-4546-a5e4-eb81564e9402, 8fa39d39-1ec6-408a-b498-aba46bfd5249
     args = parser.parse_args()
     
     es = CustomElasticSearch(index_name='refeat_ai', host="http://10.10.10.27:9200")

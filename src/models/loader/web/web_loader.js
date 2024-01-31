@@ -61,7 +61,7 @@ class WebLoader {
         const htmlPath = await this.saveHtml(content, fileUuid, htmlSaveDir);
     
         let data = [];
-        const elementHandles = await page.$$('p, div, span, h1, h2, h3, h4, h5, h6, em, figcaption, strong, a, b');
+        const elementHandles = await page.$$('p, div, span, h1, h2, h3, h4, h5, h6, em, figcaption, strong, a, b, td');
     
         for (const elementHandle of elementHandles) {
             // Evaluate all child nodes and concatenate text content

@@ -6,7 +6,7 @@ import networkx as nx
 from sklearn.metrics.pairwise import cosine_similarity
 
 class ChunksGraph:
-    def __init__(self, data, cosine_sim_threshold=0.85, filter_text_length=50):
+    def __init__(self, data, cosine_sim_threshold=0.2, filter_text_length=50):
         self.cosine_sim_threshold = cosine_sim_threshold
         self.filter_text_length = filter_text_length
         self.short_text_nodes = set()
@@ -44,7 +44,7 @@ class ChunksGraph:
 
                 if (uuid_i not in self.short_text_nodes) and (uuid_j not in self.short_text_nodes):
                     if cosine_sim_matrix[i][j] >= self.cosine_sim_threshold:
-                        G.add_edge(uuid_i, uuid_j, weight=cosine_sim_matrix[i][j])
+                        G.add_edge(uuid_i, uuid_j, weight=float(cosine_sim_matrix[i][j]))
     
     def visualize_graph(self):
         plt.figure(figsize=(20, 8))
@@ -68,7 +68,7 @@ class ChunksGraph:
 # python single_file_chunks_graph.py --data_path ../../moduels/test_data/a6e594a6-712c-4e1e-be4a-667dabfee9ca.json
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, default='../../modules/test_data/a6e594a6-712c-4e1e-be4a-667dabfee9ca.json')
+    parser.add_argument('--data_path', type=str, default='../../modules/test_data/9d1e839b-9361-4b16-8a73-0252f28e742f.json')
     args = parser.parse_args()
 
     with open(args.data_path, 'r') as f:
