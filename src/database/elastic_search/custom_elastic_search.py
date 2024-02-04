@@ -105,7 +105,7 @@ class CustomElasticSearch:
             return [{"_index": self.index_name, "_source": document}]
         return None
     
-    def _prepare_document(self, data, token_filter_length=100):
+    def _prepare_document(self, data, token_filter_length=50):
         """
         json 데이터를 Elasticsearch에 넣기위한 문서 형식으로 변환합니다.
         """

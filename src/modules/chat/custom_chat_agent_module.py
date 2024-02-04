@@ -20,17 +20,18 @@ from models.llm.agent.streaming_queue import StreamingQueue
 from models.llm.chain import CommonChatChain, PlanAnswerChain, DBToolQueryGeneratorChain, ExtractEvidenceChain, ExtractIntentChain, ExtractIntentAndQueryChain
 
 class ChatAgentModule:
-    def __init__(self, es, knowledge_graph_db, streaming=True, verbose=False, limit_chunk_num=100):
+    def __init__(self, es, knowledge_graph_db, streaming=True, verbose=False, limit_chunk_num=100, chain_input_chat_history_num=2):
         self.tools = [DBSearchTool(es), KGDBSearchTool(knowledge_graph_db)]
         self.tool_dict = self.create_tool_dict(self.tools)
         self.streaming = streaming
-        self.common_chat_chain = CommonChatChain(verbose=verbose)
+        self.common_chat_chain = CommonChatChain(verbose=verbose, streaming=self.streaming)
         self.extract_intent_and_query_chain = ExtractIntentAndQueryChain(verbose=verbose)
         self.extract_evidence_chain = ExtractEvidenceChain(verbose=verbose)
         self.plan_answer_chain = PlanAnswerChain(verbose=verbose, streaming=self.streaming)        
         self.limit_chunk_num = limit_chunk_num # project의 chunk수가 limit_chunk_num보다 작으면 elastic search로 검색, limit_chunk_num보다 크면 knowledge graph로 검색
+        self.chain_input_chat_history_num = chain_input_chat_history_num
     
-    def run(self, query, file_uuid:List[str]=None, project_id=None, chat_history: List[List[str]]=[], queue=None, chain_input_chat_history_num=2):
+    def run(self, query, file_uuid:List[str]=None, project_id=None, chat_history: List[List[str]]=[], queue=None):
         """
         Args:
             query (str): user input
@@ -43,7 +44,7 @@ class ChatAgentModule:
         if queue is None:
             queue = StreamingQueue()
         callbacks = [CustomStreamingStdOutCallbackHandler(queue=queue)] if self.streaming else None
-        chat_history = chat_history[-chain_input_chat_history_num:]
+        chat_history = chat_history[-self.chain_input_chat_history_num:]
 
         # version1: enrich_query와 db_query_list를 분리된 chain으로 실행
         # enrich_query = self.extract_intent_chain.run(query=query, chat_history=chat_history)
@@ -53,7 +54,10 @@ class ChatAgentModule:
         enrich_query, db_query_list = self.extract_intent_and_query_chain.run(query=query, chat_history=chat_history)
         if len(db_query_list) == 0:
             answer = self.common_chat_chain.run(query=query, chat_history=chat_history, callbacks=callbacks)
-            return dict(), answer
+            file_uuid_bbox_dict = {} # "안녕" 같은 단순한 질문에 대한 답변은 evidence가 없으므로 빈 dict를 반환
+            queue.set_document_info(file_uuid_bbox_dict)  
+            queue.document_end()
+            return file_uuid_bbox_dict, answer
         
         chunk_num = self.get_chunk_num(file_uuid=file_uuid, project_id=project_id)
         tool_results = self.execute_search_tools(db_query_list, file_uuid, project_id, chunk_num)
@@ -162,7 +166,6 @@ class ChatAgentModule:
         return processed_tool_result[:evidence_num]
     
     def calculate_evidence_num(self, chunk_num, chunk_evidence_ratio=0.2, min_evidence_num=10, max_evidence_num=20):
-        print(chunk_num)
         evidence_num = min(max(min_evidence_num, int(chunk_num*chunk_evidence_ratio)), max_evidence_num)
         return evidence_num
 
@@ -183,7 +186,7 @@ def profile_run(query, file_uuid, project_id, chat_agent):
         chat_agent.run(query, file_uuid, project_id)
 
 # example usage
-# python custom_chat_agent_module.py --query "글로벌 SaaS 시장 규모를 알려줘." --file_uuid 631d9795-43e7-45b1-9c24-aaa006861f4c
+# python custom_chat_agent_module.py --query "UX 향상시키는 서비스 예시" --file_uuid 06d0a9c5-5f95-4ff9-8807-1a9b87a44591
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--query', type=str, default='타입드의 대표가 누구야?')

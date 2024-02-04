@@ -9,7 +9,8 @@ Output Format Guidelines:
 1. Output in JSON format.
 2. Include a list of concise evidence extracted from the context.
 3. Each piece of evidence should be a direct, relevant response to the user's query.
-4. The JSON keys should be "concise evidence".
+4. If no evidence can be found, return an empty list.
+5. The JSON keys should be "concise evidence".
 
 JSON Output Generation:
 {{

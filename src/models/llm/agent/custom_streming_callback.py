@@ -17,7 +17,7 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
         answer_suffix_tokens: Optional[List[str]] = ['"',  'e', 'vidence'],
         strip_tokens: bool = True,
         stream_prefix: bool = False,
-        special_tokens: Optional[List[str]] = ['}',  '"', '\n', ',', '  '],
+        special_tokens: Optional[List[str]] = ['",\n', '}', '"', '  '],
         queue,
     ) -> None:
         """Instantiate EofStreamingStdOutCallbackHandler.
@@ -72,11 +72,10 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
 
         # ... if yes, then print tokens from now on
         if self.answer_reached:
-            if self.last_token not in self.special_tokens:
-                sys.stdout.write(self.last_token)
-                sys.stdout.flush()
-                self.queue.append(self.last_token)
-                self.last_token = self.replace_special_tokens(token)
+            sys.stdout.write(self.last_token)
+            sys.stdout.flush()
+            self.queue.append(self.last_token)
+            self.last_token = self.replace_special_tokens(token)
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""

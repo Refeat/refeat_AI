@@ -22,17 +22,21 @@ class CommonChatChain(BaseChatChain):
                 system_prompt_template:str=SYSTEM,
                 user_prompt_template:str=USER,
                 response_format="json",
-                model='gpt-3.5-turbo-1106',
-                temperature=1.0,
-                verbose=False,) -> None:
-        super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature)
+                model='gpt-3.5-turbo-0125',
+                temperature=0.0,
+                verbose=False,
+                top_p=0.0,
+                streaming=False) -> None:
+        super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature, top_p=top_p, streaming=streaming)
+        self.input_keys = ['query', 'chat_history']
+        self.output_keys = ['answer']
 
     def run(self, query=None, chat_history=[], callbacks=None):
         return super().run(input=query, chat_history=chat_history, callbacks=callbacks)
     
     def parse_output(self, output):
         result = ast.literal_eval(output)
-        return result.get('final answer', '')
+        return result.get('answer', '')
     
 # example usage
 # python instantly_answerable_discriminator_chain.py --query "안녕하세요"

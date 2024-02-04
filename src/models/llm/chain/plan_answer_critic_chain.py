@@ -22,7 +22,7 @@ class PlanAnswerCriticChain(BaseChatChain):
                 system_prompt_template:str=SYSTEM,
                 user_prompt_template:str=USER,
                 response_format="json",
-                model='gpt-3.5-turbo-1106',
+                model='gpt-3.5-turbo-0125',
                 temperature=0.0,
                 verbose=False,) -> None:
         super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature)

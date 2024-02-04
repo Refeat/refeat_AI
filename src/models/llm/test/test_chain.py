@@ -14,11 +14,12 @@ import threading
 
 from prettytable import PrettyTable, ALL
 
-from models.llm.chain import ExtractIntentAndQueryChain, ExtractEvidenceChain, PlanAnswerChain
+from models.llm.chain import ExtractIntentAndQueryChain, ExtractEvidenceChain, PlanAnswerChain, DocumentCoverageCheckerChain, CommonChatChain, ExtractColumnValueChain
 
 class TestChain:
     def __init__(self, chain, test_json_path, save_dir='./'):
         self.chain = chain
+        self.class_name = chain.__class__.__name__
         self.input_keys = self.chain.input_keys
         self.output_keys = self.chain.output_keys
         self.test_set = self.load_json(test_json_path)['data']
@@ -64,35 +65,24 @@ class TestChain:
             row.append(idx+1)
             for input_key in self.input_keys:
                 cell_input = test_result['input'][input_key]
-                if input_key == 'chat_history':
-                    cell = self.format_cell(self.parse_chat_history(cell_input))
-                elif isinstance(cell_input, list):
-                    cell = self.format_cell(self.parse_list(cell_input))
-                else:
-                    cell = self.format_cell(cell_input)
+                cell = self.format_cell(self.parse_to_str(cell_input))
                 row.append(cell)
             for output_key in self.output_keys:
                 cell_input = test_result['output'][output_key]
-                if isinstance(cell_input, list):
-                    cell = self.format_cell(self.parse_list(cell_input))
-                else:
-                    cell = self.format_cell(cell_input)
+                cell = self.format_cell(self.parse_to_str(cell_input))
                 row.append(cell)
             for output_key in self.output_keys:
                 cell_input = test_result['golden output'][output_key]
-                if isinstance(cell_input, list):
-                    cell = self.format_cell(self.parse_list(cell_input))
-                else:
-                    cell = self.format_cell(cell_input)
+                cell = self.format_cell(self.parse_to_str(cell_input))
                 row.append(cell)
             table.add_row(row)
-        with open(f"./plan_answer_chain_results_table.txt", "w") as f:
+        with open(f"./{self.class_name}_results_table.txt", "w") as f:
             f.write(str(table))
         print(table)
         
     def save_results(self, results):
         output_data = {"data": results}
-        with open(f"{self.save_dir}/plan_answer_chain_results.json", "w") as f:
+        with open(f"{self.save_dir}/{self.class_name}_results.json", "w") as f:
             json.dump(output_data, f, ensure_ascii=False, indent=4)
             
     def parse_chat_history(self, chat_history):
@@ -102,19 +92,41 @@ class TestChain:
             chat_history_text += f"U: {user}\nA: {assistant}\n"
         return chat_history_text
     
-    def parse_list(self, result_list):
-        result_list = [str(item) for item in result_list]
-        list_text = ', '.join(result_list)        
-        return list_text
+    def parse_to_str(self, result):
+        if isinstance(result, list):
+            result = [str(item) for item in result]
+            text = ', '.join(result)
+        elif isinstance(result, bool):
+            text = str(result)
+        elif isinstance(result, str):
+            text = result
+        else:
+            text = str(result)
+        return text
             
     def format_cell(self, data):
-        max_width = 28 # input, ouput key 수가 합쳐서 6개
-        # max_width = 32 # input, ouput key 수가 합쳐서 4개
+        # max_width = 28 # input, ouput key 수가 합쳐서 6개
+        max_width = 46
+        # max_width = 50 # input, ouput key 수가 합쳐서 4개
         return '\n'.join([data[i:i+max_width] for i in range(0, len(data), max_width)])
 
 if __name__ == "__main__":
-    # extract_intent_and_query_chain = ExtractEvidenceChain(verbose=True)
-    # test_chain = TestChain(extract_intent_and_query_chain, './extract_evidence_chain_test.json')
-    plan_answer_chain = PlanAnswerChain(verbose=True)
-    test_chain = TestChain(plan_answer_chain, './plan_answer_chain_test.json')
+    # extract_evidence_chain = ExtractEvidenceChain(verbose=True)
+    # test_chain = TestChain(extract_evidence_chain, './extract_evidence_chain_test.json')
+    
+    # plan_answer_chain = PlanAnswerChain(verbose=True)
+    # test_chain = TestChain(plan_answer_chain, './plan_answer_chain_test.json')
+    
+    # extract_intent_and_query_chain = ExtractIntentAndQueryChain(verbose=True)
+    # test_chain = TestChain(extract_intent_and_query_chain, './extract_intent_and_query_chain_test.json')
+    
+    # document_coverage_checker_chain = DocumentCoverageCheckerChain(verbose=True)
+    # test_chain = TestChain(document_coverage_checker_chain, './document_coverage_checker_chain_test.json')
+    
+    # common_chat_chain = CommonChatChain(verbose=True)
+    # test_chain = TestChain(common_chat_chain, './common_chat_chain_test.json')
+    
+    extract_column_value_chain = ExtractColumnValueChain(verbose=True)
+    test_chain = TestChain(extract_column_value_chain, './extract_column_value_chain_test.json')
+    
     test_chain.test()

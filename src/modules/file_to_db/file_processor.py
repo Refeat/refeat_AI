@@ -112,7 +112,7 @@ class FileProcessor:
             data['data'][idx]['child_embeddings'] = embedding_list[start_idx:end_idx]
 
     def add_summary(self, data):
-        summary = self.summary_chain.run(full_text=data['full_text'])
+        summary = self.summary_chain.run(title=data['title'], full_text=data['full_text'])
         data['summary'] = summary
         return summary
     
@@ -162,7 +162,7 @@ def profile_run(file_uuid, project_id, file_path, file_processor):
 
 # example usage
 # web
-# python file_processor.py --file_path "https://lobste.rs/s/clfulh/big_tdd_misunderstanding_2022" --test_query "2023 EV Rank"
+# python file_processor.py --file_path "https://www.yna.co.kr/view/AKR20240117022700017" --test_query "2023 EV Rank"
 # pdf
 # python file_processor.py --file_path "../test_data/전기차 시장 규모.pdf" --test_query "전기차 시장 규모"
 if __name__ == "__main__":
