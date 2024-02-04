@@ -21,11 +21,13 @@ class DocumentCoverageCheckerChain(BaseChatChain):
                 system_prompt_template:str=SYSTEM,
                 user_prompt_template:str=USER,
                 response_format="json",
-                model='gpt-3.5-turbo-1106',
+                model='gpt-3.5-turbo-0125',
                 temperature=0.0,
                 top_p=0.0,
                 verbose=False,) -> None:
         super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature, top_p=top_p)
+        self.input_keys = ['query']
+        self.output_keys = ['query nature']
 
     def run(self, query=None, chat_history=[]):
         """
@@ -43,13 +45,7 @@ class DocumentCoverageCheckerChain(BaseChatChain):
     
     def parse_output(self, output):
         result = ast.literal_eval(output)
-        print(result)
-        if result['Do I only need to see part of content?'] == 'yes':
-            return False
-        elif result['Do I only need to see part of content?'] == 'no':
-            return True
-        else:
-            raise ValueError(f"Unexpected output: {output}. Expected: 'yes' or 'no'")        
+        return result['query nature']
     
 # example usage
 # python document_coverage_checker_chain.py --query "한국 전자 기업의 주주 수"

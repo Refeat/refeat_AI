@@ -25,7 +25,10 @@ class WebLoader(BaseLoader):
             raise WebLoaderError()
         else:
             print(result.stdout)
-            result = json.loads(result.stdout)
+            try:
+                result = json.loads(result.stdout)
+            except:
+                raise WebLoaderError()
         self.title, data, self.favicon, self.screenshot_path, self.html_path = result['title'], result['data'], result['favicon'], result['screenshotPath'], result['htmlPath']
         self.favicon = None if self.favicon == 'No favicon found' else self.favicon
         return data
