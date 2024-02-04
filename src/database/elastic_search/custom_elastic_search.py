@@ -25,7 +25,7 @@ class CustomElasticSearch:
     mappings = MAPPINGS
     settings = SETTINGS
     def __init__(self, index_name='refeat_ai', host="http://localhost:9200"):
-        self.es = Elasticsearch(hosts=[host], timeout=60)
+        self.es = Elasticsearch(hosts=[host], timeout=120)
         self.index_name = index_name
         self.embedding = get_embedder(EMBEDDER)
         
