@@ -433,6 +433,7 @@ class CustomElasticSearch:
                                             "query": {"match_all": {}},
                                             "script": {
                                                 "source": "if (doc['contents.token_num'].value >= params.limit_token_length) { return (cosineSimilarity(params.query_vector, 'contents.content_embedding') + 1.0)/2.0; } else { return 0; }",
+                                                # "source": "if (doc['contents.token_num'].value >= params.limit_token_length) { return ((cosineSimilarity(params.query_vector, 'topic_embedding') + 1.0)+(cosineSimilarity(params.query_vector, 'contents.content_embedding') + 1.0))/2.0; } else { return 0; }",
                                                 "params": {"query_vector": query_vector, "limit_token_length": limit_token_length}
                                             }
                                         }

@@ -37,7 +37,8 @@ class PlanAnswerChain(BaseChatChain):
     
     def parse_output(self, output):
         result = ast.literal_eval(output.strip())
-        final_answer, used_evidence_idx_list = result['answer'], result['evidence used']
+        print(result)
+        final_answer, used_evidence_idx_list = result['answer'], result['content used']
         used_evidence_idx_list = [int(idx) for idx in used_evidence_idx_list]
         return final_answer, used_evidence_idx_list
     

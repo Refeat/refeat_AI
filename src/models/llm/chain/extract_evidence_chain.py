@@ -35,17 +35,17 @@ class ExtractEvidenceChain(BaseChatChain):
         for _ in range(self.max_tries):
             try:
                 result = self.chain.run(input_dict)
-                return self.parse_output(result, document, bbox)
+                return self.parse_output(result, document, context)
             except Exception as e:
                 print(e)
                 continue
         print('Failed to run chain.')
         return None
     
-    def parse_output(self, output, document, bbox):
+    def parse_output(self, output, document, context):
         result = ast.literal_eval(output)
-        if (document is not None) and (bbox is not None):
-            return result['concise evidence'], document, bbox
+        if (document is not None) and (context is not None):
+            return result['concise evidence'], document, context
         else:
             return result['concise evidence']
     
