@@ -22,21 +22,21 @@ class ExtractColumnValueChain(BaseChatChain):
                 system_prompt_template:str=SYSTEM,
                 user_prompt_template:str=USER,
                 response_format="json",
-                model='gpt-4-0125-preview',
-                # model='gpt-3.5-turbo-0125',
+                # model='gpt-4-0125-preview',
+                model='gpt-3.5-turbo-0125',
                 temperature=0.0,
                 top_p=0.0,
                 verbose=False) -> None:
         super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature, top_p=top_p)
         self.input_keys = ['query']
-        self.output_keys = ['values']
+        self.output_keys = ['extracted content']
 
     def run(self, query=None, context=None, chat_history=[], callbacks=None):
         return super().run(input=query, context=context, chat_history=chat_history, callbacks=callbacks)
     
     def parse_output(self, output):
         result = ast.literal_eval(output)
-        values = result['values']
+        values = result['extracted content']
         return values
     
 # example usage

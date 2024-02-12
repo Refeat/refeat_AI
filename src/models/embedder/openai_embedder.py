@@ -1,4 +1,11 @@
 import os
+import sys
+current_path = os.path.dirname(os.path.abspath(__file__))
+for _ in range(2):
+    current_path = os.path.dirname(current_path)
+sys.path.append(current_path)
+
+import os
 import configparser
 config = configparser.ConfigParser()
 current_path = os.path.dirname(os.path.abspath(__file__))
@@ -9,6 +16,8 @@ os.environ.update({'OPENAI_API_KEY': openai_api_key})
 import argparse
 
 from openai import OpenAI
+
+from models.errors.error import AIFailException
 
 class OpenAIEmbedder:
     def __init__(self, model="text-embedding-3-large"):
@@ -22,7 +31,7 @@ class OpenAIEmbedder:
                 embedding = self.embedding_model.create(input = [query], model=self.model).data[0].embedding
             except Exception as e:
                 print(e)
-                embedding = None
+                raise AIFailException()
         elif isinstance(query, list):
             try:
                 # empty string의 index를 기록해두고, embedding을 계산한 후에 해당 index에 None을 삽입
@@ -34,9 +43,10 @@ class OpenAIEmbedder:
                     embedding.insert(i, None)
             except Exception as e:
                 print(e)
-                return None
+                raise AIFailException()
         else:
-            raise ValueError(f'query should be str or list. but {type(query)} is given')
+            # raise ValueError(f'query should be str or list. but {type(query)} is given')
+            raise AIFailException()
         return embedding
 
 # example usage

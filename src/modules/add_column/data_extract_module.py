@@ -13,46 +13,24 @@ import concurrent.futures
 
 from database.elastic_search.custom_elastic_search import CustomElasticSearch
 from models.tools import DBSearchTool
-from models.llm.chain import DocumentCoverageCheckerChain, ExtractIntentFromColumnOfMultiDocumentsChain, ExtractColumnValueChain, ExtractIntentFromColumnOfSingleDocumentChain, ExtractEvidenceChain
+from models.llm.chain import DocumentCoverageCheckerChain, ExtractIntentFromColumnOfMultiDocumentsChain, ExtractColumnValueChain, ExtractIntentFromColumnOfSingleDocumentChain, ExtractEvidenceChain, ExtractRelevanceChain
 
 class AddColumnModule:
     def __init__(self, es, trigger_file_num=4, verbose=True):
-        self.extract_intent_from_column_of_multi_documents_chain = ExtractIntentFromColumnOfMultiDocumentsChain(verbose=verbose)
-        self.extract_intent_from_column_of_single_document_chain = ExtractIntentFromColumnOfSingleDocumentChain(verbose=verbose)
         self.document_coverage_checker_chain = DocumentCoverageCheckerChain(verbose=verbose)
         self.extract_column_value_chain = ExtractColumnValueChain(verbose=verbose)
+        self.extract_relevance_chain = ExtractRelevanceChain(verbose=verbose)
         self.extract_evidence_chain = ExtractEvidenceChain(verbose=verbose)
         self.trigger_file_num = trigger_file_num
         self.db_tool = DBSearchTool(es=es)
         self.chunks_num = 5
         self.text_length_filter = 50
-
-    def get_column_value_by_project(self, column, project_id):
-        # summaries = self.db_tool.get_schema_data_by_project_id(project_id, 'summary')
-        # common_query = self.extract_intent_from_column_of_multi_documents_chain.run(column=column, document_summaries=summaries)
-        common_query = column
         
-        file_uuids = self.db_tool.get_schema_data_by_project_id(project_id, 'file_uuid')
-        file_uuid_column_value_list = []
-        for file_uuid in file_uuids:
-            file_uuid, column_value = self.get_column_value_by_file(column, file_uuid, common_query)
-            file_uuid_column_value_list.append({file_uuid : column_value})
-        file_uuid_column_value_dict = self.merge_dict(file_uuid_column_value_list)
-        return file_uuid_column_value_dict, common_query
-    
     def merge_dict(self, file_uuid_column_value_list):
         file_uuid_column_value_dict = {}
         for file_uuid_column_value in file_uuid_column_value_list:
             file_uuid_column_value_dict.update(file_uuid_column_value)
         return file_uuid_column_value_dict
-    
-    def get_column_value_by_file(self, column, file_uuid, query=None, is_general_query=False):
-        if query:
-            pass
-        else:            
-            query = column
-        column_value = self.get_column_value_by_file_and_query(query, file_uuid, is_general_query=is_general_query)
-        return file_uuid, column_value
     
     def get_is_general_query(self, query):
         result = self.document_coverage_checker_chain.run(query=query)        
@@ -63,32 +41,38 @@ class AddColumnModule:
         else:
             raise ValueError(f"Invalid query nature: {result}. It should be either 'general' or 'specific'")
             
-    def get_column_value_by_file_and_query(self, query, file_uuid, is_general_query=False):
+    def get_column_value_by_file(self, column, file_uuid, is_general_query=False):
         if is_general_query:
             chunks = self.db_tool.get_schema_data_by_file_uuid(file_uuid, 'chunk_list_by_text_rank')
             chunks = [chunk for chunk in chunks if len(chunk) > self.text_length_filter]
         else:
-            # document_summary = self.db_tool.get_schema_data_by_file_uuid(file_uuid, 'summary')
-            # query = self.extract_intent_from_column_of_single_document_chain.run(column=query, document_summary=document_summary)
-            chunks = self.db_tool.run(query=query, file_uuid=[file_uuid])
+            chunks = self.db_tool.run(query=column, file_uuid=[file_uuid])
             chunks = [chunk['chunk'] for chunk in chunks]
             chunks = [chunk for chunk in chunks if len(chunk) > self.text_length_filter]
         chunks = chunks[:self.chunks_num]
         context = self.chunks_list_to_text(chunks)
         
-        # evidence_list = self.extract_evidence(query, chunks)
+        # evidence_list = self.extract_evidence(column, chunks)
         # context = self.evidence_list_to_text(evidence_list)
         
-        column_value = self.extract_column_value_chain.run(query=query, context=context)
-        if column_value is None or len(column_value) < 1:
-            return ''
-        return column_value[0]
+        column_value = self.extract_column_value_chain.run(query=column, context=context)
+        if column_value is None or len(column_value) == 0:
+            column_text = '해당 사항 없음'
+        else:
+            column_text = self.post_process_column_value(column_value)
+        return file_uuid, column_text
     
     def chunks_list_to_text(self, chunks_list):
         chunks_text = ''
         for idx, chunk in enumerate(chunks_list[:self.chunks_num]):
             chunks_text += f'- Content {idx+1}: {chunk}\n'
         return chunks_text
+    
+    def post_process_column_value(self, column_value):
+        column_value_text = ''
+        for value in column_value:
+            column_value_text += f'- {value}\n'
+        return column_value_text
 
     def evidence_list_to_text(self, evidence_list):
         evidence_text = '\n'.join(evidence_list)
@@ -106,7 +90,11 @@ class AddColumnModule:
     
     def process_chunk(self, args):
         query, chunk = args
-        return self.extract_evidence_chain.run(query=query, context=chunk)
+        relevance = self.extract_relevance_chain.run(query=query, context=chunk)
+        if relevance:
+            return self.extract_evidence_chain.run(query=query, context=chunk)
+        else:
+            return []
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -120,11 +108,6 @@ if __name__ == "__main__":
     
     is_general_query = add_column_module.get_is_general_query(query=args.column)
     print(is_general_query)
-    
-    # ------ get column by project id ------ #
-    # file_uuid_column_value_dict, common_query = add_column_module.get_column_value_by_project(column=args.column, project_id=args.project_id)
-    # print(file_uuid_column_value_dict)
-    # print(common_query)
     
     # ------ get column by file uuid ------ #
     file_uuid_column_value = add_column_module.get_column_value_by_file(column=args.column, file_uuid=args.file_uuid, is_general_query=is_general_query)

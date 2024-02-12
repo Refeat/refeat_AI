@@ -1,4 +1,5 @@
 import sys
+import asyncio
 from typing import Any, List, Dict, Optional
 
 from langchain_core.outputs import LLMResult
@@ -14,7 +15,7 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
         self,
         *,
         answer_prefix_tokens: Optional[List[str]] = ['"', ' answer', '":'],
-        answer_suffix_tokens: Optional[List[str]] = ['"',  'e', 'vidence'],
+        answer_suffix_tokens: Optional[List[str]] = ['"',  'content', 'used'],
         strip_tokens: bool = True,
         stream_prefix: bool = False,
         special_tokens: Optional[List[str]] = ['",\n', '}', '"', '  '],
@@ -47,6 +48,8 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
         self.queue = queue
         self.special_tokens = special_tokens
         self.last_token = ""
+        # self.dummy_tokens = ['죄', '송', '합', '니', '다', '.', ' ', '저', '는', ' ', '입', '력', '하', '신', ' ', '문', '서', '에', ' ', '대', '해', '서', '만', ' ', '답', '변', '드', '릴', ' ', '수', ' ', '있', '습', '니', '다', '.']
+        self.dummy_tokens = "죄송합니다. 저는 입력하신 문서에 대해서만 답변드릴 수 있습니다."
         
     def check_if_answer_reached(self) -> bool:
         if self.strip_tokens:
@@ -76,6 +79,9 @@ class CustomStreamingStdOutCallbackHandler(FinalStreamingStdOutCallbackHandler):
             sys.stdout.flush()
             self.queue.append(self.last_token)
             self.last_token = self.replace_special_tokens(token)
+            
+    def add_dummy_tokens(self):
+        self.queue.append(self.dummy_tokens)
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""

@@ -14,7 +14,7 @@ import threading
 
 from prettytable import PrettyTable, ALL
 
-from models.llm.chain import ExtractIntentAndQueryChain, ExtractEvidenceChain, PlanAnswerChain, DocumentCoverageCheckerChain, CommonChatChain, ExtractColumnValueChain
+from models.llm.chain import ExtractIntentAndQueryChain, ExtractEvidenceChain, PlanAnswerChain, DocumentCoverageCheckerChain, CommonChatChain, ExtractColumnValueChain, ExtractRelevanceChain
 
 class TestChain:
     def __init__(self, chain, test_json_path, save_dir='./'):
@@ -126,7 +126,10 @@ if __name__ == "__main__":
     # common_chat_chain = CommonChatChain(verbose=True)
     # test_chain = TestChain(common_chat_chain, './common_chat_chain_test.json')
     
-    extract_column_value_chain = ExtractColumnValueChain(verbose=True)
-    test_chain = TestChain(extract_column_value_chain, './extract_column_value_chain_test.json')
+    # extract_column_value_chain = ExtractColumnValueChain(verbose=True)
+    # test_chain = TestChain(extract_column_value_chain, './extract_column_value_chain_test.json')
+    
+    extract_relevance_chain = ExtractRelevanceChain(verbose=True)
+    test_chain = TestChain(extract_relevance_chain, './extract_relevance_chain_test.json')
     
     test_chain.test()

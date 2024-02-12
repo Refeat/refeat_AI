@@ -11,7 +11,6 @@ from utils import add_api_key
 add_api_key()
 
 import json
-import uuid
 import glob
 import pickle
 import argparse
@@ -56,6 +55,7 @@ class KnowledgeGraphDataBase:
         with open(filepath, 'wb') as file:
             pickle.dump(dict_to_save, file)
         print(f"Graph data saved to {filepath}")
+        self.cleanup_old_files()
 
     def load_most_recent_graph(self):
         files = glob.glob(os.path.join(self.save_dir, 'knowledge_graph_*.pkl'))
@@ -75,6 +75,21 @@ class KnowledgeGraphDataBase:
 
     def delete_document(self, file_uuid, project_id):
         self.G_dict[project_id].delete_document(file_uuid)
+        
+    def cleanup_old_files(self):
+        file_pattern = "knowledge_graph_"
+        
+        # List all files in the given directory
+        files = os.listdir(self.save_dir)
+        
+        # Filter and sort files based on the pattern and their timestamp
+        matched_files = [f for f in files if f.startswith(file_pattern)]
+        matched_files.sort(key=lambda x: datetime.strptime(x[len(file_pattern):-4], '%Y%m%d_%H%M%S'), reverse=True)
+        
+        # Keep only the most recent 5 files, delete the rest
+        for file_to_delete in matched_files[5:]:
+            os.remove(os.path.join(self.save_dir, file_to_delete))
+            print(f"Deleted old graph files: {file_to_delete}")
 
     def __str__(self, project_id=None):
         if project_id:

@@ -2,3 +2,6 @@ npm install puppeteer
 npm install cheerio
 npm install uuid
 npm install js-beautify
+npm install pdf-lib
+npm install puppeteer-extra
+npm install puppeteer-extra-plugin-adblocker
