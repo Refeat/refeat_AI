@@ -14,11 +14,11 @@ from bs4 import BeautifulSoup
 from models.loader.base_loader import BaseLoader
 
 class PdfLoader(BaseLoader):
-    def __init__(self, file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir):
-        super().__init__(file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir)
+    def __init__(self, file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir):
+        super().__init__(file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir)
         self.page_height = None
 
-    def get_data(self, file_path, file_uuid, screenshot_dir, html_save_dir):
+    def get_data(self, file_path, file_uuid, screenshot_dir, html_save_dir, pdf_save_dir):
         data = []
         doc = fitz.open(file_path)
 
@@ -82,7 +82,10 @@ class PdfLoader(BaseLoader):
         
         html_path = self.change_html_name_to_uuid(file_path, file_uuid, html_save_dir)        
         self.postprocess_html(html_path)
-        return html_path
+        return 
+    
+    def get_pdf_path(self, file_path, file_uuid, pdf_save_dir):
+        return self.file_path
     
     def postprocess_html(self, html_path):
         with open(html_path, 'r', encoding='utf-8') as file:

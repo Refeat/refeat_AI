@@ -1,8 +1,11 @@
-const puppeteer = require('puppeteer');
+// const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-extra');
+const AdblockerPlugin = require('puppeteer-extra-plugin-adblocker');
 const cheerio = require('cheerio');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid'); 
 const beautify_html = require('js-beautify').html;
+const { PDFDocument } = require('pdf-lib');
 
 function isImageElement(element) {
     if (element.is('img')) {
@@ -38,15 +41,48 @@ function addTagsToElements(imageElements, fileUuid) {
     });
 }
 
+async function mergePdfPages(filePath) {
+    // 원본 PDF 로드
+    const originalPdfBytes = fs.readFileSync(filePath);
+    const originalPdfDoc = await PDFDocument.load(originalPdfBytes);
+  
+    // 새 PDF 문서 생성
+    const newPdfDoc = await PDFDocument.create();
+    
+    // 원본 PDF의 모든 페이지를 하나의 페이지로 병합
+    const mergedPage = await newPdfDoc.addPage();
+  
+    const pageCount = originalPdfDoc.getPageCount();
+    for (let i = 0; i < pageCount; i++) {
+      const page = await originalPdfDoc.getPage(i);
+      const { width, height } = page.getSize();
+      
+      // 여기서는 단순화를 위해 모든 페이지를 동일한 크기로 병합합니다.
+      // 실제로는 페이지 크기 조정이 필요할 수 있습니다.
+      mergedPage.drawPage(page, {
+        x: 0,
+        y: mergedPage.getHeight() - height * (i + 1), // 페이지를 위로 쌓아 올립니다.
+        width,
+        height,
+      });
+    }
+  
+    // 병합된 PDF를 저장
+    const mergedPdfBytes = await newPdfDoc.save();
+    fs.writeFileSync('merged.pdf', mergedPdfBytes);
+  
+    console.log('PDF 병합 완료');
+}
 class WebLoader {
-    constructor(filePath = null, fileUuid = null, screenshotDir = null, htmlSaveDir = null) {
+    constructor(filePath = null, fileUuid = null, screenshotDir = null, htmlSaveDir = null, pdfSaveDir = null) {
         this.filePath = filePath;
         this.fileUuid = fileUuid;
         this.screenshotDir = screenshotDir;
         this.htmlSaveDir = htmlSaveDir;
+        this.pdfSaveDir = pdfSaveDir;
     }
 
-    async get_data(filePath, fileUuid, screenshotDir, htmlSaveDir) {
+    async get_data(filePath, fileUuid, screenshotDir, htmlSaveDir, pdfSaveDir) {
         const page = await this.fetch_data(filePath);
         const baseUrl = new URL(page.url()).origin;    
         let content = await page.content();
@@ -56,10 +92,16 @@ class WebLoader {
 
         content = $.html();
         const title = await page.title();
+        // console.log(title);
         const favicon = await this.get_favicon(page, $);
+        // console.log(favicon);
         const screenshotPath = await this.take_screenshot(page, fileUuid, screenshotDir);
+        // console.log(screenshotPath);
         const htmlPath = await this.saveHtml(content, fileUuid, htmlSaveDir);
-    
+        // console.log(htmlPath);
+        const pdfPath = await this.savePdf(page, fileUuid, pdfSaveDir); // Save the web page as a PDF
+        // console.log(pdfPath);
+        
         let data = [];
         const elementHandles = await page.$$('p, div, span, h1, h2, h3, h4, h5, h6, em, figcaption, strong, a, b, td');
     
@@ -93,12 +135,36 @@ class WebLoader {
         }
         
         await page.browser().close();
-        return { title, data, favicon, screenshotPath, htmlPath };
+        return { title, data, favicon, screenshotPath, htmlPath, pdfPath };
+    }
+
+    async savePdf(page, fileUuid, pdfSaveDir) {
+        if (!fs.existsSync(pdfSaveDir)) {
+            fs.mkdirSync(pdfSaveDir);
+        }
+
+        const height = await page.evaluate(() => document.documentElement.scrollHeight);
+
+        const pdfPath = `${pdfSaveDir}/${fileUuid}.pdf`;
+        await page.pdf({
+            path: pdfPath,
+            format: 'A4',
+            // width: '794px', // A4의 너비를 픽셀로 환산한 값입니다. 필요에 따라 조정할 수 있습니다.
+            // height: `${height + 1}px`, // 측정된 높이를 사용하여 PDF의 높이를 설정. 1px 추가로 빈 페이지 방지
+            printBackground: true, // 페이지의 배경 포함 여부
+            displayHeaderFooter: false, // 헤더와 푸터 표시 여부
+            scale: 0.8, // 페이지 배율
+            // pageRanges: '1'
+        });
+
+        // mergePdfPages(pdfPath);
+        return pdfPath;
     }
 
     async processPageContent($, baseUrl, fileUuid) {
         await this.convertRelativePathsToAbsolute($, baseUrl);
-        $('script').remove();
+        // $('script').remove();
+        
         let imageElements = findImageElements($);
         addTagsToElements(imageElements, fileUuid);
     }
@@ -139,20 +205,93 @@ class WebLoader {
     }
 
     async fetch_data(filePath) {
+        puppeteer.use(AdblockerPlugin());
         const browser = await puppeteer.launch({
             headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            args: [
+                '--no-sandbox', 
+                '--disable-setuid-sandbox',
+                '--disable-infobars',
+                '--window-position=0,0',
+                '--ignore-certifcate-errors',
+                '--ignore-certifcate-errors-spki-list',
+            ]
         });
         const page = await browser.newPage();
     
         // 일반적인 브라우저처럼 보이게 사용자 에이전트 설정
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36');
+        await page.setRequestInterception(true);
+        page.on('request', (req) => {
+            // 광고나 팝업으로 알려진 URL을 포함하는 요청 차단
+            if (req.url().includes('cdn-client.medium.com')||req.url().includes('cookie')) {
+              req.abort();
+            } else {
+              req.continue();
+            }
+          });
     
         try {
-            const navigationPromise = page.waitForNavigation({ waitUntil: 'networkidle2' });
             await page.goto(filePath, { waitUntil: 'networkidle2' });
-            await navigationPromise;
-    
+
+            // 현재 페이지의 보이는 높이를 가져옵니다.
+            const viewportHeight = page.viewport().height;
+            
+            // 스크롤을 맨 아래까지 내리는 로직
+            await page.evaluate(async (viewportHeight) => {
+                await new Promise((resolve, reject) => {
+                    var totalHeight = 0;
+                    var timer = setInterval(() => {
+                        window.scrollBy(0, viewportHeight);
+                        totalHeight += viewportHeight;
+
+                        if(totalHeight >= document.body.scrollHeight){
+                            clearInterval(timer);
+                            resolve();
+                        }
+                    }, 100); // 0.1초에 한 번씩 스크롤
+                });
+            }, viewportHeight);
+
+            await page.evaluate(() => {
+                const links = document.querySelectorAll('a');
+                links.forEach(link => {
+                    link.removeAttribute('href');
+                    // 또는 link.href = '#';
+                });
+            });
+
+            const selectorsToRemove = ['iframe', 'header', 'footer', 'script', 'nav']; // 태그와 클래스 모두 포함
+            // 선택자(태그 또는 클래스)에 대해 반복 실행
+            for (const selector of selectorsToRemove) {
+                await page.evaluate((selector) => {
+                    const elements = document.querySelectorAll(selector);
+                    elements.forEach(element => {
+                        element.remove();
+                    });
+                }, selector);
+            }
+
+            await page.evaluate(() => {
+                // 삭제할 요소를 결정하기 위한 키워드 목록
+                // const keywords = ['right', 'head', 'hed'];
+                const keywords = ['head', 'hed', 'below'];
+                
+                // 문서 내의 모든 요소를 반복하여 검사합니다.
+                document.querySelectorAll('*').forEach((element) => {
+                    // 각 요소의 클래스 리스트를 순회합니다.
+                    element.classList.forEach((className) => {
+                        // 클래스 이름이 위에서 정의한 키워드 중 하나를 포함하는지 여부를 검사합니다.
+                        if (keywords.some(keyword => className.includes(keyword))) {
+                            // 조건을 만족하는 요소를 삭제합니다.
+                            element.remove();
+                            // 한 요소를 삭제한 후에는 같은 요소의 다른 클래스 이름 검사를 더 이상 진행하지 않습니다.
+                            return;
+                        }
+                    });
+                });
+            });
+            
         } catch (error) {
             console.error(error);
             await browser.close();
@@ -197,6 +336,14 @@ class WebLoader {
             }
         });
 
+        // <link> 태그의 href 속성 처리
+        $('link').each(function() {
+            const href = $(this).attr('href');
+            if (href && !href.startsWith('http://') && !href.startsWith('https://')) {
+                $(this).attr('href', new URL(href, baseUrl).href);
+            }
+        });
+
         // <img> 태그의 src 속성 처리
         $('img').each(function() {
             const src = $(this).attr('src');
@@ -222,15 +369,16 @@ class WebLoader {
 }
 
 // example usage
-// node web_loader.js "https://medium.com/thirdai-blog/neuraldb-enterprise-full-stack-llm-driven-generative-search-at-scale-f4e28fecc3af" "ce0137db-48dc-4c9b-b336-d8a7f654736d" "./screenshots" "./html"
+// node web_loader.js "https://stackoverflow.com/questions/54402593/remove-whitespace-from-pdf-document" "ce0137db-48dc-4c9b-b336-d8a7f654736d" "./screenshots" "./html" "./pdf"
 const url = process.argv[2];  // 커맨드 라인에서 URL 받기
 const fileUuid = process.argv[3];
 const screenshotDir = process.argv[4];  // 커맨드 라인에서 스크린샷 저장 경로 받기
 const htmlSaveDir = process.argv[5];  // 커맨드 라인에서 HTML 저장 경로 받기
+const pdfSaveDir = process.argv[6];
 
 async function loadData() {
     const webLoader = new WebLoader();
-    const data = await webLoader.get_data(url, fileUuid, screenshotDir, htmlSaveDir);
+    const data = await webLoader.get_data(url, fileUuid, screenshotDir, htmlSaveDir, pdfSaveDir);
     console.log(JSON.stringify(data));  // JSON 형식으로 출력
     return data;
 }

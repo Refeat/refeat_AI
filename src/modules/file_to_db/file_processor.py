@@ -26,7 +26,7 @@ from database.knowledge_graph.graph_construct import KnowledgeGraphDataBase
 # knowledge_graph_db = KnowledgeGraphDataBase()
 
 class FileProcessor:
-    def __init__(self, es: CustomElasticSearch, summary_chain, knowledge_graph_db, model_name='openai', json_save_dir='../test_data', screenshot_dir='../test_data/screenshots', html_save_dir='../test_data/html'):
+    def __init__(self, es: CustomElasticSearch, summary_chain, knowledge_graph_db, model_name='openai', json_save_dir='../test_data', screenshot_dir='../test_data/screenshots', html_save_dir='../test_data/html', pdf_save_dir='../test_data/pdf'):
         self.es = es
         self.summary_chain = summary_chain
         self.knowledge_graph_db = knowledge_graph_db
@@ -36,6 +36,7 @@ class FileProcessor:
         self.json_save_dir = json_save_dir
         self.screenshot_dir = screenshot_dir
         self.html_save_dir = html_save_dir
+        self.pdf_save_dir = pdf_save_dir
         os.makedirs(self.json_save_dir, exist_ok=True)
 
     def __call__(self, file_uuid, project_id, file_path):
@@ -48,7 +49,7 @@ class FileProcessor:
 
     def load_file(self, file_uuid, project_id, file_path):
         loader = UnifiedLoader()
-        data = loader.load_file(file_uuid, project_id, file_path, self.json_save_dir, self.screenshot_dir, self.html_save_dir)
+        data = loader.load_file(file_uuid, project_id, file_path, self.json_save_dir, self.screenshot_dir, self.html_save_dir, self.pdf_save_dir)
         return data
     
     def process_data(self, data):
@@ -63,6 +64,9 @@ class FileProcessor:
 
     def get_title_favicon_screenshot_path(self, data):
         return data['title'], data['favicon'], data['screenshot_path']
+    
+    def get_pdf_path(self, data):
+        return data['pdf_path']
     
     def get_save_path(self, data):
         return data['processed_path']
@@ -96,8 +100,22 @@ class FileProcessor:
             raise ValueError('Invalid category while chunking. Only pdf and web are allowed.')
 
     def add_embedding(self, data):
+        # text_list = [chunk['text'] for chunk in data['data']]
+        # embedding_list = self.embedder.get_embedding(text_list)
+        # for chunk, embedding in zip(data['data'], embedding_list):
+        #     chunk['embedding'] = embedding
         text_list = [chunk['text'] for chunk in data['data']]
-        embedding_list = self.embedder.get_embedding(text_list)
+    
+        # text_list를 20개씩 나누어 처리
+        chunked_text_list = [text_list[i:i + 5] for i in range(0, len(text_list), 5)]
+        embedding_list = []
+        
+        for chunk in chunked_text_list:
+            # 각 부분에 대해 get_embedding을 호출하고 결과를 embedding_list에 추가
+            embeddings = self.embedder.get_embedding(chunk)
+            embedding_list.extend(embeddings)
+        
+        # 결과를 다시 data['data']에 합쳐서 저장
         for chunk, embedding in zip(data['data'], embedding_list):
             chunk['embedding'] = embedding
 
@@ -172,6 +190,7 @@ if __name__ == "__main__":
     parser.add_argument('--json_save_dir', type=str, default='../test_data')
     parser.add_argument('--screenshot_dir', type=str, default='../test_data/screenshots')
     parser.add_argument('--html_save_dir', type=str, default='../test_data/html')
+    parser.add_argument('--pdf_save_dir', type=str, default='../test_data/pdf')
     args = parser.parse_args()
     
     # es = CustomElasticSearch(index_name='refeat_ai') # default host is localhost:9200
@@ -181,7 +200,7 @@ if __name__ == "__main__":
     summary_chain = SummaryChain()
     knowledge_graph_db = KnowledgeGraphDataBase()
 
-    file_processor = FileProcessor(es, summary_chain, knowledge_graph_db, json_save_dir=args.json_save_dir, screenshot_dir=args.screenshot_dir, html_save_dir=args.html_save_dir)
+    file_processor = FileProcessor(es, summary_chain, knowledge_graph_db, json_save_dir=args.json_save_dir, screenshot_dir=args.screenshot_dir, html_save_dir=args.html_save_dir, pdf_save_dir=args.pdf_save_dir)
     file_uuid = str(uuid.uuid4())
     project_id = -5
     print('file_uuid:', file_uuid)
