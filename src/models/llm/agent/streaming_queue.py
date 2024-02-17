@@ -5,6 +5,7 @@ class StreamingQueue:
         self.document_info = None
         self.document_flag = False
         self.end_flag = False
+        self.error_flag = False
 
     def __len__(self):
         return len(self.main_queue)
@@ -27,6 +28,10 @@ class StreamingQueue:
         
     def is_document_end(self):
         return self.document_flag
+    
+    def get_document_info(self, ref_name):
+        print(self.document_info)
+        return str(self.document_info)
 
     def end_job(self):
         self.end_flag = True
@@ -42,9 +47,15 @@ class StreamingQueue:
     
     def __str__(self) -> str:
         if len(self.main_queue)>0:
-            return f"{self.document_info}\n{self.main_queue}"
+            return self.main_queue[-1]
         else:
             return "empty"
+        
+    def error(self):
+        self.error_flag = True
+        
+    def is_error(self):
+        return self.error_flag
 
     def refresh(self):
         return ""

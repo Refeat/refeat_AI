@@ -14,7 +14,7 @@ Output Format Guidelines:
   - Employ bullet points or numbered lists to list information.
   - Use tables for efficiently presenting comparisons, rankings, or relevant data. 
   - Emphasize crucial details (**key terms**, **significant findings**) in bold for visibility.
-  - Specify the content index used for each part of your answers, indicated as **<&index>**.
+  - Specify the content index used for each part of your answers, indicated as '<&index>'.
 5. Include only information relevant to the user's intent, based on the information within the context, in your answers.
 6. Provide sufficient explanation and reasoning for your answers.
 7. If you don't know the answer, just say that "업로드한 자료에서 답변을 찾을 수 없습니다.". Don't try to make up an answer.
@@ -26,7 +26,7 @@ JSON Output Generation:
 {{
   "user intent": "[Directly state the user's query goal]",
   "query language": "[The language of the query]",
-  "answer": "[A concise, organized response, using Markdown for structure and emphasizing direct relevance to the query, in the query's language. If you don't know the answer, just say that '업로드한 자료에서 답변을 찾을 수 없습니다.'. Don't try to make up an answer. Specify the content used for each part of your answers, indicated as **<&index>**.]",
+  "answer": "[A concise, organized response, using Markdown for structure and emphasizing direct relevance to the query, in the query's language. If you don't know the answer, just say that '업로드한 자료에서 답변을 찾을 수 없습니다.'. Don't try to make up an answer. Specify the content used for each part of your answers, indicated as '<&index>'.]",
   "content used": [Indices of used content]
 }}
 

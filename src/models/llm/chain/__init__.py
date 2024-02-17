@@ -23,3 +23,5 @@ from models.llm.chain.determine_what_table_of_contents_support_chain import Dete
 from models.llm.chain.extract_information_document_table_of_contents_chain import ExtractInformationDocumentTableofContentsChain
 from models.llm.chain.summary_chain_en import SummaryChainEnglish
 from models.llm.chain.summary_chain import SummaryChain
+from models.llm.chain.keywords_chain import KeywordsChain
+from models.llm.chain.extract_insights_chain import ExtractInsightsChain
