@@ -126,10 +126,10 @@ if __name__ == "__main__":
     # common_chat_chain = CommonChatChain(verbose=True)
     # test_chain = TestChain(common_chat_chain, './common_chat_chain_test.json')
     
-    # extract_column_value_chain = ExtractColumnValueChain(verbose=True)
-    # test_chain = TestChain(extract_column_value_chain, './extract_column_value_chain_test.json')
+    extract_column_value_chain = ExtractColumnValueChain(verbose=True)
+    test_chain = TestChain(extract_column_value_chain, './extract_column_value_chain_test.json')
     
-    extract_relevance_chain = ExtractRelevanceChain(verbose=True)
-    test_chain = TestChain(extract_relevance_chain, './extract_relevance_chain_test.json')
+    # extract_relevance_chain = ExtractRelevanceChain(verbose=True)
+    # test_chain = TestChain(extract_relevance_chain, './extract_relevance_chain_test.json')
     
     test_chain.test()

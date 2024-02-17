@@ -13,15 +13,16 @@ import concurrent.futures
 
 from database.elastic_search.custom_elastic_search import CustomElasticSearch
 from models.tools import DBSearchTool
-from models.llm.chain import DocumentCoverageCheckerChain, ExtractIntentFromColumnOfMultiDocumentsChain, ExtractColumnValueChain, ExtractIntentFromColumnOfSingleDocumentChain, ExtractEvidenceChain, ExtractRelevanceChain
+from models.llm.chain import DocumentCoverageCheckerChain, ExtractColumnValueChain, ExtractEvidenceChain, ExtractRelevanceChain, KeywordsChain, ExtractInsightsChain
 
 class AddColumnModule:
-    def __init__(self, es, trigger_file_num=4, verbose=True):
+    def __init__(self, es, verbose=True):
         self.document_coverage_checker_chain = DocumentCoverageCheckerChain(verbose=verbose)
         self.extract_column_value_chain = ExtractColumnValueChain(verbose=verbose)
         self.extract_relevance_chain = ExtractRelevanceChain(verbose=verbose)
         self.extract_evidence_chain = ExtractEvidenceChain(verbose=verbose)
-        self.trigger_file_num = trigger_file_num
+        self.keywords_chain = KeywordsChain(verbose=verbose)
+        self.extract_insights_chain = ExtractInsightsChain(verbose=verbose)
         self.db_tool = DBSearchTool(es=es)
         self.chunks_num = 5
         self.text_length_filter = 50
@@ -33,6 +34,7 @@ class AddColumnModule:
         return file_uuid_column_value_dict
     
     def get_is_general_query(self, query):
+        query = query.strip().lower()
         result = self.document_coverage_checker_chain.run(query=query)        
         if result == 'general':
             return True
@@ -42,20 +44,30 @@ class AddColumnModule:
             raise ValueError(f"Invalid query nature: {result}. It should be either 'general' or 'specific'")
             
     def get_column_value_by_file(self, column, file_uuid, is_general_query=False):
-        if is_general_query:
+        column = column.strip().lower()
+        if is_general_query or column in ['인사이트', '키워드', 'insights', 'keywords']:
             chunks = self.db_tool.get_schema_data_by_file_uuid(file_uuid, 'chunk_list_by_text_rank')
             chunks = [chunk for chunk in chunks if len(chunk) > self.text_length_filter]
+            chunks = chunks[:self.chunks_num]
+            context = self.chunks_list_to_text(chunks)
         else:
             chunks = self.db_tool.run(query=column, file_uuid=[file_uuid])
             chunks = [chunk['chunk'] for chunk in chunks]
             chunks = [chunk for chunk in chunks if len(chunk) > self.text_length_filter]
-        chunks = chunks[:self.chunks_num]
-        context = self.chunks_list_to_text(chunks)
+            evidence_list = self.extract_evidence(column, chunks)
+            context = self.evidence_list_to_text(evidence_list)
         
-        # evidence_list = self.extract_evidence(column, chunks)
-        # context = self.evidence_list_to_text(evidence_list)
-        
-        column_value = self.extract_column_value_chain.run(query=column, context=context)
+        if column == '인사이트':
+            column_value = self.extract_insights_chain.run(context=context, lang='korean')
+        elif column == '키워드':
+            column_value = self.keywords_chain.run(context=context, lang='korean')
+        elif column == 'insights':
+            column_value = self.extract_insights_chain.run(context=context, lang='english')
+        elif column == 'keywords':
+            column_value = self.keywords_chain.run(context=context, lang='english')
+        else:
+            column_value = self.extract_column_value_chain.run(query=column, context=context)
+            
         if column_value is None or len(column_value) == 0:
             column_text = '해당 사항 없음'
         else:
@@ -81,6 +93,8 @@ class AddColumnModule:
     def extract_evidence(self, query, chunks):
         args_list = [(query, chunk) for chunk in chunks]
         evidence_list = []
+        if len(chunks) == 0:
+            return []
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(chunks)) as executor:
             future_to_chunk = {executor.submit(self.process_chunk, args): args for args in args_list}
             for future in concurrent.futures.as_completed(future_to_chunk):

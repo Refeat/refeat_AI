@@ -260,7 +260,7 @@ class CustomElasticSearch:
         data = self.get_data_by_project_id(project_id)
         return [d[schema] for d in data]
 
-    def post_process_search_results(self, response, search_range):
+    def post_process_search_results(self, response, search_range, chunk_score_threshold=0.7):
         """
         Elasticsearch의 검색 결과를 후처리합니다.
 
@@ -308,6 +308,9 @@ class CustomElasticSearch:
                     document_score = hit['_score']
 
                     if chunk_info['content'] in content_list:
+                        continue
+                    
+                    if chunk_score_threshold > chunk_score:
                         continue
                     
                     # 모든 'chunk' 저장
@@ -485,24 +488,6 @@ class CustomElasticSearch:
         if search_range == 'document':
             if part == 'topic_summary':
                 raise ValueError("part='topic_summary' is not supported when search_range='document'")
-                # es_query = {
-                #     "bool": {
-                #         "must": [
-                #             {"match": {"topic": query}}
-                #         ],
-                #     }
-                # }
-
-                # # filter가 제공되고, 비어있지 않은 경우에만 토픽 필터 추가
-                # if filter and len(filter) > 0:
-                #     if "filter" not in es_query["bool"]:
-                #         es_query["bool"]["filter"] = {"bool": {"should": []}}
-                #     es_query["bool"]["filter"]["bool"]["should"].extend(
-                #         [{"match_phrase": {"topic": topic}} for topic in filter]
-                #     )
-                #     es_query["bool"]["filter"]["bool"]["minimum_should_match"] = 1
-                
-                # return es_query
             # version2: chunk를 이용해서 검색했을 경우
             elif part == 'chunk':
                 es_query = {
@@ -722,16 +707,26 @@ class CustomElasticSearch:
         """
         Elasticsearch의 hybrid 검색(similarity + match)을 수행합니다.
         """
-        if search_range == 'chunk':
-            raise ValueError("search_range='chunk' is not supported when method='hybrid'")
-        num_results_multiplier = 4 # 두 개의 검색을 더하는 방법을 사용하므로, 각각의 검색 결과 수를 넉넉하게 N배로 설정
-        single_search_num_results = num_results *  num_results_multiplier
-        similarity_response = self._similarity_search(query, query_embedding, search_range, part, single_search_num_results, num_chunks, limit_token_length, filter, project_filter)
-        match_response = self._match_search(query, search_range, part, single_search_num_results, num_chunks, limit_token_length, filter, project_filter)
-        response = self._combine_response(similarity_response, match_response, match_weight, similarity_weight)
+        if search_range == 'document':
+            num_results_multiplier = 4 # 두 개의 검색을 더하는 방법을 사용하므로, 각각의 검색 결과 수를 넉넉하게 N배로 설정
+            single_search_num_results = num_results *  num_results_multiplier
+            similarity_response = self._similarity_search(query, query_embedding, search_range, part, single_search_num_results, num_chunks, limit_token_length, filter, project_filter)
+            match_response = self._match_search(query, search_range, part, single_search_num_results, num_chunks, limit_token_length, filter, project_filter)
+            response = self._combine_response(similarity_response, match_response, match_weight, similarity_weight, search_range='document')
+        elif search_range == 'chunk':
+            raise ValueError("search_range='chunk' is not supported for hybrid search")
+            # num_results_multiplier = 4 # 두 개의 검색을 더하는 방법을 사용하므로, 각각의 검색 결과 수를 넉넉하게 N배로 설정
+            # single_search_num_results = num_results *  num_results_multiplier
+            # similarity_response = self._similarity_search(query, query_embedding, search_range, part, single_search_num_results, num_chunks, limit_token_length, filter, project_filter)
+            # match_response = self._match_search(query, search_range, part, single_search_num_results, num_chunks, limit_token_length, filter, project_filter)
+            # response = self._combine_response(similarity_response, match_response, match_weight, similarity_weight, search_range='chunk')
+        else:
+            raise ValueError(f"search_range {search_range} is not supported")
+        
+        
         return response
     
-    def _combine_response(self, similarity_response, match_response, match_weight=0.02, similarity_weight=1):
+    def _combine_response(self, similarity_response, match_response, match_weight=0.02, similarity_weight=1, search_range='document'):
         """
         hybrid 검색을 위해 similarity와 match 검색 결과를 합칩니다.
         
@@ -744,36 +739,76 @@ class CustomElasticSearch:
         Returns:
             final_response: hybrid 검색 결과
         """
-        similarity_hits = similarity_response['hits']['hits']
-        match_hits = match_response['hits']['hits']
+        if search_range == 'document':
+            similarity_hits = similarity_response['hits']['hits']
+            match_hits = match_response['hits']['hits']
 
-        combined_results = {}
+            combined_results = {}
 
-        # Process similarity hits
-        for hit in similarity_hits:
-            score = hit['_score'] * similarity_weight
-            doc_id = hit['_id']
-            combined_results[doc_id] = {'score': score, 'hit': hit}
-        
-        # Process match hits
-        for hit in match_hits:
-            score = hit['_score'] * match_weight
-            doc_id = hit['_id']
-            if doc_id in combined_results:
-                combined_results[doc_id]['score'] += score
-                combined_results[doc_id]['hit']['_score'] += score
-            else:
+            # Process similarity hits
+            for hit in similarity_hits:
+                score = hit['_score'] * similarity_weight
+                doc_id = hit['_id']
                 combined_results[doc_id] = {'score': score, 'hit': hit}
-                combined_results[doc_id]['hit']['_score'] = score
-        
-        # Sort the combined results by their scores in descending order
-        sorted_results = sorted(combined_results.values(), key=lambda x: x['score'], reverse=True)
-        
-        # Prepare the final response format
-        final_response = {
-            'hits': {'hits': [result['hit'] for result in sorted_results]},
-        }
+            
+            # Process match hits
+            for hit in match_hits:
+                score = hit['_score'] * match_weight
+                doc_id = hit['_id']
+                if doc_id in combined_results:
+                    combined_results[doc_id]['score'] += score
+                    combined_results[doc_id]['hit']['_score'] += score
+                else:
+                    combined_results[doc_id] = {'score': score, 'hit': hit}
+                    combined_results[doc_id]['hit']['_score'] = score
+            
+            # Sort the combined results by their scores in descending order
+            sorted_results = sorted(combined_results.values(), key=lambda x: x['score'], reverse=True)
+            
+            # Prepare the final response format
+            final_response = {
+                'hits': {'hits': [result['hit'] for result in sorted_results]},
+            }
+        elif search_range == 'chunk':
+            raise ValueError("search_range='chunk' is not supported for hybrid search")
+            # combined_results = {}
 
+            # def process_hits(hits, weight, is_similarity=True):
+            #     for hit in hits:
+            #         doc_id = hit['_id']
+            #         inner_hits = hit.get('inner_hits', {}).get('contents', {}).get('hits', {}).get('hits', [])
+            #         for inner_hit in inner_hits:
+            #             chunk_id = inner_hit['_nested']['offset']  # Assuming unique identifier within a document
+            #             combined_id = f"{doc_id}_{chunk_id}"  # Unique ID for each chunk across documents
+            #             score = inner_hit['_score'] * weight
+                        
+            #             if combined_id in combined_results:
+            #                 combined_results[combined_id]['score'] += score
+            #                 # Update score based on the type of hit (similarity or match)
+            #                 if is_similarity:
+            #                     combined_results[combined_id]['hit']['_score'] += score
+            #                 else:
+            #                     combined_results[combined_id]['hit']['_score'] = max(combined_results[combined_id]['hit']['_score'], score)
+            #                     print(222)
+            #             else:
+            #                 # Copy hit to avoid mutating original and to customize for combined response
+            #                 combined_hit = dict(inner_hit, _score=score)
+            #                 combined_results[combined_id] = {'score': score, 'hit': combined_hit}
+            #                 print(333)
+
+            # # Process similarity and match hits
+            # process_hits(similarity_response['hits']['hits'], similarity_weight, is_similarity=True)
+            
+            # process_hits(match_response['hits']['hits'], match_weight, is_similarity=False)
+            # # Sort the combined results by their scores in descending order
+            # sorted_results = sorted(combined_results.values(), key=lambda x: x['score'], reverse=True)
+            
+            # # Prepare the final response format
+            # final_response = {
+            #     'hits': {
+            #         'hits': [result['hit'] for result in sorted_results]
+            #     }
+            # }
         return final_response        
 
 if __name__ == "__main__":
@@ -783,22 +818,22 @@ if __name__ == "__main__":
     
     # ---------- create index ---------- #
     # es._create_index(settings=es.settings, mappings=es.mappings)
-    json_path = '../../modules/test_data/test.json'
-    es.add_document_from_json(json_path) # add single document
+    # json_path = '../../modules/test_data/test.json'
+    # es.add_document_from_json(json_path) # add single document
 
     # ---------- delete index ---------- #
     # es._delete_index()
 
     # ---------- search test ---------- #
     response = es.search(
-        query="아시아 경제 성장", 
+        query="챗gpt", 
         query_embedding=None,
         num_results=5, # 최종 결과로 반환할 문서 수
         method='similarity', # [similarity, match, hybrid]
         search_range='chunk', # [document, chunk]
         part='chunk', # [chunk, topic_summary]
         num_chunks=5, # reranking을 사용할 경우, 사용할 chunk 수
-        limit_token_length=100,
+        limit_token_length=1,
         match_weight=0.02, # hybrid search에서 match search의 가중치
         similarity_weight=1, # hybrid search에서 similarity search의 가중치
         )
