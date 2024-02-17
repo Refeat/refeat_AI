@@ -32,7 +32,7 @@ class ChatAgentModule:
         self.limit_chunk_num = limit_chunk_num # project의 chunk수가 limit_chunk_num보다 작으면 elastic search로 검색, limit_chunk_num보다 크면 knowledge graph로 검색
         self.chain_input_chat_history_num = chain_input_chat_history_num
     
-    def run(self, query, file_uuid:List[str]=None, project_id=None, chat_history: List[List[str]]=[], queue=None, idx_evidence_use=False):
+    def run(self, query, file_uuid:List[str]=None, project_id=None, chat_history: List[List[str]]=[], queue=None, idx_evidence_use=True):
         """
         Args:
             query (str): user input
@@ -74,6 +74,7 @@ class ChatAgentModule:
             file_uuid_bbox_dict= self.post_process_evidence_with_idx(evidence_list, used_evidence_idx_list, queue)
         else:
             file_uuid_bbox_dict= self.post_process_evidence(evidence_list, used_evidence_idx_list, queue)
+        print(file_uuid_bbox_dict, answer)
         return file_uuid_bbox_dict, answer
     
     def post_process_evidence(self, evidence_list, used_evidence_idx_list, queue):
@@ -90,14 +91,12 @@ class ChatAgentModule:
         return file_uuid_chunk_dict
     
     def post_process_evidence_with_idx(self, evidence_list, used_evidence_idx_list, queue):
-        document_list, file_uuid_chunk_list = [], []
+        file_uuid_chunk_list = []
         idx_used_evidence_list = [[idx, evidence_list[idx]] for idx in used_evidence_idx_list]
         for idx_used_evidence in idx_used_evidence_list:
             idx, used_evidence = idx_used_evidence[0], idx_used_evidence[1]
             evidence, document, chunk = used_evidence[0], used_evidence[1], used_evidence[2]
-            if document not in document_list:
-                document_list.append(document)
-                file_uuid_chunk_list.append({idx:{"file_uuid":document, "text":chunk}}) # queue는 backend에서 넘겨준다
+            file_uuid_chunk_list.append({idx:{"file_uuid":document, "text":chunk}}) # queue는 backend에서 넘겨준다
         file_uuid_chunk_dict = self.merge_dict(file_uuid_chunk_list)
         queue.set_document_info(file_uuid_chunk_dict) 
         queue.document_end()
@@ -127,6 +126,8 @@ class ChatAgentModule:
     def execute_search_tools(self, db_query_list, file_uuid, project_id, chunk_num):
         tool_results = []
         args_list = self.prepare_tool_args(db_query_list, file_uuid, project_id, chunk_num)
+        if len(db_query_list) == 0:
+            return []
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(db_query_list)) as executor:
             future_to_tool = {executor.submit(self.execute_tool, args): args for args in args_list}
             for future in concurrent.futures.as_completed(future_to_tool):
@@ -144,7 +145,9 @@ class ChatAgentModule:
 
     def extract_evidence(self, tool_results, enrich_query, evidence_num):
         args_list = [(enrich_query, tool_result['document'], tool_result['chunk'], tool_result['bbox']) for tool_result in tool_results]
-        evidence_list, document_list, file_uuid_bbox_list = [], [], []
+        evidence_list = []
+        if evidence_num == 0:
+            return []
         with concurrent.futures.ThreadPoolExecutor(max_workers=evidence_num) as executor:
             future_to_chunk = {executor.submit(self.process_chunk, args): args for args in args_list}
             for future in concurrent.futures.as_completed(future_to_chunk):

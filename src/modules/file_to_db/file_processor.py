@@ -15,20 +15,15 @@ import time
 from models.loader.unified_loader import UnifiedLoader
 from models.chunker.json_chunker import JsonChunker
 from models.embedder.utils import get_embedder
-from models.llm.chain.summary_chain import SummaryChain
+from modules.summary.summary_module import SummaryModule
 from models.text_ranker.text_ranker import TextRanker
 from database.elastic_search.custom_elastic_search import CustomElasticSearch
 from database.knowledge_graph.graph_construct import KnowledgeGraphDataBase
 
-# es = CustomElasticSearch(index_name='refeat_ai', host="http://10.10.10.27:9200")
-# es._create_index() # delete index and create new index
-# summary_chain = SummaryChain()
-# knowledge_graph_db = KnowledgeGraphDataBase()
-
 class FileProcessor:
-    def __init__(self, es: CustomElasticSearch, summary_chain, knowledge_graph_db, model_name='openai', json_save_dir='../test_data', screenshot_dir='../test_data/screenshots', html_save_dir='../test_data/html', pdf_save_dir='../test_data/pdf'):
+    def __init__(self, es: CustomElasticSearch, summary_module, knowledge_graph_db, model_name='openai', json_save_dir='../test_data', screenshot_dir='../test_data/screenshots', html_save_dir='../test_data/html', pdf_save_dir='../test_data/pdf', favicon_save_dir="../test_data/favicon"):
         self.es = es
-        self.summary_chain = summary_chain
+        self.summary_module = summary_module
         self.knowledge_graph_db = knowledge_graph_db
         self.chunker = JsonChunker(model_name=model_name)
         self.embedder = get_embedder(model_name)
@@ -37,6 +32,7 @@ class FileProcessor:
         self.screenshot_dir = screenshot_dir
         self.html_save_dir = html_save_dir
         self.pdf_save_dir = pdf_save_dir
+        self.favicon_save_dir = favicon_save_dir
         os.makedirs(self.json_save_dir, exist_ok=True)
 
     def __call__(self, file_uuid, project_id, file_path):
@@ -49,7 +45,7 @@ class FileProcessor:
 
     def load_file(self, file_uuid, project_id, file_path):
         loader = UnifiedLoader()
-        data = loader.load_file(file_uuid, project_id, file_path, self.json_save_dir, self.screenshot_dir, self.html_save_dir, self.pdf_save_dir)
+        data = loader.load_file(file_uuid, project_id, file_path, self.json_save_dir, self.screenshot_dir, self.html_save_dir, self.pdf_save_dir, self.favicon_save_dir)
         return data
     
     def process_data(self, data):
@@ -58,11 +54,11 @@ class FileProcessor:
         self.add_child_embedding(data)
         self.add_chunk_list_by_text_rank(data)
 
-    def get_summary(self, data):
-        summary = self.add_summary(data)
+    def get_summary(self, data, lang='ko'):
+        summary = self.add_summary(data, lang)
         return summary
 
-    def get_title_favicon_screenshot_path(self, data):
+    def get_title_favicon_screenshot_path(self, data):        
         return data['title'], data['favicon'], data['screenshot_path']
     
     def get_pdf_path(self, data):
@@ -129,8 +125,8 @@ class FileProcessor:
             end_idx = accumulate_index_list[idx+1]
             data['data'][idx]['child_embeddings'] = embedding_list[start_idx:end_idx]
 
-    def add_summary(self, data):
-        summary = self.summary_chain.run(title=data['title'], full_text=data['full_text'])
+    def add_summary(self, data, lang='ko'):
+        summary = self.summary_module.run(title=data['title'], full_text=data['full_text'], lang=lang)
         data['summary'] = summary
         return summary
     
@@ -191,16 +187,17 @@ if __name__ == "__main__":
     parser.add_argument('--screenshot_dir', type=str, default='../test_data/screenshots')
     parser.add_argument('--html_save_dir', type=str, default='../test_data/html')
     parser.add_argument('--pdf_save_dir', type=str, default='../test_data/pdf')
+    parser.add_argument('--favicon_save_dir', type=str, default='../test_data/favicon')
     args = parser.parse_args()
     
     # es = CustomElasticSearch(index_name='refeat_ai') # default host is localhost:9200
     es = CustomElasticSearch(index_name='refeat_ai', host="http://10.10.10.27:9200")
     # es._create_index() # delete index and create new index
 
-    summary_chain = SummaryChain()
+    summary_module = SummaryModule()
     knowledge_graph_db = KnowledgeGraphDataBase()
 
-    file_processor = FileProcessor(es, summary_chain, knowledge_graph_db, json_save_dir=args.json_save_dir, screenshot_dir=args.screenshot_dir, html_save_dir=args.html_save_dir, pdf_save_dir=args.pdf_save_dir)
+    file_processor = FileProcessor(es, summary_module, knowledge_graph_db, json_save_dir=args.json_save_dir, screenshot_dir=args.screenshot_dir, html_save_dir=args.html_save_dir, pdf_save_dir=args.pdf_save_dir, favicon_save_dir=args.favicon_save_dir)
     file_uuid = str(uuid.uuid4())
     project_id = -5
     print('file_uuid:', file_uuid)

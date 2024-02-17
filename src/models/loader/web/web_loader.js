@@ -3,7 +3,9 @@ const puppeteer = require('puppeteer-extra');
 const AdblockerPlugin = require('puppeteer-extra-plugin-adblocker');
 const cheerio = require('cheerio');
 const fs = require('fs');
-const { v4: uuidv4 } = require('uuid'); 
+const https = require('https');
+const path = require('path');
+const sharp = require('sharp');
 const beautify_html = require('js-beautify').html;
 const { PDFDocument } = require('pdf-lib');
 
@@ -82,7 +84,7 @@ class WebLoader {
         this.pdfSaveDir = pdfSaveDir;
     }
 
-    async get_data(filePath, fileUuid, screenshotDir, htmlSaveDir, pdfSaveDir) {
+    async get_data(filePath, fileUuid, screenshotDir, htmlSaveDir, pdfSaveDir, faviconDir = null) {
         const page = await this.fetch_data(filePath);
         const baseUrl = new URL(page.url()).origin;    
         let content = await page.content();
@@ -93,7 +95,8 @@ class WebLoader {
         content = $.html();
         const title = await page.title();
         // console.log(title);
-        const favicon = await this.get_favicon(page, $);
+        const faviconUrl = await this.get_favicon(page, $);
+        const favicon = await this.downloadFavicon(faviconUrl, fileUuid, faviconDir);
         // console.log(favicon);
         const screenshotPath = await this.take_screenshot(page, fileUuid, screenshotDir);
         // console.log(screenshotPath);
@@ -187,6 +190,59 @@ class WebLoader {
             return favicon;
         } else {
             return 'No favicon found';
+        }
+    }
+
+    async downloadFavicon(faviconUrl, fileUuid, faviconDir) {
+        if (!fs.existsSync(faviconDir)) {
+            fs.mkdirSync(faviconDir);
+        }
+        
+        // 만약 faviconURL이 'No favicon found' 문자열이라면 에러 발생
+        if (faviconUrl === 'No favicon found') {
+            return "images/web_image.png" // 기본 favicon 경로 반환
+        }
+    
+        // URL에서 파일 확장자 추출, 확장자가 명확하지 않은 경우 기본값으로 '.ico' 사용
+        // const extension = faviconUrl.split('.').pop() || 'ico';
+        if (faviconUrl.includes('<svg')) {
+            const svgPattern = /<svg[\s\S]*<\/svg>/;
+            const svgMatch = faviconUrl.match(svgPattern);
+            if (svgMatch && svgMatch[0]) {
+                const svgData = svgMatch[0];
+                const pngFileName = path.join(faviconDir, `${fileUuid}.png`); // PNG 파일 이름
+    
+                try {
+                    await sharp(Buffer.from(svgData)).png().toFile(pngFileName);    
+                    return `${pngFileName}`;
+                } catch (error) {
+                    return "images/web_image.png"; // 에러 시 기본 경로 반환
+                }
+            } else {
+                return "images/web_image.png"; // SVG 데이터가 유효하지 않은 경우
+            }
+        } else {        
+            const fileName = `${faviconDir}/${fileUuid}.ico`; // 수정된 부분: 확장자를 URL에서 추출한 값으로 사용
+            const file = fs.createWriteStream(fileName);
+        
+            // User-Agent 설정을 포함한 https 요청 옵션
+            const options = {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+                }
+            };
+        
+            return new Promise((resolve, reject) => {
+                https.get(faviconUrl, options, response => { // 수정된 부분: 요청에 options 추가
+                    response.pipe(file);
+                    file.on('finish', () => {
+                        file.close();
+                        resolve(`${fileName}`);
+                    });
+                }).on('error', err => {
+                    resolve("images/web_image.png"); // 기본 favicon 경로 반환
+                });
+            });
         }
     }
 
@@ -293,9 +349,8 @@ class WebLoader {
             });
             
         } catch (error) {
-            console.error(error);
-            await browser.close();
-            throw error;
+            
+            
         }
     
         return page;
@@ -369,16 +424,17 @@ class WebLoader {
 }
 
 // example usage
-// node web_loader.js "https://stackoverflow.com/questions/54402593/remove-whitespace-from-pdf-document" "ce0137db-48dc-4c9b-b336-d8a7f654736d" "./screenshots" "./html" "./pdf"
+// node web_loader.js "https://openai.com/pricing" "ce0137db-48dc-4c9b-b336-d8a7f654736d" "./screenshots" "./html" "./pdf" "./favicon"
 const url = process.argv[2];  // 커맨드 라인에서 URL 받기
 const fileUuid = process.argv[3];
 const screenshotDir = process.argv[4];  // 커맨드 라인에서 스크린샷 저장 경로 받기
 const htmlSaveDir = process.argv[5];  // 커맨드 라인에서 HTML 저장 경로 받기
 const pdfSaveDir = process.argv[6];
+const faviconDir = process.argv[7];
 
 async function loadData() {
     const webLoader = new WebLoader();
-    const data = await webLoader.get_data(url, fileUuid, screenshotDir, htmlSaveDir, pdfSaveDir);
+    const data = await webLoader.get_data(url, fileUuid, screenshotDir, htmlSaveDir, pdfSaveDir, faviconDir);
     console.log(JSON.stringify(data));  // JSON 형식으로 출력
     return data;
 }

@@ -12,15 +12,21 @@ import subprocess
 import fitz
 from bs4 import BeautifulSoup
 from models.loader.base_loader import BaseLoader
+from models.errors.error import PdfLoadException
 
 class PdfLoader(BaseLoader):
-    def __init__(self, file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir):
-        super().__init__(file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir)
+    def __init__(self, file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir, favicon_save_dir=None):
+        super().__init__(file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir, favicon_save_dir)
         self.page_height = None
 
-    def get_data(self, file_path, file_uuid, screenshot_dir, html_save_dir, pdf_save_dir):
+    def get_data(self, file_path, file_uuid, screenshot_dir, html_save_dir, pdf_save_dir, favicon_save_dir):
         data = []
+        pdf_page_limit = 100
         doc = fitz.open(file_path)
+        
+        if len(doc) > pdf_page_limit: # 만약 페이지가 "pdf_page_limit"페이지 이상이면 에러 발생
+            doc.close()
+            raise PdfLoadException()
 
         for page_num, page in enumerate(doc):
             self.page_height = page.rect.height

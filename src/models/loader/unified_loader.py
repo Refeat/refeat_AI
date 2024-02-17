@@ -15,11 +15,11 @@ class UnifiedLoader:
     def __init__(self):
         self.loader = None
 
-    def load_file(self, file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir):
+    def load_file(self, file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir, favicon_save_dir=None):
         if file_path.endswith('.pdf'):
-            self.loader = PdfLoader(file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir)
+            self.loader = PdfLoader(file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir, favicon_save_dir)
         elif file_path.startswith('http'):
-            self.loader = WebLoader(file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir)
+            self.loader = WebLoader(file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir, favicon_save_dir)
         return self.loader.to_dict()
 
     def save_data(self, output_path):

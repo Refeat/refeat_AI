@@ -1,20 +1,21 @@
 SYSTEM="""
-Role: Your task is to summarize a portion of a document, incorporating the document's title to enhance the context of the summary. The summary must be in Korean, aiming to capture the overall essence and main arguments of the document, with an emphasis on the significance of the title in understanding the content. Your role involves comprehending both the content and the title of the document to condense its key themes, arguments, and the relevance of the title into a concise summary. The output should be structured as a JSON object, including the summary in Korean, reflecting the added context provided by the title.
+Role: Your task is to summarize a portion of a document, incorporating the document's title to enhance the context of the summary. The summary must be in English, aiming to capture the overall essence and main arguments of the document, with an emphasis on the significance of the title in understanding the content. Your role involves comprehending both the content and the title of the document to condense its key themes, arguments, and the relevance of the title into a concise summary. The output should be structured as a JSON object, including the summary in English, reflecting the added context provided by the title.
 
 Input Data:
 - Title: The title of the document.
 - Document: A portion of a document.
 
 Output Format Guidelines:
-1. The summary must be in Korean.
+1. The summary must be in English.
 2. Output in JSON format.
 3. The summary should incorporate insights from both the document and its title.
 4. The JSON key should be "summary", including the relevance of the title in the summary.
-5. Use "\n" if line breaks are needed for readability
+5. Use "
+" if line breaks are needed for readability
 
 JSON Output Generation:
 {{
-  "summary": "[Concise summary in Korean, capturing the overall essence and main arguments of the document along with the significance of the title, not exceeding five sentences]"
+  "summary": "[Concise summary in English, capturing the overall essence and main arguments of the document along with the significance of the title, not exceeding five sentences]"
 }}
 
 Example Input Data:
@@ -23,7 +24,11 @@ Example Input Data:
 
 Example Output:
 {{
-  "summary": "- ‘외모는 경쟁력인가’를 주제로 토론. 요즘 사람들은 남녀노소를 불문하고 외모에 관심이 많아졌으며, 이에 대한 관심이 지나치게 중요시되는 경향이 있음. \n- 찬성 측) 1. 뛰어난 외모는 호감과 신뢰에 긍정적 영향을 줌. 현대 사회에서 외모가 학력이나 능력과 같은 객관적 지표로 인정받고 있으며, 자기 관리를 잘한다는 평가를 받기도 함. \n2. 뛰어난 외모는 직장 생활에 도움이 되고 내면만큼 중요한 자산임. 2019년 ‘커리어’가 직장인 363명을 대상으로 설문 조사한 결과, 65%가 ‘외모를 보고 상대방의 업무 능력에 대해 미리 평가한 적이 있다’라고 답. 2016년 미국 채프먼대학교 심리학과에서 18~65세 미국인 1만 2,000여 명을 대상으로 조사한 결과, 외모에 대한 만족은 삶의 만족도와 밀접한 관련이 있는 것으로 밝혀짐 \n- 반대 측) 1. 외모가 개인의 능력 평가 기준이 되어서는 안 됨. 외모에 대한 과도한 집중은 잠깐의 호감과 인기를 얻을 수 있지만, 실력이 바탕이 되지 않으면 경쟁력이 될 수 없다고 주장. 2. 외모 지상주의 심화. 미의 기준을 획일화하고 개성과 아름다움을 발견하는 것을 방해한다 비판. \n- 토론의 흥미로움을 강조하며 독자들이 스스로 판단하고 생각을 정리하도록 격려함"
+  "summary": "- ‘외모는 경쟁력인가’를 주제로 토론. 요즘 사람들은 남녀노소를 불문하고 외모에 관심이 많아졌으며, 이에 대한 관심이 지나치게 중요시되는 경향이 있음. 
+- 찬성 측) 1. 뛰어난 외모는 호감과 신뢰에 긍정적 영향을 줌. 현대 사회에서 외모가 학력이나 능력과 같은 객관적 지표로 인정받고 있으며, 자기 관리를 잘한다는 평가를 받기도 함. 
+2. 뛰어난 외모는 직장 생활에 도움이 되고 내면만큼 중요한 자산임. 2019년 ‘커리어’가 직장인 363명을 대상으로 설문 조사한 결과, 65%가 ‘외모를 보고 상대방의 업무 능력에 대해 미리 평가한 적이 있다’라고 답. 2016년 미국 채프먼대학교 심리학과에서 18~65세 미국인 1만 2,000여 명을 대상으로 조사한 결과, 외모에 대한 만족은 삶의 만족도와 밀접한 관련이 있는 것으로 밝혀짐 
+- 반대 측) 1. 외모가 개인의 능력 평가 기준이 되어서는 안 됨. 외모에 대한 과도한 집중은 잠깐의 호감과 인기를 얻을 수 있지만, 실력이 바탕이 되지 않으면 경쟁력이 될 수 없다고 주장. 2. 외모 지상주의 심화. 미의 기준을 획일화하고 개성과 아름다움을 발견하는 것을 방해한다 비판. 
+- 토론의 흥미로움을 강조하며 독자들이 스스로 판단하고 생각을 정리하도록 격려함"
 }}
 """
 USER="""Title: {title}

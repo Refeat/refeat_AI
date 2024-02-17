@@ -16,12 +16,12 @@ from models.errors.error import WebLoadException
 from models.loader.web.pdf_merge import merge_pdf_pages_into_one, delete_text_from_pdf
 
 class WebLoader(BaseLoader):
-    def __init__(self, file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir):
+    def __init__(self, file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir, favicon_save_dir):
         self.js_path = js_path
-        super().__init__(file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir)
+        super().__init__(file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir, favicon_save_dir)
 
-    def get_data(self, file_path, file_uuid, screenshot_dir, html_save_dir, pdf_save_dir):
-        result = subprocess.run(['node', self.js_path, file_path, file_uuid, screenshot_dir, html_save_dir, pdf_save_dir], capture_output=True, text=True, encoding='utf-8')
+    def get_data(self, file_path, file_uuid, screenshot_dir, html_save_dir, pdf_save_dir, favicon_save_dir):
+        result = subprocess.run(['node', self.js_path, file_path, file_uuid, screenshot_dir, html_save_dir, pdf_save_dir, favicon_save_dir], capture_output=True, text=True, encoding='utf-8')
         if result.stdout.startswith('Error'):
             raise WebLoadException()
         else:
@@ -33,11 +33,14 @@ class WebLoader(BaseLoader):
             except:
                 raise WebLoadException()
         self.title, data, self.favicon, self.screenshot_path, self.html_path, self.pdf_path = result['title'], result['data'], result['favicon'], result['screenshotPath'], result['htmlPath'], result['pdfPath']
+        self.favicon = self.favicon.replace('s3_mount/', '').replace('//', '/')
+        if len(data) == 0:
+            raise WebLoadException()
         self.postprocess_pdf()
         self.favicon = None if self.favicon == 'No favicon found' else self.favicon
         return data
     
-    def postprocess_pdf(self):
+    def postprocess_pdf(self): # merge pdf pages into one and delete text from pdf
         os.rename(self.pdf_path, self.pdf_path.replace('.pdf', 'raw.pdf'))
         merge_pdf_pages_into_one(self.pdf_path.replace('.pdf', 'raw.pdf'), self.pdf_path.replace('.pdf', 'modified.pdf'))
         delete_text_from_pdf(self.pdf_path.replace('.pdf', 'modified.pdf'), self.pdf_path)

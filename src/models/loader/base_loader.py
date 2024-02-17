@@ -5,14 +5,14 @@ import datetime
 from abc import ABC, abstractmethod
 
 class BaseLoader(ABC):
-    def __init__(self, file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir):
+    def __init__(self, file_uuid, project_id, file_path, json_save_dir, screenshot_dir, html_save_dir, pdf_save_dir, favicon_save_dir=None):
         self.file_path = file_path
         self.file_uuid = file_uuid
         self.project_id = project_id
         self.screenshot_dir = screenshot_dir
         self.init_date = self.get_date()
         self.updated_date = None
-        self.data = self.get_data(file_path, file_uuid, screenshot_dir, html_save_dir, pdf_save_dir)
+        self.data = self.get_data(file_path, file_uuid, screenshot_dir, html_save_dir, pdf_save_dir, favicon_save_dir)
         self.title = self.get_title(file_path) # web loader에서는 title이 data를 가져오는 과정에서 결정되므로, get_data()보다 뒤에 위치해야 함
         self.screenshot_path = self.get_screenshot(file_path, file_uuid, screenshot_dir) # web loader에서는 screenshot_path가 data를 가져오는 과정에서 결정되므로, get_data()보다 뒤에 위치해야 함
         self.favicon = self.get_favicon(file_path) # web loader에서는 favicon이 data를 가져오는 과정에서 결정되므로, get_data()보다 뒤에 위치해야 함
@@ -23,7 +23,7 @@ class BaseLoader(ABC):
         self.processed_path = self.get_json_save_path(json_save_dir)
 
     @abstractmethod
-    def get_data(self, file_path, file_uuid, screenshot_dir=None, html_save_dir=None, pdf_save_dir=None):
+    def get_data(self, file_path, file_uuid, screenshot_dir=None, html_save_dir=None, pdf_save_dir=None, favicon_save_dir=None):
         pass
 
     @abstractmethod

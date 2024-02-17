@@ -5,3 +5,4 @@ npm install js-beautify
 npm install pdf-lib
 npm install puppeteer-extra
 npm install puppeteer-extra-plugin-adblocker
+npm install sharp
