@@ -260,7 +260,7 @@ class CustomElasticSearch:
         data = self.get_data_by_project_id(project_id)
         return [d[schema] for d in data]
 
-    def post_process_search_results(self, response, search_range, chunk_score_threshold=0.7):
+    def post_process_search_results(self, response, search_range, chunk_score_threshold=0.6):
         """
         Elasticsearch의 검색 결과를 후처리합니다.
 
