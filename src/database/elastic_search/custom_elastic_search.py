@@ -37,7 +37,9 @@ class CustomElasticSearch:
         """
         기존의 인덱스를 삭제하고, 새로운 인덱스를 생성합니다.
         """
-        self._delete_index()
+        if self.es.indices.exists(index="index"):
+            print("exist!!")
+        # self._delete_index()
         self.es.indices.create(index=self.index_name, settings=settings, mappings=mappings)
 
     def _delete_index(self):
@@ -260,7 +262,7 @@ class CustomElasticSearch:
         data = self.get_data_by_project_id(project_id)
         return [d[schema] for d in data]
 
-    def post_process_search_results(self, response, search_range, chunk_score_threshold=0.7):
+    def post_process_search_results(self, response, search_range, chunk_score_threshold=0.6):
         """
         Elasticsearch의 검색 결과를 후처리합니다.
 

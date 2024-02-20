@@ -8,6 +8,7 @@ sys.path.append(current_path)
 from utils import add_api_key
 add_api_key()
 
+import re
 import uuid
 import copy
 import json
@@ -47,6 +48,7 @@ class TextSplitter:
         for i in range(0, len(tokenized_text), self.max_token_num-self.overlap):
             splitted_text.append(tokenized_text[i:i+self.max_token_num])
         splitted_text = [self.tokenizer.get_decoding(ids) for ids in splitted_text]
+        splitted_text = [re.sub(r'�', '', text) for text in splitted_text]
         return splitted_text
 
 class ChunkTextSplitter:
@@ -104,8 +106,10 @@ class ChunkTextSplitter:
             else:
                 tokenized_text = self.tokenizer(chunk['text'])
                 for i in range(0, token_num, filter_length-overlap):
+                    text = self.tokenizer.get_decoding(tokenized_text[i:i+filter_length])
+                    text = re.sub(r'�', '', text)
                     splitted_chunk.append({
-                        'text': self.tokenizer.get_decoding(tokenized_text[i:i+filter_length]),
+                        'text': text,
                         'bbox': chunk['bbox'],
                         'page': chunk['page'] if 'page' in chunk else None
                     })
@@ -159,10 +163,12 @@ class ChunkTextSplitter:
         for i in range(0, len(tokens), max_length):
             if len(tokens) - i - max_length < last_split_length:
                 split_text = self.tokenizer.get_decoding(tokens[i:])
+                split_text = re.sub(r'�', '', split_text)
                 split_texts.append(split_text)
                 break
             else:
                 split_text = self.tokenizer.get_decoding(tokens[i:i+max_length])
+                split_text = re.sub(r'�', '', split_text)
                 split_texts.append(split_text)
         return split_texts
     
@@ -176,9 +182,11 @@ class ChunkTextSplitter:
         processed_merge_chunk_list = []
         for merge_chunk in merge_chunk_list:
             merge_text = ' '.join([chunk['text'] for chunk in merge_chunk])
+            merge_text = re.sub(r'�', '', merge_text)
             merge_bbox = self.get_merge_bbox(merge_chunk)
             page = merge_chunk[0]['page'] if 'page' in merge_chunk[0] else None
             child_texts = self.split_text(merge_text, child_text_length)
+            child_texts = [re.sub(r'�', '', text) for text in child_texts]
             chunk_uuid = str(uuid.uuid4())
             processed_merge_chunk = {
                 'text': merge_text,
@@ -258,10 +266,12 @@ class SemanticChunkSplitter:
         for i in range(0, len(tokens), max_length):
             if len(tokens) - i - max_length < last_split_length:
                 split_text = self.tokenizer.get_decoding(tokens[i:])
+                split_text = re.sub(r'�', '', split_text)
                 split_texts.append(split_text)
                 break
             else:
                 split_text = self.tokenizer.get_decoding(tokens[i:i+max_length])
+                split_text = re.sub(r'�', '', split_text)
                 split_texts.append(split_text)
         return split_texts
 

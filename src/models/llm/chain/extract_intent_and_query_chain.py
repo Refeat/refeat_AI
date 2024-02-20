@@ -21,7 +21,8 @@ class ExtractIntentAndQueryChain(BaseChatChain):
                 system_prompt_template:str=SYSTEM,
                 user_prompt_template:str=USER,
                 response_format="json",
-                model='gpt-3.5-turbo-0125',
+                model='gpt-4-0125-preview',
+                # model='gpt-3.5-turbo-0125',
                 temperature=0.0,
                 top_p=0.0,
                 verbose=False,) -> None:
@@ -45,7 +46,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     extract_intent_and_query_chain = ExtractIntentAndQueryChain(verbose=True)
-    # result = extract_intent_and_query_chain.run(query=args.query, chat_history=[['글로벌 SaaS 시장의 규모와 국내 SaaS 시장의 규모를 알려주세요', '글로벌 SaaS 시장은 2025년까지 723조8천억원으로 예상되고, 국내 SaaS 시장은 2025년에 2조5천억원으로 예상됩니다.']])
-    result = extract_intent_and_query_chain.run(query=args.query, chat_history=[])
+    result = extract_intent_and_query_chain.run(query=args.query, chat_history=[['글로벌 SaaS 시장의 규모와 국내 SaaS 시장의 규모를 알려주세요', '글로벌 SaaS 시장은 2025년까지 723조8천억원으로 예상되고, 국내 SaaS 시장은 2025년에 2조5천억원으로 예상됩니다.']])
+    # result = extract_intent_and_query_chain.run(query=args.query, chat_history=[])
     print(result)
     
