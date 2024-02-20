@@ -33,13 +33,15 @@ class CustomElasticSearch:
     def schema_list(self):
         return list(self.mappings['properties'].keys())
     
+    def initialize_index(self, settings=SETTINGS, mappings=MAPPINGS):
+        if not self.es.indices.exists(index=self.index_name):
+            self.es.indices.create(index=self.index_name, settings=settings, mappings=mappings)
+    
     def _create_index(self, settings=SETTINGS, mappings=MAPPINGS):
         """
         기존의 인덱스를 삭제하고, 새로운 인덱스를 생성합니다.
         """
-        if self.es.indices.exists(index="index"):
-            print("exist!!")
-        # self._delete_index()
+        self._delete_index()
         self.es.indices.create(index=self.index_name, settings=settings, mappings=mappings)
 
     def _delete_index(self):
