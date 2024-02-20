@@ -37,7 +37,9 @@ class CustomElasticSearch:
         """
         기존의 인덱스를 삭제하고, 새로운 인덱스를 생성합니다.
         """
-        self._delete_index()
+        if self.es.indices.exists(index="index"):
+            print("exist!!")
+        # self._delete_index()
         self.es.indices.create(index=self.index_name, settings=settings, mappings=mappings)
 
     def _delete_index(self):

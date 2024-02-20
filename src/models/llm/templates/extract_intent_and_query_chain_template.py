@@ -18,8 +18,8 @@ JSON Output Generation:
 {{
   "interaction category": "[True/False]",
   "original question": "[User Question]",
-  "enriched user question": "[Expanded and enriched version of the user question based on the conversation history and the detected language]",
-  "search query": ["Relevant search queries based on the enriched question"]
+  "enriched user question": "[Expanded and enriched version of the original question based on the conversation history]",
+  "search query": ["Relevant search queries based on the enriched user question"]
 }}
 
 Example1 Input Data:
@@ -68,6 +68,18 @@ Example4 Output:
   "original question": "그렇다면 이 기술들은 어떻게 자동차에 적용되고 있나요?",
   "enriched user question": "자율주행 자동차의 인공지능, 센서 기술, 네트워크 시스템이 자동차에 어떻게 적용되고 있는지 설명해줘.",
   "search query": ["자율주행 자동차의 인공지능 기술 적용", "자율주행 자동차의 센서 기술 적용", "자율주행 자동차의 네트워크 시스템 적용"]
+}}
+
+Example5 Input Data:
+- User Question: "저자가 누구야?"
+- Conversation History: None
+
+Example5 Output:
+{{
+  "interaction category": "False",
+  "original question": "저자가 누구야?",
+  "enriched user question": "이 글의 저자가 누구인가요?",
+  "search query": ["저자 정보"]
 }}
 """
 USER="""User Question: {input}"""
