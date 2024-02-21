@@ -55,8 +55,9 @@ class ChatAgentModule:
         enrich_query, db_query_list = self.extract_intent_and_query_chain.run(query=query, chat_history=chat_history)
         if len(db_query_list) == 0:
             # answer = self.common_chat_chain.run(query=query, chat_history=chat_history, callbacks=callbacks)
+            is_lang_ko = self.contains_korean(query)
             answer = callbacks[0].dummy_tokens  # "죄송합니다. 저는 입력하신 문서에 대해서만 답변드릴 수 있습니다."
-            callbacks[0].add_dummy_tokens()
+            callbacks[0].add_dummy_tokens(is_lang_ko)
             file_uuid_bbox_dict = {} # "안녕" 같은 단순한 질문에 대한 답변은 evidence가 없으므로 빈 dict를 반환
             queue.set_document_info(file_uuid_bbox_dict)  
             queue.document_end()
@@ -74,7 +75,6 @@ class ChatAgentModule:
             file_uuid_bbox_dict= self.post_process_evidence_with_idx(evidence_list, used_evidence_idx_list, queue)
         else:
             file_uuid_bbox_dict= self.post_process_evidence(evidence_list, used_evidence_idx_list, queue)
-        print(file_uuid_bbox_dict, answer)
         return file_uuid_bbox_dict, answer
     
     def post_process_evidence(self, evidence_list, used_evidence_idx_list, queue):
@@ -199,6 +199,13 @@ class ChatAgentModule:
 
     def get_chunk_num(self, project_id, file_uuid=None):        
         return self.tool_dict['Knowledge Graph Search'].get_chunk_num(project_id, file_uuid)
+    
+    def contains_korean(self, text):
+        # 한글 유니코드 범위 확인
+        for char in text:
+            if '\uac00' <= char <= '\ud7a3':
+                return True  # 한글 문자가 발견되면 True 반환
+        return False
 
 def profile_run(query, file_uuid, project_id, chat_agent):
     """
