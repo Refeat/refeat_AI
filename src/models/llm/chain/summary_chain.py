@@ -56,7 +56,9 @@ class SummaryChain(BaseChatChain):
         
     def parse_output(self, output):
         result = ast.literal_eval(output)
-        return result['summary']
+        summary = result['summary']
+        summary = summary.replace(' - ', '\n- ')
+        return summary
     
 # example usage
 # python summary_chain.py --text_file ../test_data/summary_chain_test.txt
