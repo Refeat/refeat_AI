@@ -20,7 +20,7 @@ from models.llm.agent.streaming_queue import StreamingQueue
 from models.llm.chain import CommonChatChain, PlanAnswerChain, DBToolQueryGeneratorChain, ExtractEvidenceChain, ExtractIntentChain, ExtractIntentAndQueryChain, ExtractRelevanceChain
 
 class ChatAgentModule:
-    def __init__(self, es, knowledge_graph_db, streaming=True, verbose=False, limit_chunk_num=100, chain_input_chat_history_num=2):
+    def __init__(self, es, knowledge_graph_db, streaming=True, verbose=False, limit_chunk_num=1000000, chain_input_chat_history_num=2):
         self.tools = [DBSearchTool(es), KGDBSearchTool(knowledge_graph_db)]
         self.tool_dict = self.create_tool_dict(self.tools)
         self.streaming = streaming
@@ -171,8 +171,8 @@ class ChatAgentModule:
         enrich_query, document, chunk, bbox = args
         evidence_list, document, context = self.extract_evidence_chain.run(query=enrich_query, context=chunk, document=document, bbox=bbox)
         evidence_relevance_list = self.extract_relevance_chain.run(query=enrich_query, context=evidence_list)
-        if len(evidence_list) != len(evidence_relevance_list):
-            print(evidence_list, evidence_relevance_list)
+        # if len(evidence_list) != len(evidence_relevance_list):
+        #     print(evidence_list, evidence_relevance_list)
         evidence_list = [evidence_list[i] for i in range(len(evidence_list)) if evidence_relevance_list[i]]
         return evidence_list, document, context
     

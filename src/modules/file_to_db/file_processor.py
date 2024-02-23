@@ -146,19 +146,24 @@ class FileProcessor:
         self.es.delete_document(file_uuid)
 
     def add_data_to_db_kg(self, file_path, project_id):
-        self.knowledge_graph_db.add_document_from_json(file_path, project_id)
+        pass
+        # self.knowledge_graph_db.add_document_from_json(file_path, project_id)
 
     def delete_data_from_db_kg(self, file_uuid, project_id):
-        self.knowledge_graph_db.delete_document(file_uuid, project_id)
+        pass
+        # self.knowledge_graph_db.delete_document(file_uuid, project_id)
 
     def save_graph(self):
-        self.knowledge_graph_db.save_graph_data()
+        pass
+        # self.knowledge_graph_db.save_graph_data()
 
     def visualize_graph(self, project_id):
-        self.knowledge_graph_db.visualize_graph(project_id)
+        pass
+        # self.knowledge_graph_db.visualize_graph(project_id)
 
     def print_graph(self):
-        print(self.knowledge_graph_db)
+        pass
+        # print(self.knowledge_graph_db)
 
     def __str__(self):
         return f"File Processor: {self.chunker}, {self.embedder}, {self.save_dir}"

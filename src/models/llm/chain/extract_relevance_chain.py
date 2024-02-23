@@ -8,6 +8,7 @@ sys.path.append(current_path)
 from utils import add_api_key
 add_api_key()
 
+import os
 import ast
 import argparse
 
@@ -15,6 +16,8 @@ from models.llm.base_chain import BaseChatChain
 from models.llm.templates.extract_relevance_chain_template import SYSTEM, USER
 
 current_file_folder_path = os.path.dirname(os.path.abspath(__file__))
+
+other_openai_api_key = os.getenv('OPENAI_API_KEY_1')
 
 class ExtractRelevanceChain(BaseChatChain):
     def __init__(self, 
@@ -26,8 +29,8 @@ class ExtractRelevanceChain(BaseChatChain):
                 temperature=0.0,
                 verbose=False,
                 top_p=0.0,
-                ) -> None:
-        super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature, top_p=top_p)
+                openai_api_key=other_openai_api_key) -> None:
+        super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature, top_p=top_p, openai_api_key=openai_api_key)
         self.input_keys = ['query', 'context']
         self.output_keys = ['evidence response']
 

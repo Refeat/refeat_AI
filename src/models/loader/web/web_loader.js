@@ -288,6 +288,7 @@ class WebLoader {
           });
     
         try {
+            filePath = filePath.replace("blog.naver", "m.blog.naver");
             await page.goto(filePath, { waitUntil: 'networkidle2' });
 
             // 현재 페이지의 보이는 높이를 가져옵니다.
