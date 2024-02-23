@@ -63,7 +63,8 @@ class ChatAgentModule:
             queue.document_end()
             return file_uuid_bbox_dict, answer
         
-        chunk_num = self.get_chunk_num(file_uuid=file_uuid, project_id=project_id)
+        # chunk_num = self.get_chunk_num(file_uuid=file_uuid, project_id=project_id)
+        chunk_num = 100
         tool_results = self.execute_search_tools(db_query_list, file_uuid, project_id, chunk_num)
         evidence_num = self.calculate_evidence_num(chunk_num)
         tool_result = self.process_search_tool_results(tool_results, evidence_num)
