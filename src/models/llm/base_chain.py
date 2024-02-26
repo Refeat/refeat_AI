@@ -43,7 +43,7 @@ class BaseChain:
         self.prompt = self._get_prompt(prompt_template, prompt_template_path)
         self.llm = ChatOpenAI(model=model, temperature=temperature, top_p=top_p, streaming=streaming, seed=seed, response_format=llm_response_format, request_timeout=request_timeout, openai_api_key=openai_api_key)
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt, verbose=verbose, callbacks=callbacks)
-        self.max_tries = 3
+        self.max_tries = 1
 
     def _get_prompt(self, template, template_path):
         if template_path:
@@ -95,7 +95,7 @@ class BaseToolChain(BaseChain):
         self.prompt = self._get_prompt(prompt_template, tool_prompt_template, prompt_template_path, tools)
         self.llm = ChatOpenAI(model=model, temperature=temperature, top_p=top_p, streaming=streaming, seed=seed, response_format=llm_response_format, request_timeout=request_timeout, openai_api_key=openai_api_key)
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt, verbose=verbose, callbacks=callbacks)
-        self.max_tries = 3
+        self.max_tries = 1
 
     def _get_prompt(self, prompt_template, tool_prompt_template, prompt_template_path, tools):
         if not (prompt_template_path or (prompt_template and tool_prompt_template)):
@@ -145,7 +145,7 @@ class BaseChatChain(BaseChain):
         self.prompt = self._get_prompt(system_prompt_template, user_prompt_template, prompt_template_path)
         self.llm = ChatOpenAI(model=model, temperature=temperature, top_p=top_p, streaming=streaming, seed=seed, response_format=llm_response_format, request_timeout=request_timeout, openai_api_key=openai_api_key)
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt, verbose=verbose)
-        self.max_tries = 3
+        self.max_tries = 1
 
     def _get_prompt(self, system_prompt_template=None, user_prompt_template=None, prompt_template_path=None):
         if not (prompt_template_path or (system_prompt_template and user_prompt_template)):
@@ -215,7 +215,7 @@ class BaseChatToolChain(BaseChatChain):
         self.prompt = self._get_prompt(system_prompt_template, user_prompt_template, tool_prompt_template, prompt_template_path, tools)
         self.llm = ChatOpenAI(model=model, temperature=temperature, top_p=top_p, streaming=streaming, seed=seed, response_format=llm_response_format, request_timeout=request_timeout, openai_api_key=openai_api_key)
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt, verbose=verbose)
-        self.max_tries = 3
+        self.max_tries = 1
 
     def _get_prompt(self, system_prompt_template=None, user_prompt_template=None, tool_prompt_template=None, prompt_template_path=None, tools=None):
         if not (prompt_template_path or (system_prompt_template and user_prompt_template and tool_prompt_template)):
