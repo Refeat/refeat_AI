@@ -36,7 +36,7 @@ class WebLoader(BaseLoader):
         self.favicon = self.favicon.replace('s3_mount/', '').replace('//', '/')
         if len(data) == 0:
             raise WebLoadException()
-        self.postprocess_pdf()
+        # self.postprocess_pdf()
         self.favicon = None if self.favicon == 'No favicon found' else self.favicon
         return data
     

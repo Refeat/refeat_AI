@@ -100,9 +100,11 @@ class WebLoader {
         // console.log(favicon);
         const screenshotPath = await this.take_screenshot(page, fileUuid, screenshotDir);
         // console.log(screenshotPath);
-        const htmlPath = await this.saveHtml(content, fileUuid, htmlSaveDir);
+        // const htmlPath = await this.saveHtml(content, fileUuid, htmlSaveDir);
+        const htmlPath = null;
         // console.log(htmlPath);
-        const pdfPath = await this.savePdf(page, fileUuid, pdfSaveDir); // Save the web page as a PDF
+        // const pdfPath = await this.savePdf(page, fileUuid, pdfSaveDir); // Save the web page as a PDF
+        const pdfPath = null;
         // console.log(pdfPath);
         
         let data = [];
@@ -288,7 +290,7 @@ class WebLoader {
           });
     
         try {
-            filePath = filePath.replace("blog.naver", "m.blog.naver");
+            filePath = filePath.replace("blog.naver", "m.blog.naver").replace("m.m.blog.naver", "m.blog.naver");
             await page.goto(filePath, { waitUntil: 'networkidle2' });
 
             // 현재 페이지의 보이는 높이를 가져옵니다.
@@ -306,7 +308,7 @@ class WebLoader {
                             clearInterval(timer);
                             resolve();
                         }
-                    }, 100); // 0.1초에 한 번씩 스크롤
+                    }, 10); // 0.1초에 한 번씩 스크롤
                 });
             }, viewportHeight);
 
