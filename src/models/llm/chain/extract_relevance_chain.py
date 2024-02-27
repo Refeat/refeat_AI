@@ -33,6 +33,7 @@ class ExtractRelevanceChain(BaseChatChain):
         super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature, top_p=top_p, openai_api_key=openai_api_key)
         self.input_keys = ['query', 'context']
         self.output_keys = ['evidence response']
+        self.max_tries = 1
 
     def run(self, query=None, context=None, chat_history=[], callbacks=None):
         input_dict = self.parse_input(chat_history=chat_history, query=query, context=context)

@@ -23,5 +23,4 @@ JSON Output Generation:
 USER="""
 Query: {input}
 Context:{context}
-Query: {input}
 """

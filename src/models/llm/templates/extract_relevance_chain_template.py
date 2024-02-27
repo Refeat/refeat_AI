@@ -22,7 +22,7 @@ Note:
 
 Example Input Data:
 - User Query: 'What causes tides on Earth?'
-- Context List: ['The Earth revolves around the Sun.', 'Water boils at 100 degrees Celsius at sea level.', 'The Moon affects the Earth's tides.']
+- Context List: ['The Earth revolves around the Sun.'||'Water boils at 100 degrees Celsius at sea level.'||'The Moon affects the Earth's tides.']
 
 Example Output:
 {{
@@ -30,4 +30,4 @@ Example Output:
 }}
 """
 USER="""Query: {query}
-Context List: [{context}]"""
+Context List: ['{context}']"""

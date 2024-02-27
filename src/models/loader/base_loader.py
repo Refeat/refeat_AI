@@ -16,8 +16,7 @@ class BaseLoader(ABC):
         self.title = self.get_title(file_path) # web loader에서는 title이 data를 가져오는 과정에서 결정되므로, get_data()보다 뒤에 위치해야 함
         self.screenshot_path = self.get_screenshot(file_path, file_uuid, screenshot_dir) # web loader에서는 screenshot_path가 data를 가져오는 과정에서 결정되므로, get_data()보다 뒤에 위치해야 함
         self.favicon = self.get_favicon(file_path) # web loader에서는 favicon이 data를 가져오는 과정에서 결정되므로, get_data()보다 뒤에 위치해야 함
-        # self.html_path = self.get_html_path(file_path, file_uuid, html_save_dir) # web loader에서는 html_path가 data를 가져오는 과정에서 결정되므로, get_data()보다 뒤에 위치해야 함
-        self.html_path = None
+        self.html_path = self.get_html_path(file_path, file_uuid, html_save_dir) # web loader에서는 html_path가 data를 가져오는 과정에서 결정되므로, get_data()보다 뒤에 위치해야 함
         self.pdf_path = self.get_pdf_path(file_path, file_uuid, pdf_save_dir) # web loader에서는 pdf_path가 data를 가져오는 과정에서 결정되므로, get_data()보다 뒤에 위치해야 함
         self.full_text = self.get_full_text()
         self.processed_path = self.get_json_save_path(json_save_dir)

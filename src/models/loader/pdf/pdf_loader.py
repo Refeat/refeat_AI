@@ -83,12 +83,13 @@ class PdfLoader(BaseLoader):
         return output_path if os.path.exists(output_path) else None
     
     def get_html_path(self, file_path, file_uuid, html_save_dir):
-        command = ["pdf2htmlEX", "--dest-dir", html_save_dir, "--embed-javascript", "0", "--zoom", "1.3", file_path]
-        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        # command = ["pdf2htmlEX", "--dest-dir", html_save_dir, "--embed-javascript", "0", "--zoom", "1.3", file_path]
+        # result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         
-        html_path = self.change_html_name_to_uuid(file_path, file_uuid, html_save_dir)        
-        self.postprocess_html(html_path)
-        return 
+        # html_path = self.change_html_name_to_uuid(file_path, file_uuid, html_save_dir)        
+        # self.postprocess_html(html_path)
+        # return 
+        pass
     
     def get_pdf_path(self, file_path, file_uuid, pdf_save_dir):
         return self.file_path
