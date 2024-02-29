@@ -27,10 +27,10 @@ class ExtractInsightsChain(BaseChatChain):
                 response_format="json",
                 # model='gpt-4-0125-preview',
                 model='gpt-3.5-turbo-0125',
-                temperature=0.0,
-                top_p=0.0,
+                temperature=0.7,
+                top_p=1.0,
                 verbose=False,
-                openai_api_key=other_openai_api_key) -> None:
+                openai_api_key=None) -> None:
         super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature, top_p=top_p, openai_api_key=openai_api_key)
         self.input_keys = ['context']
         self.output_keys = ['insights']

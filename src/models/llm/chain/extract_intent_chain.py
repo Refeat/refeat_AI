@@ -22,7 +22,7 @@ class ExtractIntentChain(BaseChatChain):
                 user_prompt_template:str=USER,
                 response_format="json",
                 model='gpt-3.5-turbo-0125',
-                temperature=0.0,
+                temperature=0.7,
                 verbose=False,) -> None:
         super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature)
 
