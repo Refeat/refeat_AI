@@ -21,7 +21,7 @@ from models.llm.agent.custom_streming_callback import CustomStreamingStdOutCallb
 
 class ChatAgentModule:
     def __init__(self, verbose=False):
-        llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0.0, streaming=True, seed=42)
+        llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0.7, streaming=True, seed=42)
         self.tools = []
         agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=self.tools)
         self.queue = [] # TODO: 나중에 backend에서 주면 삭제

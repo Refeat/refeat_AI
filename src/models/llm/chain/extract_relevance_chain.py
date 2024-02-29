@@ -26,10 +26,10 @@ class ExtractRelevanceChain(BaseChatChain):
                 response_format="text",
                 # model='gpt-4-0125-preview',
                 model='gpt-3.5-turbo-0125',
-                temperature=0.0,
+                temperature=0.7,
                 verbose=False,
-                top_p=0.0,
-                openai_api_key=other_openai_api_key) -> None:
+                top_p=1.0,
+                openai_api_key=None) -> None:
         super().__init__(system_prompt_template=system_prompt_template, user_prompt_template=user_prompt_template, response_format=response_format, verbose=verbose, model=model, temperature=temperature, top_p=top_p, openai_api_key=openai_api_key)
         self.input_keys = ['query', 'context']
         self.output_keys = ['evidence response']
